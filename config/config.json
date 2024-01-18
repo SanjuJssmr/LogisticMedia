@@ -1,0 +1,14 @@
+{
+    "port": "8008",
+    "mongodb": {
+      "host": "localhost",
+      "port": "27017",
+      "database": "baseCode",
+      "username": "",
+      "password": ""
+    },
+    "settings": {
+      "apiUrl": "localhost:8000",
+      "siteTitle": "baseCode"
+    }
+  }
