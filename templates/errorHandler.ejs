@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+</head>
+
+<body>
+    <table align="center" style="
+          font-size: 18px;
+          padding: 30px;
+          background-color: rgb(248, 248, 248);
+          width: 600px !important;" role="presentation">
+        <tbody>
+            <tr>
+                <td>
+                    <img src="<%= logoUrl %>" alt="Image" width="100%" height="auto" />
+                </td>
+            </tr>
+            <tr style="padding: 0 30px 30px 30px !important;">
+                <td>
+                    <h3>Hi Team,</h3>
+
+                    <p class="sub">Error accured while sending <strong style="color: red;"><%= location %></strong> mail from -<strong>
+                                <%= funName %>
+                            </strong></p>
+                    <p>Please checkout and Fix as soon as possible!</p>
+                    <p>Regards,</p>
+                    <p><strong>AllMasters</strong></p>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</body>
+
+</html>

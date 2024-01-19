@@ -1,5 +1,5 @@
 const nodemailer = require('nodemailer')
-const CONFIG = require('../config/config.js')
+const CONFIG = require('../config/config')
 
 const transporter = nodemailer.createTransport({
   host: CONFIG.SMTP_HOST,

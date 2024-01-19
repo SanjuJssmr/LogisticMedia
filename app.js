@@ -1,10 +1,15 @@
 const koa = require("koa")
 const mongoose = require("mongoose")
 const { userRouter } = require('./routes/user/user');
-const bodyParser = require("koa-bodyparser")
-const CONFIG = require("./config/config")
+const bodyParser = require("koa-bodyparser");
+const CONFIG = require("./config/config");
+const cors = require('@koa/cors');
+
 const app = new koa()
 app.use(bodyParser())
+
+app.use(cors());
+
 app.on('error', (err, ctx) => {
   console.log('server error', err, ctx)
 });

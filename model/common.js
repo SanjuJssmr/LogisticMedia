@@ -5,7 +5,7 @@ const fs = require('fs').promises
 // const CONFIG = require('../config/config')
 // let CONFIGJSON = require('../config/config.json')
 // const jwt = require('jsonwebtoken')
-// const path = require('path')
+const path = require('path')
 // const { ObjectId } = require('bson')
 // const ejs = require('ejs')
 // const { transporter } = require('./mail')
@@ -74,42 +74,42 @@ const fs = require('fs').promises
 //   }
 // }
 
-// const errorMail = async (errorData) => {
-//   let templatePathUser, errorMailTo, mailOptions
-//   try {
-//     templatePathUser = path.resolve('./templates/handlings')
-//     errorMailTo = JSON.parse(process.env.errorMailTo)
+const errorMail = async (errorData) => {
+  let templatePathUser, errorMailTo, mailOptions
+  try {
+    templatePathUser = path.resolve('./templates')
+    errorMailTo = JSON.parse(process.env.errorMailTo)
 
-//     ejs.renderFile(`${templatePathUser}/errorHandler.ejs`,
-//       {
-//         location: errorData.location,
-//         funName: errorData.funName,
-//         logoUrl: getImageAsBase64(imagePath)
-//       }
-//       , (err, data) => {
-//         if (err) {
-//           console.log(err);
-//         } else {
-//           mailOptions = {
-//             from: process.env.SMTP_AUTH_USER,
-//             to: errorMailTo,
-//             subject: `Attention | Error while sending mail`,
-//             html: data
-//           }
-//           //Send Mail
-//           transporter.sendMail(mailOptions, (error, info) => {
-//             if (error) {
-//               console.log(`Error catching mail not sent: - ${error}`)
-//               return console.log(error)
-//             }
-//             console.log(`Error catching mail sent:  - ${info.messageId}`)
-//           })
-//         }
-//       })
-//   } catch (error) {
-//     console.log(`Error sending common/errorMail - ${error.message}`)
-//   }
-// }
+    ejs.renderFile(`${templatePathUser}/errorHandler.ejs`,
+      {
+        location: errorData.location,
+        funName: errorData.funName,
+        logoUrl: getImageAsBase64(imagePath)
+      }
+      , (err, data) => {
+        if (err) {
+          console.log(err);
+        } else {
+          mailOptions = {
+            from: process.env.SMTP_AUTH_USER,
+            to: errorMailTo,
+            subject: `Attention | Error while sending mail`,
+            html: data
+          }
+          //Send Mail
+          transporter.sendMail(mailOptions, (error, info) => {
+            if (error) {
+              console.log(`Error catching mail not sent: - ${error}`)
+              return console.log(error)
+            }
+            console.log(`Error catching mail sent:  - ${info.messageId}`)
+          })
+        }
+      })
+  } catch (error) {
+    console.log(`Error sending common/errorMail - ${error.message}`)
+  }
+}
 
 // async function deleteFilesInFolder(filePath, folderName) {
 //   try {
@@ -377,5 +377,5 @@ module.exports = {
   // checkAccess,
   // deleteFilesInFolder,
   // getImageAsBase64,
-  // errorMail
+  errorMail
 }
