@@ -3,14 +3,13 @@ const mongoose = require("mongoose")
 const { userRouter } = require('./routes/user/user');
 const bodyParser = require("koa-bodyparser")
 const CONFIG = require("./config/config")
-const koaRouter = require("koa-router")
 const app = new koa()
 app.use(bodyParser())
 app.on('error', (err, ctx) => {
   console.log('server error', err, ctx)
 });
- 
-mongoose.connect("mongodb://localhost:27017/koaDb")
+
+mongoose.connect(CONFIG.DB_URL)
 mongoose.connection.on('disconnected', () => console.log('disconnected'));
 mongoose.connection.on('reconnected', () => console.log('reconnected'));
 mongoose.connection.on('disconnecting', () => console.log('disconnecting'));
@@ -20,9 +19,8 @@ mongoose.connection.on('connected', () => {
     app.use(userRouter.routes())
     app.listen(CONFIG.PORT, () => {
       console.log("Server turned on with Koa", CONFIG.ENV, "mode on port", CONFIG.PORT);
-  });
+    });
   } catch (error) {
     console.log(`Koa server error - ${error}`);
   }
 });
- 

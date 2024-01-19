@@ -31,4 +31,4 @@ const postSchema = mongoose.Schema({
     versionKey: false
 })
 
-module.exports = mongoose.model("page", postSchema) 
+module.exports = mongoose.model("pageDetails", postSchema) 
