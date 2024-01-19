@@ -1,16 +1,33 @@
 //Schema Imports
 const user = require('../schema/user')
-const pageDetails = require('../schema/pageDetails')
+const connection = require("../schema/connection")
+const chat = require("../schema/chat")
+const companyPage = require('../schema/companyPage')
+const follower = require("../schema/follower")
 const post = require('../schema/post')
 const postComment = require('../schema/postComment')
-
+const postLike = require("../schema/postLike")
+const question = require("../schema/question")
+const answer = require("../schema/answer")
+const schedule = require("../schema/schedule")
+const scheduleComment = require("../schema/scheduleComment")
+const scheduleLike = require("../schema/scheduleLike")
 
 //DB Collection Schema
 const db = {
   user,
-  pageDetails,
+  companyPage,
   post,
-  postComment
+  postComment,
+  connection,
+  chat,
+  follower,
+  postLike,
+  question,
+  answer,
+  schedule,
+  scheduleComment,
+  scheduleLike
 }
 
 /**All mongoose queryfunction and normal functions */
