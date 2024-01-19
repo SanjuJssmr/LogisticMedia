@@ -1,26 +1,31 @@
 const mongoose = require("mongoose")
 const ObjectId = mongoose.Schema.Types.ObjectId
 
-const postSchema = mongoose.Schema({
+const companyPageSchema = mongoose.Schema({
     createdBy: {
         type: ObjectId,
-        ref: "user"
+        ref: "user",
+        required: true
     },
     companyName: {
         type: String,
         required: true
     },
-    gst: {
+    profile: {
         type: String,
-        required: true
+        default: "https://t4.ftcdn.net/jpg/03/59/58/91/360_F_359589186_JDLl8dIWoBNf1iqEkHxhUeeOulx0wOC5.jpg"
     },
-    pan: {
-        type: String,
-        required: true
-    },
+    email :{
+        type :String,
+        required:true,
+        lowercase :true
+    }
     licenseNo: {
         type: String,
         required: true
+    },
+    about :{
+        type : String
     },
     status: {
         type: Number,
@@ -31,4 +36,4 @@ const postSchema = mongoose.Schema({
     versionKey: false
 })
 
-module.exports = mongoose.model("pageDetails", postSchema) 
+module.exports = mongoose.model("companyPage", companyPageSchema) 

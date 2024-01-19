@@ -7,7 +7,8 @@ const userSchema = mongoose.Schema({
     },
     email: {
         type: String,
-        require: true
+        require: true,
+        lowercase: true
     },
     designation: {
         type: String,
@@ -22,10 +23,12 @@ const userSchema = mongoose.Schema({
         default: "https://t4.ftcdn.net/jpg/03/59/58/91/360_F_359589186_JDLl8dIWoBNf1iqEkHxhUeeOulx0wOC5.jpg"
     },
     otp: {
-        type: String,
-        require: true
+        type: String
     },
-    location: {
+    state: {
+        type: String
+    },
+    country: {
         type: String
     },
     dob: {
