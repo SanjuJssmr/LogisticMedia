@@ -13,10 +13,13 @@ const postSchema = mongoose.Schema({
     hashtags: {
         type: Array
     },
-    location: {
+    state: {
         type: String
     },
-    filePath: {
+    country: {
+        type: String
+    },
+    files: {
         type: Array
     },
     status: {

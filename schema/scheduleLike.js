@@ -7,9 +7,6 @@ const scheduleLikeSchema = mongoose.Schema({
         ref: "schedule",
         required: true
     },
-    likes: {
-        type: Number
-    },
     likedBy: {
         type: Array,
         default: []

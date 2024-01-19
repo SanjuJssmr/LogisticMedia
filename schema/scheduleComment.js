@@ -7,7 +7,7 @@ const scheduleCommentSchema = mongoose.Schema({
         ref: "schedule",
         required: true
     },
-    userCommented: {
+    userId: {
         type: ObjectId,
         ref: "user",
         required: true

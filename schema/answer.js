@@ -7,7 +7,7 @@ const answerSchema = mongoose.Schema({
         ref: "QnA",
         required: true
     },  
-    userAnswered: {
+    userId: {
         type: ObjectId,
         ref: "user",
         required: true

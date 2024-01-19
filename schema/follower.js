@@ -2,11 +2,15 @@ const mongoose = require("mongoose")
 const ObjectId = mongoose.Schema.Types.ObjectId
 
 const followerSchema = mongoose.Schema({
-    followers: {
-        type: ObjectId
+    followerId: {
+        type: ObjectId,
+        required: true,
+        ref : "user"
     },
-    pageId: {
-        type: ObjectId
+    companyId: {
+        type: ObjectId,
+        required: true,
+        ref :"companyPage"
     },
     status: {
         type: Number,

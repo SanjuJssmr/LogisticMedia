@@ -7,9 +7,6 @@ const postLikeSchema = mongoose.Schema({
         ref: "post",
         required: true
     },
-    likes: {
-        type: Number
-    },
     likedBy: {
         type: Array,
         default: []

@@ -1,7 +1,7 @@
 const mongoose = require("mongoose")
 const ObjectId = mongoose.Schema.Types.ObjectId
 
-const questionAndQuestion = mongoose.Schema({
+const questionSchema = mongoose.Schema({
     createdBy: {
         type: ObjectId,
         required: true,
@@ -11,13 +11,7 @@ const questionAndQuestion = mongoose.Schema({
         type: String,
         required: true
     },
-    hashtags: {
-        type: Array
-    },
-    location: {
-        type: String
-    },
-    filePath: {
+    files: {
         type: Array
     },
     status: {
@@ -43,4 +37,4 @@ const questionAndQuestion = mongoose.Schema({
     versionKey: false
 })
 
-module.exports = mongoose.model("QnA", questionAndQuestion)
+module.exports = mongoose.model("question", questionSchema)

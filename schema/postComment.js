@@ -7,8 +7,7 @@ const postCommentSchema = mongoose.Schema({
         ref: "post",
         required: true
     },
-
-    userCommented: {
+    userId: {
         type: ObjectId,
         ref: "user",
         required: true
