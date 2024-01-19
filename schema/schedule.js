@@ -30,7 +30,7 @@ const scheduleSchema = mongoose.Schema({
     },
     description: {
         type: String
-    }
+    },
     status: {
         type: Number,
         default: 1
