@@ -1,4 +1,6 @@
+const mongoose = require("mongoose");
 const db = require("../../model/mongodb")
+const ObjectId = mongoose.Types.ObjectId
 
 const addPost = async (ctx) => {
     let data = { status: 0, response: "Invalid request" }
@@ -51,9 +53,53 @@ const getMyPost = async (ctx) => {
     try {
         let postData = ctx.request.body, postInfo;
         postData = postData.data[0];
-        postInfo = await db.findDocuments("post", { createdBy: postData.userId })
+        postInfo = await db.findDocuments("post", { createdBy: postData.userId, status: 1 })
 
         return ctx.response.body = { status: 1, data: postInfo }
+    } catch (error) {
+        console.log(error)
+        return ctx.response.body = { status: 0, response: `Error in post controllers - ${error.message}` }
+    }
+}
+
+const getTrendingPost = async (ctx) => {
+    try {
+        let postInfo, aggregationQuery = [];
+        aggregationQuery = [
+            {
+                $match: { status: 1 },
+            },
+            {
+                $lookup:
+                {
+                    from: "postlikes",
+                    localField: "_id",
+                    foreignField: "postId",
+                    as: "postInfo",
+                }
+            },
+            {
+                $addFields: {
+                    likes: { $size: "$postInfo" }
+                }
+            },
+            {
+                $sort: {
+                    likes: -1,
+                }
+            },
+            {
+                $project: {
+                    "postInfo": 0,
+                    "status":0,
+                    "reportCount":0,
+                    "updatedAt":0
+                }
+            }
+        ]
+        postInfo = await db.getAggregation("post", aggregationQuery)
+
+        return ctx.response.body = { status: 1, data: JSON.stringify(postInfo) }
     } catch (error) {
         console.log(error)
         return ctx.response.body = { status: 0, response: `Error in post controllers - ${error.message}` }
@@ -167,23 +213,78 @@ const getCommentsAndReplies = async (ctx) => {
             return ctx.response.body = { status: 0, response: "No post found" }
         }
         aggregationQuery = [
+            { $match: { $and: [{ postId: new ObjectId(postData.postId) }, { status: 1 }] } },
             {
                 $lookup:
                 {
-                    from: "user",
+                    from: "users",
                     localField: "userId",
                     foreignField: "_id",
                     as: "userData",
                 }
             },
             {
-                $replaceRoot: { newRoot: { $mergeObjects: [{ $arrayElemAt: ["$userData", 0] }, "$$ROOT"] } }
+                $replaceRoot: { newRoot: { $mergeObjects: [{ fullName: "$userData.fullName" }, "$$ROOT"] } }
             },
-            { $project: { userData: 0 } }
+            {
+                $lookup: {
+                    from: 'users',
+                    localField: "replies.userReplied",
+                    foreignField: "_id",
+                    as: 'replyUser'
+                }
+            },
+            { $unset: ["replyUser.email", "replyUser.designation", "replyUser.profile", "replyUser.otp", "replyUser.state", "replyUser.country", "replyUser.role", "replyUser.status", "replyUser.password", "replyUser.dob", "replyUser.createdAt", "replyUser.updatedAt"] },
+            {
+                $addFields: {
+                    "replies": {
+                        $map: {
+                            input: "$replies",
+                            as: "reply",
+                            in: {
+                                $mergeObjects: [
+                                    "$$reply",
+                                    {
+                                        userInfo: {
+                                            $arrayElemAt: ["$replyUser", {
+                                                $indexOfArray: ["$replyUser._id", "$$reply.userReplied"]
+                                            }]
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                }
+            },
+            {
+                $addFields: {
+                    "userRepliedInfo": { $map: { input: "$userRepliedInfo", as: "user", in: { fullName: "$$user.fullName" } } },
+                }
+            },
+            { $unset: ["replies.userInfo._id"] },
+            {
+                $project: {
+                    "userId": "$userId",
+                    "message": "$message",
+                    'fullName': { '$arrayElemAt': ['$fullName', 0] },
+                    "commentedOn": "$commentedOn",
+                    "userInfo": {
+                        'fullName': { '$arrayElemAt': ['$fullName', 0] },
+                    },
+                    "replies": {
+                        $filter: {
+                            input: "$replies",
+                            as: "reply",
+                            cond: { $eq: ["$$reply.status", 1] }
+                        }
+                    }
+                }
+            }
         ]
         commentAndReplies = await db.getAggregation("postComment", aggregationQuery)
 
-        return ctx.response.body = { status: 0, data: commentAndReplies }
+        return ctx.response.body = { status: 0, data: JSON.stringify(commentAndReplies) }
     } catch (error) {
         console.log(error)
         return ctx.response.body = { status: 0, response: `Error in post controllers - ${error.message}` }
@@ -225,4 +326,4 @@ const updateLike = async (ctx) => {
 
 
 
-module.exports = { addPost, deletePost, getMyPost, postComment, deleteComment, addReply, deleteReply, getCommentsAndReplies, updateLike }
+module.exports = { addPost, deletePost, getMyPost, postComment, deleteComment, addReply, deleteReply, getCommentsAndReplies, updateLike, getTrendingPost }
