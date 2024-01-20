@@ -19,7 +19,7 @@ const companyPageSchema = mongoose.Schema({
         type :String,
         required:true,
         lowercase :true
-    }
+    },
     licenseNo: {
         type: String,
         required: true

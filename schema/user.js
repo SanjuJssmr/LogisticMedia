@@ -1,7 +1,7 @@
 const mongoose = require("mongoose")
 
 const userSchema = mongoose.Schema({
-    fullname: {
+    fullName: {
         type: String,
         require: true
     },
@@ -26,16 +26,20 @@ const userSchema = mongoose.Schema({
         default: "https://t4.ftcdn.net/jpg/03/59/58/91/360_F_359589186_JDLl8dIWoBNf1iqEkHxhUeeOulx0wOC5.jpg"
     },
     otp: {
-        type: String
+        type: String,
+        require:true
     },
     state: {
-        type: String
+        type: String,
+        require:true
     },
     country: {
-        type: String
+        type: String,
+        require: true
     },
     dob: {
-        type: Date
+        type: Date,
+        require:true
     },
     about: {
         type: String
@@ -46,7 +50,7 @@ const userSchema = mongoose.Schema({
     },
     status: {
         type: Number,
-        status: 1
+        default: 2
     }
 }, {
     timestamps: true,
