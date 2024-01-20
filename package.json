@@ -12,13 +12,17 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@azure/storage-file-share": "^12.17.0",
     "bcrypt": "^5.1.1",
     "dotenv": "^16.3.1",
+    "ejs": "^3.1.9",
+    "express-validator": "^7.0.1",
     "jsonwebtoken": "^9.0.2",
     "koa": "^2.15.0",
     "koa-bodyparser": "^4.4.1",
     "koa-router": "^12.0.1",
-    "mongoose": "^8.1.0"
+    "mongoose": "^8.1.0",
+    "nodemailer": "^6.9.8"
   },
   "devDependencies": {
     "nodemon": "^3.0.3"

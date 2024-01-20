@@ -3,12 +3,13 @@
     "mongodb": {
       "host": "localhost",
       "port": "27017",
-      "database": "baseCode",
+      "database": "Am_Social",
       "username": "",
       "password": ""
     },
     "settings": {
       "apiUrl": "localhost:8000",
-      "siteTitle": "baseCode"
+      "siteTitle": "baseCode",
+      "nodeFileUploads": "amSocialFiles/"
     }
   }
