@@ -34,7 +34,8 @@ const postSchema = mongoose.Schema({
             type: String
         },
         reportedOn: {
-            type: String
+            type: Date,
+            default : Date.now()
         }
     }],
 }, {

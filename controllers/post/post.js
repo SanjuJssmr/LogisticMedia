@@ -91,9 +91,9 @@ const getTrendingPost = async (ctx) => {
             {
                 $project: {
                     "postInfo": 0,
-                    "status":0,
-                    "reportCount":0,
-                    "updatedAt":0
+                    "status": 0,
+                    "reportCount": 0,
+                    "updatedAt": 0
                 }
             }
         ]
@@ -128,7 +128,6 @@ const postComment = async (ctx) => {
     }
 }
 
-
 const deleteComment = async (ctx) => {
     let data = { status: 0, response: "Invalid request" }
     try {
@@ -151,7 +150,6 @@ const deleteComment = async (ctx) => {
     }
 }
 
-
 const addReply = async (ctx) => {
     let data = { status: 0, response: "Invalid request" }
     try {
@@ -173,7 +171,6 @@ const addReply = async (ctx) => {
         return ctx.response.body = { status: 0, response: `Error in post controllers - ${error.message}` }
     }
 }
-
 
 const deleteReply = async (ctx) => {
     let data = { status: 0, response: "Invalid request" }
@@ -291,7 +288,6 @@ const getCommentsAndReplies = async (ctx) => {
     }
 }
 
-
 const updateLike = async (ctx) => {
     let data = { status: 0, response: "Invalid request" }
     try {
@@ -324,6 +320,84 @@ const updateLike = async (ctx) => {
     }
 }
 
+const getForYouPost = async (ctx) => {
+    try {
+        let postData = ctx.request.body, postInfo, aggregationQuery = [];
+        postData = postData.data[0]
+        aggregationQuery = [
+            {
+                $match: {
+                    status: 1,
+                    $or: [
+                        { state: postData.state },
+                        { country: postData.country }
+                    ]
+                },
+            },
+            {
+                $lookup:
+                {
+                    from: "postlikes",
+                    localField: "_id",
+                    foreignField: "postId",
+                    as: "postInfo",
+                }
+            },
+            {
+                $addFields: {
+                    likes: { $size: "$postInfo" }
+                }
+            },
+            {
+                $sort: {
+                    createdAt: -1,
+                }
+            },
+            {
+                $project: {
+                    "postInfo": 0,
+                    "status": 0,
+                    "reportCount": 0,
+                    "updatedAt": 0
+                }
+            }
+        ]
+        postInfo = await db.getAggregation("post", aggregationQuery)
 
+        return ctx.response.body = { status: 1, data: JSON.stringify(postInfo) }
+    } catch (error) {
+        console.log(error)
+        return ctx.response.body = { status: 0, response: `Error in post controllers - ${error.message}` }
+    }
+}
 
-module.exports = { addPost, deletePost, getMyPost, postComment, deleteComment, addReply, deleteReply, getCommentsAndReplies, updateLike, getTrendingPost }
+const reportCount = async (ctx) => {
+    let data = { status: 0, response: "Invalid request" }
+    try {
+        let postData = ctx.request.body, postInfo;
+        postData = postData.data[0];
+        postInfo = await db.findSingleDocument("post", { _id: postData.postId, status: 1 })
+        if (postInfo == null || postInfo.status === 0) {
+
+            return ctx.response.body = { status: 0, response: "No post found" }
+        }
+        if (postInfo.reportCount.length > 3) {
+            updateInfo = await db.updateOneDocument("post", { _id: postInfo._id }, { status: 0, $push: { reportCount: { userId: postData.userId, reason: postData.reason } } })
+            if (updateInfo.modifiedCount !== 0 && updateInfo.matchedCount !== 0) {
+
+                return ctx.response.body = { status: 1, response: "Post as been reported" }
+            }
+        }
+        updateInfo = await db.updateOneDocument("post", { _id: postInfo._id }, { $push: { reportCount: { userId: postData.userId, reason: postData.reason } } })
+        if (updateInfo.modifiedCount !== 0 && updateInfo.matchedCount !== 0) {
+
+            return ctx.response.body = { status: 1, response: "Post as been reported" }
+        }
+        return ctx.response.body = data
+    } catch (error) {
+        console.log(error)
+        return ctx.response.body = { status: 0, response: `Error in post controllers - ${error.message}` }
+    }
+}
+
+module.exports = { addPost, deletePost, getMyPost, postComment, deleteComment, addReply, deleteReply, getCommentsAndReplies, updateLike, getTrendingPost, getForYouPost, reportCount }
