@@ -11,7 +11,7 @@ const addPost = async (ctx) => {
         let postData = ctx.request.body, fileData = ctx.request.files, postInfo, likeInfo, postFolderpath = "posts", filePath;
         postInfo = await db.insertSingleDocument("post", postData)
         if (Object.keys(postInfo).length !== 0) {
-            likeInfo = await db.insertSingleDocument("postLike", { postId: postInfo._id })
+            likeInfo = await db.insertSingleDocument("postLike", { postId: postInfo._id })  
             if (Object.keys(likeInfo).length !== 0) {
                 if (fileData.length !== 0) {
                     for (const fileInfo of fileData) {
@@ -93,16 +93,25 @@ const getTrendingPost = async (ctx) => {
                 }
             },
             {
+                $addFields: {
+                    likedBy: "$postInfo.likedBy"
+                }
+            },
+            {
                 $sort: {
                     likes: -1,
                 }
             },
             {
                 $project: {
-                    "postInfo": 0,
-                    "status": 0,
-                    "reportCount": 0,
-                    "updatedAt": 0
+                    "createdBy":1,
+                    "description":1,
+                    "hashtags":1,
+                    "country":1,
+                    "files":1,
+                    "createdAt":1,
+                    "likes":1,
+                    'likedBy': { '$arrayElemAt': ['$likedBy', 0] },
                 }
             }
         ]
@@ -230,7 +239,7 @@ const getCommentsAndReplies = async (ctx) => {
                 }
             },
             {
-                $replaceRoot: { newRoot: { $mergeObjects: [{ fullName: "$userData.fullName" }, "$$ROOT"] } }
+                $replaceRoot: { newRoot: { $mergeObjects: [{ fullName: "$userData.fullName", designation: "$userData.designation", profile: "$userData.profile" }, "$$ROOT"] } }
             },
             {
                 $lookup: {
@@ -240,7 +249,7 @@ const getCommentsAndReplies = async (ctx) => {
                     as: 'replyUser'
                 }
             },
-            { $unset: ["replyUser.email", "replyUser.designation", "replyUser.profile", "replyUser.otp", "replyUser.state", "replyUser.country", "replyUser.role", "replyUser.status", "replyUser.password", "replyUser.dob", "replyUser.createdAt", "replyUser.updatedAt"] },
+            { $unset: ["replyUser.email", "replyUser.otp", "replyUser.state", "replyUser.country", "replyUser.role", "replyUser.status", "replyUser.password", "replyUser.dob", "replyUser.createdAt", "replyUser.updatedAt"] },
             {
                 $addFields: {
                     "replies": {
@@ -273,10 +282,11 @@ const getCommentsAndReplies = async (ctx) => {
                 $project: {
                     "userId": "$userId",
                     "message": "$message",
-                    'fullName': { '$arrayElemAt': ['$fullName', 0] },
                     "commentedOn": "$commentedOn",
                     "userInfo": {
                         'fullName': { '$arrayElemAt': ['$fullName', 0] },
+                        'designation': { '$arrayElemAt': ['$designation', 0] },
+                        'profile': { '$arrayElemAt': ['$profile', 0] },
                     },
                     "replies": {
                         $filter: {
