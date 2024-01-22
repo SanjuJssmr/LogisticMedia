@@ -9,9 +9,10 @@ const addPost = async (ctx) => {
     let data = { status: 0, response: "Invalid request" }
     try {
         let postData = ctx.request.body, fileData = ctx.request.files, postInfo, likeInfo, postFolderpath = "posts", filePath;
+        postData = postData.data[0];
         postInfo = await db.insertSingleDocument("post", postData)
         if (Object.keys(postInfo).length !== 0) {
-            likeInfo = await db.insertSingleDocument("postLike", { postId: postInfo._id })  
+            likeInfo = await db.insertSingleDocument("postLike", { postId: postInfo._id })
             if (Object.keys(likeInfo).length !== 0) {
                 if (fileData.length !== 0) {
                     for (const fileInfo of fileData) {
@@ -81,6 +82,15 @@ const getTrendingPost = async (ctx) => {
             {
                 $lookup:
                 {
+                    from: "users",
+                    localField: "createdBy",
+                    foreignField: "_id",
+                    as: "userInfo",
+                }
+            },
+            {
+                $lookup:
+                {
                     from: "postlikes",
                     localField: "_id",
                     foreignField: "postId",
@@ -89,12 +99,11 @@ const getTrendingPost = async (ctx) => {
             },
             {
                 $addFields: {
-                    likes: { $size: "$postInfo" }
-                }
-            },
-            {
-                $addFields: {
-                    likedBy: "$postInfo.likedBy"
+                    likes: { $size: "$postInfo" },
+                    likedBy: "$postInfo.likedBy",
+                    fullName: "$userInfo.fullName",
+                    designation: "$userInfo.designation",
+                    profile: "$userInfo.profile"
                 }
             },
             {
@@ -104,13 +113,16 @@ const getTrendingPost = async (ctx) => {
             },
             {
                 $project: {
-                    "createdBy":1,
-                    "description":1,
-                    "hashtags":1,
-                    "country":1,
-                    "files":1,
-                    "createdAt":1,
-                    "likes":1,
+                    "createdBy": 1,
+                    "description": 1,
+                    "hashtags": 1,
+                    "country": 1,
+                    "files": 1,
+                    "createdAt": 1,
+                    "likes": 1,
+                    "fullName": { '$arrayElemAt': ['$fullName', 0] },
+                    "designation": { '$arrayElemAt': ['$designation', 0] },
+                    "profile": { '$arrayElemAt': ['$profile', 0] },
                     'likedBy': { '$arrayElemAt': ['$likedBy', 0] },
                 }
             }
