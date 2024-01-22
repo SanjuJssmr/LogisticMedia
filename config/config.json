@@ -3,7 +3,7 @@
     "mongodb": {
       "host": "localhost",
       "port": "27017",
-      "database": "AmSocial",
+      "database": "Am_Social",
       "username": "",
       "password": ""
     },

@@ -1,10 +1,65 @@
 const db = require("../../model/mongodb")
 
 const getReportPost = async (ctx) => {
-    let data = { status: 0, response: "Invalid request" }
+    let data = { status: 0, response: "Invalid request" }, aggregationQuery = [];
     try {
         let postInfo;
-        postInfo = await db.findDocuments("post", { reportCount: { $ne: [] }, status: 1 }, { "_id": 1, "description": 1, "reportCount": 1, "createdAt": 1 })
+        aggregationQuery = [
+            { $match: { reportCount: { $ne: [] }, status: 1 } },
+            {
+                $lookup:
+                {
+                    from: "users",
+                    localField: "createdBy",
+                    foreignField: "_id",
+                    as: "userInfo",
+                }
+            },
+            {
+                $replaceRoot: { newRoot: { $mergeObjects: [{ fullName: "$userInfo.fullName"}, "$$ROOT"] } }
+            },
+            {
+                $lookup: {
+                    from: 'users',
+                    localField: "reportCount.userId",
+                    foreignField: "_id",
+                    as: 'reportUser'
+                }
+            },
+            { $unset: ["reportUser.email","reportUser.profile", "reportUser.designation", "reportUser.otp", "reportUser.state", "reportUser.country", "reportUser.role", "reportUser.status", "reportUser.password", "reportUser.dob", "reportUser.createdAt", "reportUser.updatedAt"] },
+            {
+                $addFields: {
+                    "reports": {
+                        $map: {
+                            input: "$reportCount",
+                            as: "report",
+                            in: {
+                                $mergeObjects: [
+                                    "$$report",
+                                    {
+                                        userInfo: {
+                                            $arrayElemAt: ["$reportUser", {
+                                                $indexOfArray: ["$reportUser._id", "$$report.userId"]
+                                            }]
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                }
+            },
+            { $unset: ["reports.userInfo._id"] },
+            {
+                $project: {
+                    'fullName': { '$arrayElemAt': ['$fullName', 0] },
+                    "description": "$description",
+                    "createdAt":"$createdAt",
+                    "reports": "$reports"
+                }
+            }
+        ]
+        postInfo = await db.getAggregation("post", aggregationQuery)
 
         return ctx.response.body = { status: 1, data: postInfo }
     } catch (error) {
@@ -23,7 +78,7 @@ const deleteReportedPost = async (ctx) => {
 
             return ctx.response.body = { status: 0, response: "No post found" }
         }
-        updateInfo = await db.updateOneDocument("post", { _id: postInfo._id }, { status : 0 })
+        updateInfo = await db.updateOneDocument("post", { _id: postInfo._id }, { status: 0 })
         if (updateInfo.modifiedCount !== 0 && updateInfo.matchedCount !== 0) {
 
             return ctx.response.body = { status: 1, response: "Post as deleted" }
