@@ -12,7 +12,7 @@ const postCommentSchema = mongoose.Schema({
         ref: "user",
         required: true
     },
-    comment: {
+    message: {
         type: String,
         required: true
     },
@@ -22,10 +22,10 @@ const postCommentSchema = mongoose.Schema({
                 type: ObjectId,
                 ref: "user"
             },
-            reply: {
+            message: {
                 type: String
             },
-            replyStatus: {
+            status: {
                 type: Number,
                 default: 1
             },

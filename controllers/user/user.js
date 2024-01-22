@@ -425,7 +425,7 @@ const getProfileById = async (ctx) => {
 
         profileData = await db.getAggregation('user', aggregationQuery);
 
-        return ctx.response.body = profileData
+        return ctx.response.body = { status: 1, data: JSON.stringify(profileData) }
     } catch (error) {
         console.log(error.message)
         return ctx.response.body = { status: 0, response: `Error in user Controller - userConnectionRequest:-${error.message}` }
@@ -446,7 +446,7 @@ const getAllUser = async (ctx) => {
         getUserData = await db.findDocumentsWithPagination("user", {}, { password: 0, otp: 0, updatedAt: 0 }, getData.pageNumber, getData.pageLimit)
         if (getUserData) {
 
-            return ctx.response.body = { status: 1, data: getUserData }
+            return ctx.response.body = { status: 1, data: JSON.stringify(getUserData) }
         }
 
         return ctx.response.body = data
@@ -481,7 +481,7 @@ const acceptConnectionRequest = async (ctx) => {
 }
 
 const getConnectionListById = async (ctx) => {
-    let data = { status: 0, response: "Something went wrong" }, updateConnectionData, updateConnectionStatus;
+    let data = { status: 0, response: "Something went wrong" }, updateConnectionData, aggregationQuery;
     try {
         updateConnectionData = ctx.request.body;
         if (Object.keys(updateConnectionData).length === 0 && updateConnectionData.data === undefined) {
@@ -491,13 +491,22 @@ const getConnectionListById = async (ctx) => {
         }
         updateConnectionData = updateConnectionData.data[0]
 
-        updateConnectionStatus = await db.updateOneDocument("user",)
-        if (getUserData) {
+        aggregationQuery = [
+            {
+                recipientId: new ObjectId(updateConnectionData.id)
+            },
+            {
+                $lookup: {
+                    from: 'users',
+                    localField: '_id',
+                    foreignField: 'scheduleId',
+                    as: 'rateData',
+                },
+            }
+        ]
 
-            return ctx.response.body = { status: 1, data: getUserData }
-        }
+        rateData = await db.getAggregation('connections', aggregationQuery)
 
-        return ctx.response.body = data
     } catch (error) {
         console.log(error.message)
         return ctx.response.body = { status: 0, response: `Error in user Controller - getConnectionListById:-${error.message}` }

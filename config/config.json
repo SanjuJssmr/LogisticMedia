@@ -9,6 +9,11 @@
     },
     "settings": {
       "apiUrl": "localhost:8000",
-      "siteTitle": "baseCode"
+      "siteTitle": "baseCode",
+      "nodeFileUploads": "amSocialFiles/"
+    },
+    "azureFilePath": {
+      "shareName": "files",
+      "directory": "Am_Social"
     }
   }
