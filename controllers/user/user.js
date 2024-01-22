@@ -269,7 +269,7 @@ const login = async (ctx) => {
 
         if (generatedToken) {
 
-            return ctx.response.body = { status: 0, response: "LoggedIn successfully", data: generatedToken }
+            return ctx.response.body = { status: 1, response: "LoggedIn successfully", data: generatedToken }
         }
 
         return ctx.response.body = data
@@ -457,7 +457,7 @@ const getAllUser = async (ctx) => {
 }
 
 const acceptConnectionRequest = async (ctx) => {
-    let data = { status: 0, response: "Something went wrong" }, updateConnectionData;
+    let data = { status: 0, response: "Something went wrong" }, updateConnectionData, updateConnectionStatus;
     try {
         updateConnectionData = ctx.request.body;
         if (Object.keys(updateConnectionData).length === 0 && updateConnectionData.data === undefined) {
@@ -467,7 +467,7 @@ const acceptConnectionRequest = async (ctx) => {
         }
         updateConnectionData = updateConnectionData.data[0]
 
-        getUserData = await db.findDocumentsWithPagination("user", {}, { password: 0, otp: 0, updatedAt: 0 }, getData.pageNumber, getData.pageLimit)
+        updateConnectionStatus = await db.updateOneDocument("user",)
         if (getUserData) {
 
             return ctx.response.body = { status: 1, data: getUserData }
@@ -480,10 +480,32 @@ const acceptConnectionRequest = async (ctx) => {
     }
 }
 
+const getConnectionListById = async (ctx) => {
+    let data = { status: 0, response: "Something went wrong" }, updateConnectionData, updateConnectionStatus;
+    try {
+        updateConnectionData = ctx.request.body;
+        if (Object.keys(updateConnectionData).length === 0 && updateConnectionData.data === undefined) {
+            res.send(data)
 
+            return
+        }
+        updateConnectionData = updateConnectionData.data[0]
+
+        updateConnectionStatus = await db.updateOneDocument("user",)
+        if (getUserData) {
+
+            return ctx.response.body = { status: 1, data: getUserData }
+        }
+
+        return ctx.response.body = data
+    } catch (error) {
+        console.log(error.message)
+        return ctx.response.body = { status: 0, response: `Error in user Controller - getConnectionListById:-${error.message}` }
+    }
+}
 
 module.exports = {
     userRegister, updateRegisterData, resendOtp,
     login, verifyOtp, updateUserDetails, userConnectionRequest, getProfileById,
-    getAllUser, acceptConnectionRequest
+    getAllUser, acceptConnectionRequest, getConnectionListById
 }
