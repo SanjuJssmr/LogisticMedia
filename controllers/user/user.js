@@ -280,43 +280,210 @@ const login = async (ctx) => {
 }
 
 const updateUserDetails = async (ctx) => {
-    let data = { status: 0, response: "Something went wrong" }, loginData, privateKey, checkEmail, generatedToken;
+    let data = { status: 0, response: "Something went wrong" }, updateData, checkId, updateUserData;
     try {
-        loginData = ctx.request.body;
-        if (Object.keys(loginData).length === 0 && loginData.data === undefined) {
+        updateData = ctx.request.body;
+        if (Object.keys(updateData).length === 0 && updateData.data === undefined) {
             res.send(data)
 
             return
         }
-        loginData = loginData.data[0]
-        privateKey = await fs.readFile('privateKey.key', 'utf8');
+        updateData = updateData.data[0]
 
-        checkEmail = await db.findSingleDocument("user", { email: loginData.email, status: 1 })
-        if (checkEmail == null || Object.keys(checkEmail).length == 0) {
+        checkId = await db.findSingleDocument("user", { _id: new ObjectId(updateData.id), status: 1 })
+        if (checkId == null || Object.keys(checkId).length == 0) {
 
-            return ctx.response.body = { status: 0, response: "Invalid User" }
+            return ctx.response.body = { status: 0, response: "Invalid id" }
         }
-        checkPasword = await bcrypt.compare(loginData.password, checkEmail.password)
-        if (checkPasword === false) {
+        updateUserData = await db.findByIdAndUpdate("user", updateData.id, updateData)
+        if (updateUserData.modifiedCount !== 0 && updateUserData.matchedCount !== 0) {
 
-            return ctx.response.body = { status: 0, response: "Invalid Credentials" }
-        }
-        generatedToken = jwt.sign({
-            userId: checkEmail._id,
-            role: checkEmail.role,
-            status: checkEmail.status,
-        }, privateKey, { algorithm: 'RS256' })
-
-        if (generatedToken) {
-
-            return ctx.response.body = { status: 0, response: "LoggedIn successfully", data: generatedToken }
+            return ctx.response.body = { status: 1, response: "Profile updated Sucessfully" }
         }
 
         return ctx.response.body = data
     } catch (error) {
         console.log(error.message)
-        return ctx.response.body = { status: 0, response: `Error in user Controller - login:-${error.message}` }
+        return ctx.response.body = { status: 0, response: `Error in user Controller - updateUserDetails:-${error.message}` }
     }
 }
 
-module.exports = { userRegister, updateRegisterData, resendOtp, login, verifyOtp }
+const userConnectionRequest = async (ctx) => {
+    let data = { status: 0, response: "Something went wrong" }, connectionData, checkId, insertConnection;
+    try {
+        connectionData = ctx.request.body;
+        if (Object.keys(connectionData).length === 0 && connectionData.data === undefined) {
+            res.send(data)
+
+            return
+        }
+        connectionData = connectionData.data[0]
+
+        checkSenderId = await db.findOneDocumentExists("user", { _id: new ObjectId(connectionData.senderId), status: 1 })
+        if (checkSenderId == false) {
+
+            return ctx.response.body = { status: 0, response: "Invalid id" }
+        }
+        checkRecipientId = await db.findOneDocumentExists("user", { _id: new ObjectId(connectionData.recipientId), status: 1 })
+        if (checkRecipientId == false) {
+
+            return ctx.response.body = { status: 0, response: "Invalid id" }
+        }
+        insertConnection = await db.insertSingleDocument("connection", connectionData)
+        if (insertConnection) {
+
+            return ctx.response.body = { status: 1, response: "Request Sent Sucessfully" }
+        }
+        return ctx.response.body = data
+    } catch (error) {
+        console.log(error.message)
+        return ctx.response.body = { status: 0, response: `Error in user Controller - userConnectionRequest:-${error.message}` }
+    }
+}
+
+const getProfileById = async (ctx) => {
+    let data = { status: 0, response: "Something went wrong" }, ProfileIdData, checkId, profileData, aggregationQuery;
+    try {
+        ProfileIdData = ctx.request.body;
+        if (Object.keys(ProfileIdData).length === 0 && ProfileIdData.data === undefined) {
+            res.send(data)
+
+            return
+        }
+        ProfileIdData = ProfileIdData.data[0]
+
+        checkId = await db.findOneDocumentExists("user", { _id: new ObjectId(ProfileIdData.id), status: 1 })
+        if (checkId == false) {
+
+            return ctx.response.body = { status: 0, response: "Invalid id" }
+        }
+        aggregationQuery = [
+            {
+                $match: {
+                    _id: new ObjectId(ProfileIdData.id)
+                }
+            },
+            {
+                $lookup: {
+                    from: 'connections',
+                    let: { userId: '$_id' },
+                    pipeline: [
+                        {
+                            $match: {
+                                $expr: {
+                                    $or: [
+                                        { $eq: ['$senderId', '$$userId'] },
+                                        { $eq: ['$recipientId', '$$userId'] }
+                                    ]
+                                }
+                            }
+                        }
+                    ],
+                    as: 'connectionData'
+                }
+            },
+            {
+                $unwind: '$connectionData'
+            },
+            {
+                $group: {
+                    _id: {
+                        userId: '$_id',
+                        status: '$connectionData.status'
+                    },
+                    count: { $sum: 1 }
+                }
+            },
+            {
+                $group: {
+                    _id: '$_id.userId',
+                    connectionCounts: {
+                        $push: {
+                            status: '$_id.status',
+                            count: '$count'
+                        }
+                    }
+                }
+            },
+            {
+                $lookup: {
+                    from: 'users',
+                    localField: '_id',
+                    foreignField: '_id',
+                    as: 'userData'
+                }
+            },
+            {
+                $unwind: '$userData'
+            },
+            {
+                $project: {
+                    'userData.password': 0 // Exclude the password field
+                }
+            }
+        ];
+
+        profileData = await db.getAggregation('user', aggregationQuery);
+
+        return ctx.response.body = profileData
+    } catch (error) {
+        console.log(error.message)
+        return ctx.response.body = { status: 0, response: `Error in user Controller - userConnectionRequest:-${error.message}` }
+    }
+}
+
+const getAllUser = async (ctx) => {
+    let data = { status: 0, response: "Something went wrong" }, getData;
+    try {
+        getData = ctx.request.body;
+        if (Object.keys(getData).length === 0 && getData.data === undefined) {
+            res.send(data)
+
+            return
+        }
+        getData = getData.data[0]
+
+        getUserData = await db.findDocumentsWithPagination("user", {}, { password: 0, otp: 0, updatedAt: 0 }, getData.pageNumber, getData.pageLimit)
+        if (getUserData) {
+
+            return ctx.response.body = { status: 1, data: getUserData }
+        }
+
+        return ctx.response.body = data
+    } catch (error) {
+        console.log(error.message)
+        return ctx.response.body = { status: 0, response: `Error in user Controller - getAllUser:-${error.message}` }
+    }
+}
+
+const acceptConnectionRequest = async (ctx) => {
+    let data = { status: 0, response: "Something went wrong" }, updateConnectionData;
+    try {
+        updateConnectionData = ctx.request.body;
+        if (Object.keys(updateConnectionData).length === 0 && updateConnectionData.data === undefined) {
+            res.send(data)
+
+            return
+        }
+        updateConnectionData = updateConnectionData.data[0]
+
+        getUserData = await db.findDocumentsWithPagination("user", {}, { password: 0, otp: 0, updatedAt: 0 }, getData.pageNumber, getData.pageLimit)
+        if (getUserData) {
+
+            return ctx.response.body = { status: 1, data: getUserData }
+        }
+
+        return ctx.response.body = data
+    } catch (error) {
+        console.log(error.message)
+        return ctx.response.body = { status: 0, response: `Error in user Controller - getAllUser:-${error.message}` }
+    }
+}
+
+
+
+module.exports = {
+    userRegister, updateRegisterData, resendOtp,
+    login, verifyOtp, updateUserDetails, userConnectionRequest, getProfileById,
+    getAllUser, acceptConnectionRequest
+}
