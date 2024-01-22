@@ -1,20 +1,29 @@
 const mongoose = require("mongoose");
 const db = require("../../model/mongodb")
+const path = require("path");
+const common = require("../../model/common");
 const ObjectId = mongoose.Types.ObjectId
+const fs = require("fs")
 
 const addPost = async (ctx) => {
     let data = { status: 0, response: "Invalid request" }
     try {
-        let postData = ctx.request.body, postInfo, likeInfo;
-        postData = postData.data[0];
+        let postData = ctx.request.body, fileData = ctx.request.files, postInfo, likeInfo, postFolderpath = "posts", filePath;
         postInfo = await db.insertSingleDocument("post", postData)
         if (Object.keys(postInfo).length !== 0) {
             likeInfo = await db.insertSingleDocument("postLike", { postId: postInfo._id })
             if (Object.keys(likeInfo).length !== 0) {
+                if (fileData.length !== 0) {
+                    for (const fileInfo of fileData) {
+                        await common.uploadFileAzure(postFolderpath, `${postInfo._id}`, fileInfo)
+                        filePath = `/posts/${postInfo._id}/${fileInfo.originalname}`
+                        await db.updateOneDocument("post", { _id: postInfo._id }, { $push: { files: filePath } })
+                    }
 
+                    return ctx.response.body = { status: 1, response: "Post added successfully" }
+                }
                 return ctx.response.body = { status: 1, response: "Post added successfully" }
             }
-
             return ctx.response.body = data
         }
 
@@ -371,7 +380,7 @@ const getForYouPost = async (ctx) => {
     }
 }
 
-const reportCount = async (ctx) => {
+const reportPost = async (ctx) => {
     let data = { status: 0, response: "Invalid request" }
     try {
         let postData = ctx.request.body, postInfo;
@@ -400,4 +409,45 @@ const reportCount = async (ctx) => {
     }
 }
 
-module.exports = { addPost, deletePost, getMyPost, postComment, deleteComment, addReply, deleteReply, getCommentsAndReplies, updateLike, getTrendingPost, getForYouPost, reportCount }
+const getPostById = async (ctx) => {
+    try {
+        let postData = ctx.request.body, postInfo, aggregationQuery = [];
+        postData = postData.data[0]
+        aggregationQuery = [
+            { $match: { $and: [{ _id: new ObjectId(postData.postId) }, { status: 1 }] } },
+            {
+                $lookup:
+                {
+                    from: "postlikes",
+                    localField: "_id",
+                    foreignField: "postId",
+                    as: "postInfo",
+                }
+            },
+            {
+                $addFields: {
+                    likes: { $size: "$postInfo" }
+                }
+            },
+            {
+                $project: {
+                    "postInfo": 0,
+                    "status": 0,
+                    "reportCount": 0,
+                    "updatedAt": 0
+                }
+            }
+        ]
+        postInfo = await db.getAggregation("post", aggregationQuery)
+
+        return ctx.response.body = { status: 1, data: JSON.stringify(postInfo) }
+    } catch (error) {
+        console.log(error)
+        return ctx.response.body = { status: 0, response: `Error in post controllers - ${error.message}` }
+    }
+}
+
+module.exports = {
+    addPost, deletePost, getMyPost, postComment, deleteComment, addReply,
+    deleteReply, getCommentsAndReplies, updateLike, getTrendingPost, getForYouPost, reportPost, getPostById
+}

@@ -5,11 +5,12 @@ const bodyParser = require("koa-bodyparser");
 const CONFIG = require("./config/config");
 const { postRouter } = require("./routes/post/post");;
 const cors = require('@koa/cors');
+const multer = require("@koa/multer")
 
 const app = new koa()
 app.use(bodyParser())
-
 app.use(cors());
+app.use(multer().any())
 
 app.on('error', (err, ctx) => {
   console.log('server error', err, ctx)

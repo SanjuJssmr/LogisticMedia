@@ -3,7 +3,7 @@
     "mongodb": {
       "host": "localhost",
       "port": "27017",
-      "database": "Amsocial",
+      "database": "Am_Social",
       "username": "",
       "password": ""
     },
@@ -11,5 +11,9 @@
       "apiUrl": "localhost:8000",
       "siteTitle": "baseCode",
       "nodeFileUploads": "amSocialFiles/"
+    },
+    "azureFilePath": {
+      "shareName": "files",
+      "directory": "Am_Social"
     }
   }

@@ -10,5 +10,7 @@ CONFIG.DB_URL = 'mongodb://' + config.mongodb.host + ':' + config.mongodb.port +
 CONFIG.SMTP_HOST = process.env.SMTP_HOST
 CONFIG.SMTP_PORT = process.env.SMTP_PORT
 CONFIG.SMTP_AUTH = { user: process.env.SMTP_AUTH_USER, pass: process.env.SMTP_AUTH_PW }
+CONFIG.AZURESTORAGE = process.env.AZURESTORAGE
+CONFIG.AZURECONNECTIONSTRING = process.env.AZURECONNECTIONSTRING
 
 module.exports = CONFIG

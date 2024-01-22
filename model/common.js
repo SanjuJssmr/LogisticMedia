@@ -1,9 +1,9 @@
 //Imports
 const db = require('../model/mongodb')
-// const { ShareServiceClient } = require("@azure/storage-file-share")
+const { ShareServiceClient } = require("@azure/storage-file-share")
 const fs = require('fs').promises
-// const CONFIG = require('../config/config')
-// let CONFIGJSON = require('../config/config.json')
+const CONFIG = require('../config/config')
+let CONFIGJSON = require('../config/config.json')
 // const jwt = require('jsonwebtoken')
 const path = require('path')
 // const { ObjectId } = require('bson')
@@ -111,130 +111,79 @@ const errorMail = async (errorData) => {
   }
 }
 
-// async function deleteFilesInFolder(filePath, folderName) {
-//   try {
-//     const shareServiceClient = ShareServiceClient.fromConnectionString(CONFIG.AZURECONNECTIONSTRING);
-//     const shareName = CONFIGJSON.azureFilePath.shareName
-//     const shareClient = shareServiceClient.getShareClient(shareName);
-//     const shareExists = await shareClient.exists()
+async function deleteFilesInFolder(filePath, folderName) {
+  try {
+    const shareServiceClient = ShareServiceClient.fromConnectionString(CONFIG.AZURECONNECTIONSTRING);
+    const shareName = CONFIGJSON.azureFilePath.shareName
+    const shareClient = shareServiceClient.getShareClient(shareName);
+    const shareExists = await shareClient.exists()
 
-//     if (shareExists) {
-//       if (filePath.includes('app') === true) {                        //For Dev, Qa, Uat Environments
-//         fileHierarchyPath = filePath.split("/fileuploads/").pop()
-//       }
-//       else {                                                          //Only for Local API Work
-//         fileHierarchyPath = filePath.split("\\fileuploads\\").pop()
-//       }
-//       fileHierarchy = fileHierarchyPath.substring(0, fileHierarchyPath.indexOf("/"))
+    if (shareExists) {
 
-//       if (fileHierarchy === 'cfs certificates') {
+      if (filePath === 'posts') {
 
-//         directoryName = CONFIGJSON.azureFilePath.directory + `/CFS Certificates/${folderName}`
-//       }
-//       if (fileHierarchy === 'registration') {
+        directoryName = CONFIGJSON.azureFilePath.directory + `/posts/${folderName}`
+      }
 
-//         directoryName = CONFIGJSON.azureFilePath.directory + `/Registration/${folderName}`
-//       }
+      const directoryClient = shareClient.getDirectoryClient(directoryName);
 
-//       const directoryClient = shareClient.getDirectoryClient(directoryName);
+      const files = directoryClient.listFilesAndDirectories();
+      for await (const file of files) {
+        if (file.kind === "file") {
+          await directoryClient.getFileClient(file.name).deleteIfExists();
+        }
+      }
+    }
+  } catch (error) {
+    console.log('Error in Azure File deleteFilesInFolder: ' + error.message + '')
+  }
+}
 
-//       const files = directoryClient.listFilesAndDirectories();
-//       for await (const file of files) {
-//         if (file.kind === "file") {
-//           await directoryClient.getFileClient(file.name).deleteIfExists();
-//         }
-//       }
-//     }
-//   } catch (error) {
-//     console.log('Error in Azure File deleteFilesInFolder: ' + error.message + '')
-//   }
-// }
+//Azure File Share Upload - uploadFileAzure(filePath, lclbookingId, fileNamePath)
+const uploadFileAzure = async (filePath, folderName, fileData) => {
+  let serviceClient, shareName, shareClient, shareExists,
+    fileHierarchyPath, fileHierarchy, directoryName, directoryClient, directoryExists,
+    fileName, fileClient, directoryFolderExists, directoryFolder, fileDirectory, bufferWithData
 
-// //Azure File Share Upload - uploadFileAzure(filePath, lclbookingId, fileNamePath)
-// const uploadFileAzure = async (filePath, folderName, fileNamePath) => {
-//   let serviceClient, shareName, shareClient, shareExists,
-//     fileHierarchyPath, fileHierarchy, directoryName, directoryClient, directoryExists,
-//     fileName, fileClient, directoryFolderExists, directoryFolder, fileDirectory
+  const azureConnectionString = CONFIG.AZURECONNECTIONSTRING
+  if (!azureConnectionString) throw Error('Azure Storage ConnectionString not found');
 
-//   const azureConnectionString = CONFIG.AZURECONNECTIONSTRING
-//   if (!azureConnectionString) throw Error('Azure Storage ConnectionString not found');
+  try {
+    serviceClient = ShareServiceClient.fromConnectionString(azureConnectionString)
 
-//   try {
-//     serviceClient = ShareServiceClient.fromConnectionString(azureConnectionString)
+    //Azure File Share
+    shareName = CONFIGJSON.azureFilePath.shareName
+    shareClient = serviceClient.getShareClient(shareName);
+    shareExists = await shareClient.exists()
+    // await shareClient.create();           -    To Create Azure Share Client if not exists. Legacy Now as Azure Share Client Already Exists
 
-//     //Azure File Share
-//     shareName = CONFIGJSON.azureFilePath.shareName
-//     shareClient = serviceClient.getShareClient(shareName);
-//     shareExists = await shareClient.exists()
-//     // await shareClient.create();           -    To Create Azure Share Client if not exists. Legacy Now as Azure Share Client Already Exists
+    if (shareExists) {
+      //Finding the File Hierarchy to determine the Directory Name to Upload the File in Azure File Share
 
-//     if (shareExists) {
-//       //Finding the File Hierarchy to determine the Directory Name to Upload the File in Azure File Share
-//       if (filePath.includes('app') === true) {                        //For Dev, Qa, Uat Environments
-//         fileHierarchyPath = filePath.split("/fileuploads/").pop()
-//       }
-//       else {                                                          //Only for Local API Work
-//         fileHierarchyPath = filePath.split("\\fileuploads\\").pop()
-//       }
-//       fileHierarchy = fileHierarchyPath.substring(0, fileHierarchyPath.indexOf("/"))
+      //Azure File Share Directory
+      if (filePath === 'posts') {
+        fileDirectory = CONFIGJSON.azureFilePath.directory + '/posts'
+        directoryFolder = shareClient.getDirectoryClient(fileDirectory)
+        directoryFolderExists = await directoryFolder.exists()
+        if (!directoryFolderExists) { await directoryFolder.create() }
 
-//       //Azure File Share Directory
-//       if (fileHierarchy === 'registration') {
-//         fileDirectory = CONFIGJSON.azureFilePath.directory + '/Registration'
-//         directoryFolder = shareClient.getDirectoryClient(fileDirectory)
-//         directoryFolderExists = await directoryFolder.exists()
-//         if (!directoryFolderExists) { await directoryFolder.create() }
+        directoryName = CONFIGJSON.azureFilePath.directory + `/posts/${folderName}`
+      }
+      directoryClient = shareClient.getDirectoryClient(directoryName)
+      directoryExists = await directoryClient.exists()
+      if (!directoryExists) { await directoryClient.create() }
 
-//         directoryName = CONFIGJSON.azureFilePath.directory + `/Registration/${folderName}`
-//       }
-//       else if (fileHierarchy === 'cfs certificates') {
-//         fileDirectory = CONFIGJSON.azureFilePath.directory + '/CFS Certificates'
-//         directoryFolder = shareClient.getDirectoryClient(fileDirectory)
-//         directoryFolderExists = await directoryFolder.exists()
-//         if (!directoryFolderExists) { await directoryFolder.create() }
-
-//         directoryName = CONFIGJSON.azureFilePath.directory + `/CFS Certificates/${folderName}`
-//       }
-//       else if (fileHierarchy === 'origin forwarder') {
-//         fileDirectory = CONFIGJSON.azureFilePath.directory + '/Origin Forwarder'
-//         directoryFolder = shareClient.getDirectoryClient(fileDirectory)
-//         directoryFolderExists = await directoryFolder.exists()
-//         if (!directoryFolderExists) { await directoryFolder.create() }
-
-//         directoryName = CONFIGJSON.azureFilePath.directory + `/Origin Forwarder/${folderName}`
-//       }
-//       else if (fileHierarchy === 'booking') {
-//         fileDirectory = CONFIGJSON.azureFilePath.directory + '/Booking'
-//         directoryFolder = shareClient.getDirectoryClient(fileDirectory)
-//         directoryFolderExists = await directoryFolder.exists()
-//         if (!directoryFolderExists) { await directoryFolder.create() }
-
-//         directoryName = CONFIGJSON.azureFilePath.directory + `/Booking/${folderName}`
-//       }
-//       else if (fileHierarchy === 'milestone pdf') {
-//         fileDirectory = CONFIGJSON.azureFilePath.directory + '/Milestone pdf'
-//         directoryFolder = shareClient.getDirectoryClient(fileDirectory)
-//         directoryFolderExists = await directoryFolder.exists()
-//         if (!directoryFolderExists) { await directoryFolder.create() }
-
-//         directoryName = CONFIGJSON.azureFilePath.directory + `/Milestone pdf/${folderName}`
-//       }
-
-//       directoryClient = shareClient.getDirectoryClient(directoryName)
-//       directoryExists = await directoryClient.exists()
-
-//       if (!directoryExists) { await directoryClient.create() }
-
-//       //Azure File Share File
-//       fileName = fileNamePath
-//       fileClient = directoryClient.getFileClient(fileName)
-//       await fileClient.uploadFile(filePath)
-//     }
-//   }
-//   catch (error) {
-//     console.log('Error in Azure File uploadFileAzure: ' + error.message + '')
-//   }
-// }
+      //Azure File Share File
+      fileName = fileData.originalname
+      fileClient = directoryClient.getFileClient(fileName)
+      bufferWithData = Buffer.from(fileData.buffer);
+      await fileClient.uploadData(bufferWithData, bufferWithData.length, { overwrite: true })
+    }
+  }
+  catch (error) {
+    console.log('Error in Azure File uploadFileAzure: ' + error.message + '')
+  }
+}
 
 // //Azure File Share Download - downloadFileAzure(lclbookingId)
 // const downloadFileAzure = async (folderName, fileToDownload, type) => {
@@ -369,7 +318,7 @@ const otpGenerate = () => {
 // }
 
 module.exports = {
-  // uploadFileAzure,
+  uploadFileAzure,
   // downloadFileAzure,
   // createDir,
   // createFile,
