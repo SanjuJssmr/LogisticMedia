@@ -21,7 +21,7 @@ const deleteReportedPost = async (ctx) => {
         postInfo = await db.findSingleDocument("post", { _id: postData.postId, status: 1 })
         if (postInfo == null || postInfo.status === 0) {
 
-            return ctx.response.body  { status: 0, response: "No post found" }
+            return ctx.response.body = { status: 0, response: "No post found" }
         }
         updateInfo = await db.updateOneDocument("post", { _id: postInfo._id }, { status : 0 })
         if (updateInfo.modifiedCount !== 0 && updateInfo.matchedCount !== 0) {
