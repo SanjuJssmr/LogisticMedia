@@ -169,6 +169,14 @@ const uploadFileAzure = async (filePath, folderName, fileData) => {
 
         directoryName = CONFIGJSON.azureFilePath.directory + `/posts/${folderName}`
       }
+      if (filePath === 'userProfile') {
+        fileDirectory = CONFIGJSON.azureFilePath.directory + '/userProfile'
+        directoryFolder = shareClient.getDirectoryClient(fileDirectory)
+        directoryFolderExists = await directoryFolder.exists()
+        if (!directoryFolderExists) { await directoryFolder.create() }
+
+        directoryName = CONFIGJSON.azureFilePath.directory + `/userProfile/${folderName}`
+      }
       directoryClient = shareClient.getDirectoryClient(directoryName)
       directoryExists = await directoryClient.exists()
       if (!directoryExists) { await directoryClient.create() }
@@ -184,6 +192,25 @@ const uploadFileAzure = async (filePath, folderName, fileData) => {
     console.log('Error in Azure File uploadFileAzure: ' + error.message + '')
   }
 }
+
+const getImageFromShare = async ( filePath) => {
+  const connectionString = CONFIG.AZURECONNECTIONSTRING
+  if (!connectionString) throw Error('Azure Storage ConnectionString not found');
+
+  shareName = CONFIGJSON.azureFilePath.shareName
+
+  const shareServiceClient = ShareServiceClient.fromConnectionString(connectionString);
+  const shareClient = shareServiceClient.getShareClient(shareName);
+  const directoryClient = shareClient.getDirectoryClient(filePath);
+
+  const fileClient = directoryClient.getFileClient('image.png');
+
+  const downloadFileResponse = await fileClient.download();
+  const imageBuffer = await streamToBuffer(downloadFileResponse.readableStreamBody);
+
+  return imageBuffer;
+}
+
 
 // //Azure File Share Download - downloadFileAzure(lclbookingId)
 // const downloadFileAzure = async (folderName, fileToDownload, type) => {

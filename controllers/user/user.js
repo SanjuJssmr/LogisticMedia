@@ -9,6 +9,7 @@ const { ObjectId } = require("bson")
 const { transporter } = require('../../model/mail')
 const mailResendAttempts = 2
 let templatePathUser = path.resolve('./templates')
+let profileFolderPath = "userProfile"
 
 const registrationOtpMail = async (mailData) => {
     let errorData, mailOptions
@@ -98,15 +99,16 @@ const resendOtpMail = async (mailData) => {
 }
 
 const userRegister = async (ctx) => {
-    let data = { status: 0, response: "Something went wrong" }, userData, checkEmailExist, userInsert;
+    let data = { status: 0, response: "Something went wrong" }, userData, checkEmailExist, userInsert, fileData;
     try {
         userData = ctx.request.body;
         if (Object.keys(userData).length === 0 && userData.data === undefined) {
-            res.send(data)
+            ctx.response.body = data
 
             return
         }
         userData = userData.data[0]
+        fileData = ctx.request.files
         checkEmailExist = await db.findOneDocumentExists("user", { email: userData.email })
         if (checkEmailExist == true) {
 
@@ -117,6 +119,11 @@ const userRegister = async (ctx) => {
 
         userInsert = await db.insertSingleDocument("user", userData)
         if (Object.keys(userInsert).length !== 0) {
+            if (fileData.length !== 0) {
+                await common.uploadFileAzure(profileFolderPath, `${userInsert._id}`, fileData[0])
+                filePath = `/${profileFolderPath}/${userInsert._id}/${fileData[0].originalname}`
+                await db.findByIdAndUpdate("user", userInsert._id, { profile: filePath })
+            }
             await registrationOtpMail(
                 {
                     emailTo: userInsert.email,
@@ -140,7 +147,7 @@ const updateRegisterData = async (ctx) => {
     try {
         userData = ctx.request.body;
         if (Object.keys(userData).length === 0 && userData.data === undefined) {
-            res.send(data)
+            ctx.response.body = data
 
             return
         }
@@ -173,12 +180,36 @@ const updateRegisterData = async (ctx) => {
     }
 }
 
+const userDetailsById = async (ctx) => {
+    let data = { status: 0, response: "Something went wrong" }, updateData, checkId;
+    try {
+        updateData = ctx.request.body;
+        if (Object.keys(updateData).length === 0 && updateData.data === undefined) {
+            ctx.response.body = data
+
+            return
+        }
+        updateData = updateData.data[0]
+
+        checkId = await db.findSingleDocument("user", { _id: new ObjectId(updateData.id), status: 2 }, { password: 0, otp: 0, createdAt: 0, updatedAt: 0 })
+        if (checkId == null || Object.keys(checkId).length == 0) {
+
+            return ctx.response.body = { status: 0, response: "Invalid id" }
+        }
+
+        return ctx.response.body = { status: 1, data: JSON.stringify(checkId) }
+    } catch (error) {
+        console.log(error.message)
+        return ctx.response.body = { status: 0, response: `Error in user Controller - userDetailsById:-${error.message}` }
+    }
+}
+
 const resendOtp = async (ctx) => {
     let data = { status: 0, response: "Something went wrong" }, userData, updateOtp, checkEmail;
     try {
         userData = ctx.request.body;
         if (Object.keys(userData).length === 0 && userData.data === undefined) {
-            res.send(data)
+            ctx.response.body = data
 
             return
         }
@@ -212,21 +243,33 @@ const resendOtp = async (ctx) => {
 }
 
 const verifyOtp = async (ctx) => {
-    let data = { status: 0, response: "Something went wrong" }, otpData, checkOtp, changeUserstatus;
+    let data = { status: 0, response: "Something went wrong" }, otpData, checkOtp, changeUserstatus, generatedToken, privateKey;
     try {
         otpData = ctx.request.body;
         if (Object.keys(otpData).length === 0 && otpData.data === undefined) {
-            res.send(data)
+            ctx.response.body = data
 
             return
         }
         otpData = otpData.data[0]
+        privateKey = await fs.readFile('privateKey.key', 'utf8');
         checkOtp = await db.findDocumentExist("user", { _id: new ObjectId(otpData.id), otp: otpData.otp, status: 2 })
         if (checkOtp == true) {
             changeUserstatus = await db.findByIdAndUpdate("user", otpData.id, { status: 1 })
             if (changeUserstatus.modifiedCount !== 0 && changeUserstatus.matchedCount !== 0) {
+                generatedToken = jwt.sign({
+                    userId: checkEmail._id,
+                    role: checkEmail.role,
+                    status: checkEmail.status,
+                }, privateKey, { algorithm: 'RS256' })
 
-                return ctx.response.body = { status: 1, response: "OTP Verified successfully" }
+                if (generatedToken) {
+
+                    return ctx.response.body = { status: 1, response: "OTP Verified successfully", data: generatedToken }
+
+                } else {
+                    return ctx.response.body = { status: 1, response: "OTP Verified successfully" }
+                }
             }
 
             return ctx.response.body = data
@@ -244,7 +287,7 @@ const login = async (ctx) => {
     try {
         loginData = ctx.request.body;
         if (Object.keys(loginData).length === 0 && loginData.data === undefined) {
-            res.send(data)
+            ctx.response.body = data
 
             return
         }
@@ -269,7 +312,7 @@ const login = async (ctx) => {
 
         if (generatedToken) {
 
-            return ctx.response.body = { status: 0, response: "LoggedIn successfully", data: generatedToken }
+            return ctx.response.body = { status: 1, response: "LoggedIn successfully", data: generatedToken }
         }
 
         return ctx.response.body = data
@@ -284,7 +327,7 @@ const updateUserDetails = async (ctx) => {
     try {
         updateData = ctx.request.body;
         if (Object.keys(updateData).length === 0 && updateData.data === undefined) {
-            res.send(data)
+            ctx.response.body = data
 
             return
         }
@@ -313,7 +356,7 @@ const userConnectionRequest = async (ctx) => {
     try {
         connectionData = ctx.request.body;
         if (Object.keys(connectionData).length === 0 && connectionData.data === undefined) {
-            res.send(data)
+            ctx.response.body = data
 
             return
         }
@@ -342,90 +385,44 @@ const userConnectionRequest = async (ctx) => {
 }
 
 const getProfileById = async (ctx) => {
-    let data = { status: 0, response: "Something went wrong" }, ProfileIdData, checkId, profileData, aggregationQuery;
+    let data = { status: 0, response: "Something went wrong" }, ProfileIdData, checkId, profileData,
+        getConnectionCount, postCount, getFowllersCount, getFowllingCount;
     try {
         ProfileIdData = ctx.request.body;
         if (Object.keys(ProfileIdData).length === 0 && ProfileIdData.data === undefined) {
-            res.send(data)
+            ctx.response.body = data
 
             return
         }
         ProfileIdData = ProfileIdData.data[0]
 
-        checkId = await db.findOneDocumentExists("user", { _id: new ObjectId(ProfileIdData.id), status: 1 })
-        if (checkId == false) {
+        checkId = await db.findSingleDocument("user", { _id: new ObjectId(ProfileIdData.id), status: 1 }, { password: 0, otp: 0 })
+        if (checkId == null || Object.keys(checkId).length == 0) {
 
             return ctx.response.body = { status: 0, response: "Invalid id" }
         }
-        aggregationQuery = [
-            {
-                $match: {
-                    _id: new ObjectId(ProfileIdData.id)
-                }
-            },
-            {
-                $lookup: {
-                    from: 'connections',
-                    let: { userId: '$_id' },
-                    pipeline: [
-                        {
-                            $match: {
-                                $expr: {
-                                    $or: [
-                                        { $eq: ['$senderId', '$$userId'] },
-                                        { $eq: ['$recipientId', '$$userId'] }
-                                    ]
-                                }
-                            }
-                        }
-                    ],
-                    as: 'connectionData'
-                }
-            },
-            {
-                $unwind: '$connectionData'
-            },
-            {
-                $group: {
-                    _id: {
-                        userId: '$_id',
-                        status: '$connectionData.status'
-                    },
-                    count: { $sum: 1 }
-                }
-            },
-            {
-                $group: {
-                    _id: '$_id.userId',
-                    connectionCounts: {
-                        $push: {
-                            status: '$_id.status',
-                            count: '$count'
-                        }
-                    }
-                }
-            },
-            {
-                $lookup: {
-                    from: 'users',
-                    localField: '_id',
-                    foreignField: '_id',
-                    as: 'userData'
-                }
-            },
-            {
-                $unwind: '$userData'
-            },
-            {
-                $project: {
-                    'userData.password': 0 // Exclude the password field
-                }
-            }
-        ];
+        getConnectionCount = await db.getCountAsync('connection', {
+            $or: [
+                { senderId: new ObjectId(ProfileIdData.id), status: 1 },
+                { recipientId: new ObjectId(ProfileIdData.id), status: 1 }
+            ]
+        })
+        getFowllersCount = await db.getCountAsync('connection', { recipientId: new ObjectId(ProfileIdData.id), status: { $nin: [3] } })
+        getFowllingCount = await db.getCountAsync('connection', { senderId: new ObjectId(ProfileIdData.id), status: { $nin: [3] } })
+        postCount = await db.getCountAsync("post", { createdBy: new ObjectId(ProfileIdData.id), status: 1 })
 
-        profileData = await db.getAggregation('user', aggregationQuery);
+        profileData =
+        {
+            "detailsCounts": {
+                "postCount": postCount,
+                "followersCount": getFowllersCount,
+                "followingCount": getFowllingCount,
+                "connectionCount": getConnectionCount
+            },
+            "userData": checkId
+        }
 
-        return ctx.response.body = profileData
+        return ctx.response.body = { status: 1, data: JSON.stringify(profileData) }
     } catch (error) {
         console.log(error.message)
         return ctx.response.body = { status: 0, response: `Error in user Controller - userConnectionRequest:-${error.message}` }
@@ -433,11 +430,11 @@ const getProfileById = async (ctx) => {
 }
 
 const getAllUser = async (ctx) => {
-    let data = { status: 0, response: "Something went wrong" }, getData;
+    let data = { status: 0, response: "Something went wrong" }, getData, allData;
     try {
         getData = ctx.request.body;
         if (Object.keys(getData).length === 0 && getData.data === undefined) {
-            res.send(data)
+            ctx.response.body = data
 
             return
         }
@@ -445,8 +442,13 @@ const getAllUser = async (ctx) => {
 
         getUserData = await db.findDocumentsWithPagination("user", {}, { password: 0, otp: 0, updatedAt: 0 }, getData.pageNumber, getData.pageLimit)
         if (getUserData) {
+            userCount = await db.getCountAsync('user', {})
+            allData = {
+                userData: getUserData,
+                userCount: userCount
+            }
 
-            return ctx.response.body = { status: 1, data: getUserData }
+            return ctx.response.body = { status: 1, data: JSON.stringify(allData) }
         }
 
         return ctx.response.body = data
@@ -456,21 +458,21 @@ const getAllUser = async (ctx) => {
     }
 }
 
-const acceptConnectionRequest = async (ctx) => {
-    let data = { status: 0, response: "Something went wrong" }, updateConnectionData;
+const changeConnectionStatus = async (ctx) => {
+    let data = { status: 0, response: "Something went wrong" }, updateConnectionData, updateConnectionStatus;
     try {
         updateConnectionData = ctx.request.body;
         if (Object.keys(updateConnectionData).length === 0 && updateConnectionData.data === undefined) {
-            res.send(data)
+            ctx.response.body = data
 
             return
         }
         updateConnectionData = updateConnectionData.data[0]
 
-        getUserData = await db.findDocumentsWithPagination("user", {}, { password: 0, otp: 0, updatedAt: 0 }, getData.pageNumber, getData.pageLimit)
-        if (getUserData) {
+        updateConnectionStatus = await db.findByIdAndUpdate("connection", updateConnectionData.id, { status: updateConnectionData.status })
+        if (updateConnectionStatus.modifiedCount !== 0 && updateConnectionStatus.matchedCount !== 0) {
 
-            return ctx.response.body = { status: 1, data: getUserData }
+            return ctx.response.body = { status: 1, response: "updated Sucessfully" }
         }
 
         return ctx.response.body = data
@@ -480,6 +482,227 @@ const acceptConnectionRequest = async (ctx) => {
     }
 }
 
+const getConnectionRequestListById = async (ctx) => {
+    let data = { status: 0, response: "Something went wrong" }, updateConnectionData, aggregationQuery, requestData;
+    try {
+        updateConnectionData = ctx.request.body;
+        if (Object.keys(updateConnectionData).length === 0 && updateConnectionData.data === undefined) {
+            ctx.response.body = data
+
+            return
+        }
+        updateConnectionData = updateConnectionData.data[0]
+
+        aggregationQuery = [
+            { $match: { status: 2, recipientId: new ObjectId(updateConnectionData.id) } },
+            {
+                $lookup: {
+                    from: "users",
+                    localField: "senderId",
+                    foreignField: "_id",
+                    as: "senderData"
+                }
+
+            },
+            {
+                $lookup: {
+                    from: "users",
+                    localField: "recipientId",
+                    foreignField: "_id",
+                    as: "recipientData"
+                }
+            },
+            {
+                $project: {
+                    _id: 1,
+                    senderId: 1,
+                    senderName: { '$arrayElemAt': ['$senderData.fullName', 0] },
+                    recipientId: 1,
+                    recipientName: { '$arrayElemAt': ['$recipientData.fullName', 0] },
+                    status: 1,
+                    createdAt: 1,
+                }
+            }
+        ]
+
+        requestData = await db.getAggregation('connection', aggregationQuery)
+        if (requestData) {
+
+            return ctx.response.body = { status: 1, data: JSON.stringify(requestData) }
+        }
+    } catch (error) {
+        console.log(error.message)
+        return ctx.response.body = { status: 0, response: `Error in user Controller - getConnectionListById:-${error.message}` }
+    }
+}
+
+const getFollowListByUserId = async (ctx) => {
+    let data = { status: 0, response: "Something went wrong" }, userData, aggregationQuery, followData;
+    try {
+        userData = ctx.request.body;
+        if (Object.keys(userData).length === 0 && userData.data === undefined) {
+            ctx.response.body = data
+
+            return
+        }
+        userData = userData.data[0]
+
+        aggregationQuery = [
+            { $match: { recipientId: new ObjectId(userData.id), status: { $nin: [3] } } },
+            {
+                $lookup: {
+                    from: "users",
+                    localField: "senderId",
+                    foreignField: "_id",
+                    as: "senderData"
+                }
+            },
+            {
+                $lookup: {
+                    from: "users",
+                    localField: "recipientId",
+                    foreignField: "_id",
+                    as: "recipientData"
+                }
+            },
+            {
+                $project: {
+                    _id: 1,
+                    senderId: 1,
+                    senderName: { '$arrayElemAt': ['$senderData.fullName', 0] },
+                    recipientId: 1,
+                    recipientName: { '$arrayElemAt': ['$recipientData.fullName', 0] },
+                    status: 1,
+                    createdAt: 1,
+                }
+            }
+        ]
+
+        followData = await db.getAggregation('connection', aggregationQuery)
+        if (followData) {
+
+            return ctx.response.body = { status: 1, data: JSON.stringify(followData) }
+        }
+    } catch (error) {
+        console.log(error.message)
+        return ctx.response.body = { status: 0, response: `Error in user Controller - getFollowListByUserId:-${error.message}` }
+    }
+}
+
+const getConnectionListByUserId = async (ctx) => {
+    let data = { status: 0, response: "Something went wrong" }, userData, aggregationQuery, conectionData;
+    try {
+        userData = ctx.request.body;
+        if (Object.keys(userData).length === 0 && userData.data === undefined) {
+            ctx.response.body = data
+
+            return
+        }
+        userData = userData.data[0]
+
+        aggregationQuery = [
+            {
+                $match: {
+                    $or: [
+                        { senderId: new ObjectId(userData.id), status: 1 },
+                        { recipientId: new ObjectId(userData.id), status: 1 }
+                    ]
+                }
+            },
+            {
+                $lookup: {
+                    from: "users",
+                    localField: "senderId",
+                    foreignField: "_id",
+                    as: "senderData"
+                }
+
+            },
+            {
+                $lookup: {
+                    from: "users",
+                    localField: "recipientId",
+                    foreignField: "_id",
+                    as: "recipientData"
+                }
+            },
+            {
+                $project: {
+                    _id: 1,
+                    senderId: 1,
+                    senderName: { '$arrayElemAt': ['$senderData.fullName', 0] },
+                    recipientId: 1,
+                    recipientName: { '$arrayElemAt': ['$recipientData.fullName', 0] },
+                    status: 1,
+                    createdAt: 1,
+                }
+            }
+        ]
+
+        conectionData = await db.getAggregation('connection', aggregationQuery)
+        if (conectionData) {
+
+            return ctx.response.body = { status: 1, data: JSON.stringify(conectionData) }
+        }
+    } catch (error) {
+        console.log(error.message)
+        return ctx.response.body = { status: 0, response: `Error in user Controller - getFollowingListByUserId:-${error.message}` }
+    }
+}
+
+const getFollowingListByUserId = async (ctx) => {
+    let data = { status: 0, response: "Something went wrong" }, userData, aggregationQuery, followingData;
+    try {
+        userData = ctx.request.body;
+        if (Object.keys(userData).length === 0 && userData.data === undefined) {
+            ctx.response.body = data
+
+            return
+        }
+        userData = userData.data[0]
+
+        aggregationQuery = [
+            { $match: { senderId: new ObjectId(userData.id), status: { $nin: [3] } } },
+            {
+                $lookup: {
+                    from: "users",
+                    localField: "senderId",
+                    foreignField: "_id",
+                    as: "senderData"
+                }
+
+            },
+            {
+                $lookup: {
+                    from: "users",
+                    localField: "recipientId",
+                    foreignField: "_id",
+                    as: "recipientData"
+                }
+            },
+            {
+                $project: {
+                    _id: 1,
+                    senderId: 1,
+                    senderName: { '$arrayElemAt': ['$senderData.fullName', 0] },
+                    recipientId: 1,
+                    recipientName: { '$arrayElemAt': ['$recipientData.fullName', 0] },
+                    status: 1,
+                    createdAt: 1,
+                }
+            }
+        ]
+
+        followingData = await db.getAggregation('connection', aggregationQuery)
+        if (followingData) {
+
+            return ctx.response.body = { status: 1, data: JSON.stringify(followingData) }
+        }
+    } catch (error) {
+        console.log(error.message)
+        return ctx.response.body = { status: 0, response: `Error in user Controller - getConnectionListByUserId:-${error.message}` }
+    }
+}
 const navSearch = async (ctx) => {
     let data = { status: 0, response: "Something went wrong" }, userData, pageData, aggregationQuery = [], searchData, pageDataCount, searchedInfo;
     try {
@@ -528,5 +751,6 @@ const navSearch = async (ctx) => {
 module.exports = {
     userRegister, updateRegisterData, resendOtp,
     login, verifyOtp, updateUserDetails, userConnectionRequest, getProfileById,
-    getAllUser, acceptConnectionRequest, navSearch
+    getAllUser, changeConnectionStatus, getConnectionRequestListById, getFollowListByUserId, getFollowingListByUserId,
+    getConnectionListByUserId, userDetailsById, navSearch
 }

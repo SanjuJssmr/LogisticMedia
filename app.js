@@ -10,7 +10,14 @@ const { scheduleRouter } = require("./routes/post/schedule");
 
 const app = new koa()
 app.use(bodyParser())
-app.use(cors());
+
+app.use(cors({
+  origin: 'http://localhost:5173',   // specify the allowed origins
+  credentials: true,               // include credentials in CORS requests
+  methods: ['GET', 'POST'],        // specify allowed HTTP methods
+  allowedHeaders: ["Origin", "X-Requested-with", "Content-Type", "Accept", "Authorization"], // specify allowed headers
+}));
+
 app.use(multer().any())
 
 app.on('error', (err, ctx) => {
