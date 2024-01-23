@@ -61,11 +61,66 @@ const deletePost = async (ctx) => {
 
 const getMyPost = async (ctx) => {
     try {
-        let postData = ctx.request.body, postInfo;
+        let postData = ctx.request.body, postInfo, aggregationQuery = [];
         postData = postData.data[0];
-        postInfo = await db.findDocuments("post", { createdBy: postData.userId, status: 1 })
+        aggregationQuery = [
+            {
+                $match: { status: 1, createdBy: new ObjectId(postData.userId) },
+            },
+            {
+                $lookup:
+                {
+                    from: "users",
+                    localField: "createdBy",
+                    foreignField: "_id",
+                    as: "userInfo",
+                }
+            },
+            {
+                $lookup:
+                {
+                    from: "postlikes",
+                    localField: "_id",
+                    foreignField: "postId",
+                    as: "postInfo",
+                }
+            },
+            {
+                $addFields: {
+                    likedBy: "$postInfo.likedBy",
+                    fullName: "$userInfo.fullName",
+                    designation: "$userInfo.designation",
+                    profile: "$userInfo.profile"
+                }
+            },
+            {
+                $project: {
+                    "createdBy": 1,
+                    "description": 1,
+                    "hashtags": 1,
+                    "country": 1,
+                    "files": 1,
+                    "createdAt": 1,
+                    "fullName": { '$arrayElemAt': ['$fullName', 0] },
+                    "designation": { '$arrayElemAt': ['$designation', 0] },
+                    "profile": { '$arrayElemAt': ['$profile', 0] },
+                    'likedBy': { '$arrayElemAt': ['$likedBy', 0] },
+                }
+            },
+            {
+                $addFields: {
+                    likes: { $size: "$likedBy" }
+                }
+            },
+            {
+                $sort: {
+                    createdAt: -1,
+                }
+            }
+        ]
+        postInfo = await db.getAggregation("post", aggregationQuery)
 
-        return ctx.response.body = { status: 1, data: postInfo }
+        return ctx.response.body = { status: 1, data: JSON.stringify(postInfo) }
     } catch (error) {
         console.log(error)
         return ctx.response.body = { status: 0, response: `Error in post controllers - ${error.message}` }
@@ -99,7 +154,6 @@ const getTrendingPost = async (ctx) => {
             },
             {
                 $addFields: {
-                    likes: { $size: "$postInfo" },
                     likedBy: "$postInfo.likedBy",
                     fullName: "$userInfo.fullName",
                     designation: "$userInfo.designation",
@@ -107,29 +161,33 @@ const getTrendingPost = async (ctx) => {
                 }
             },
             {
+                $project: {
+                    "createdBy": "$createdBy",
+                    "description": "$description",
+                    "hashtags": "$hashtags",
+                    "files": "$files",
+                    "createdAt": "$createdAt",
+                    "fullName": { '$arrayElemAt': ['$fullName', 0] },
+                    "designation": { '$arrayElemAt': ['$designation', 0] },
+                    "profile": { '$arrayElemAt': ['$profile', 0] },
+                    "likedBy": { '$arrayElemAt': ['$likedBy', 0] },
+                }
+            },
+            {
+                $addFields: {
+                    likes: { $size: "$likedBy" },
+                }
+            },
+            {
                 $sort: {
                     likes: -1,
                 }
             },
-            {
-                $project: {
-                    "createdBy": 1,
-                    "description": 1,
-                    "hashtags": 1,
-                    "country": 1,
-                    "files": 1,
-                    "createdAt": 1,
-                    "likes": 1,
-                    "fullName": { '$arrayElemAt': ['$fullName', 0] },
-                    "designation": { '$arrayElemAt': ['$designation', 0] },
-                    "profile": { '$arrayElemAt': ['$profile', 0] },
-                    'likedBy': { '$arrayElemAt': ['$likedBy', 0] },
-                }
-            }
-        ]
-        postInfo = await db.getAggregation("post", aggregationQuery)
 
-        return ctx.response.body = { status: 1, data: JSON.stringify(postInfo) }
+        ]
+        postInfo = await db.getAggregation("post", JSON.stringify(aggregationQuery))
+
+        return ctx.response.body = { status: 1, data: postInfo }
     } catch (error) {
         console.log(error)
         return ctx.response.body = { status: 0, response: `Error in post controllers - ${error.message}` }
@@ -368,6 +426,15 @@ const getForYouPost = async (ctx) => {
             {
                 $lookup:
                 {
+                    from: "users",
+                    localField: "createdBy",
+                    foreignField: "_id",
+                    as: "userInfo",
+                }
+            },
+            {
+                $lookup:
+                {
                     from: "postlikes",
                     localField: "_id",
                     foreignField: "postId",
@@ -376,7 +443,28 @@ const getForYouPost = async (ctx) => {
             },
             {
                 $addFields: {
-                    likes: { $size: "$postInfo" }
+                    likedBy: "$postInfo.likedBy",
+                    fullName: "$userInfo.fullName",
+                    designation: "$userInfo.designation",
+                    profile: "$userInfo.profile"
+                }
+            },
+            {
+                $project: {
+                    "createdBy": "$createdBy",
+                    "description": "$description",
+                    "hashtags": "$hashtags",
+                    "files": "$files",
+                    "createdAt": "$createdAt",
+                    "fullName": { '$arrayElemAt': ['$fullName', 0] },
+                    "designation": { '$arrayElemAt': ['$designation', 0] },
+                    "profile": { '$arrayElemAt': ['$profile', 0] },
+                    "likedBy": { '$arrayElemAt': ['$likedBy', 0] },
+                }
+            },
+            {
+                $addFields: {
+                    likes: { $size: "$likedBy" },
                 }
             },
             {
@@ -384,14 +472,6 @@ const getForYouPost = async (ctx) => {
                     createdAt: -1,
                 }
             },
-            {
-                $project: {
-                    "postInfo": 0,
-                    "status": 0,
-                    "reportCount": 0,
-                    "updatedAt": 0
-                }
-            }
         ]
         postInfo = await db.getAggregation("post", aggregationQuery)
 
@@ -469,7 +549,138 @@ const getPostById = async (ctx) => {
     }
 }
 
+const getFriendsPost = async (ctx) => {
+    try {
+        let connectionData = ctx.request.body, postInfo, aggregationQuery = [];
+        connectionData = connectionData.data[0]
+        aggregationQuery = [
+            {
+                $match: {
+                    $or: [
+                        { status: 1 },
+                        { status: 2 }
+                    ]
+                }
+            },
+            {
+                $match: {
+                    $or: [
+                        { senderId: new ObjectId(connectionData.userId) },
+                        { recipientId: new ObjectId(connectionData.userId) }
+                    ]
+                }
+            },
+            {
+                $group:
+                {
+                    _id: null,
+                    sData: { $addToSet: "$senderId" },
+                    rData: { $addToSet: "$recipientId" }
+                }
+            },
+            {
+                $addFields: {
+                    mergedData: {
+                        $setUnion: ["$sData", "$rData"]
+                    }
+                }
+            },
+            {
+                $project: {
+                    _id: 0,
+                    connectionIds: {
+                        $setDifference: ["$mergedData", [new ObjectId(connectionData.userId)]]
+                    },
+                }
+            },
+            {
+                $group:
+                {
+                    _id: null,
+                    myConnections: { $addToSet: "$connectionIds" },
+                }
+            },
+            {
+                $unwind: "$myConnections"
+            },
+            {
+                $lookup:
+                {
+                    from: "posts",
+                    localField: "myConnections",
+                    foreignField: "createdBy",
+                    as: "postInfo",
+                }
+            },
+            {
+                $unwind: "$postInfo"
+            },
+            { $match: { "postInfo.status": 1 } },
+            {
+                $lookup:
+                {
+                    from: "users",
+                    localField: "postInfo.createdBy",
+                    foreignField: "_id",
+                    as: "userInfo",
+                }
+            },
+            {
+                $lookup:
+                {
+                    from: "postlikes",
+                    localField: "postInfo._id",
+                    foreignField: "postId",
+                    as: "postLikes",
+                }
+            },
+            {
+                $addFields: {
+                    likedBy: "$postLikes.likedBy",
+                    fullName: "$userInfo.fullName",
+                    designation: "$userInfo.designation",
+                    profile: "$userInfo.profile"
+                }
+            },
+            {
+                $project: {
+                    _id: 0,
+                    "_id": "$postInfo._id",
+                    "createdBy": "$postInfo.createdBy",
+                    "createdAt": "$postInfo.createdAt",
+                    "description": "$postInfo.description",
+                    "hashtags": "$postInfo.hashtags",
+                    "state": "$postInfo.state",
+                    "country": "$postInfo.country",
+                    "files": "$postInfo.files",
+                    "fullName": { '$arrayElemAt': ['$fullName', 0] },
+                    "designation": { '$arrayElemAt': ['$designation', 0] },
+                    "profile": { '$arrayElemAt': ['$profile', 0] },
+                    'likedBy': { '$arrayElemAt': ['$likedBy', 0] },
+                }
+            },
+            {
+                $addFields: {
+                    likes: { $size: "$likedBy" }
+                }
+            },
+            {
+                $sort: {
+                    createdAt: -1,
+                }
+            },
+        ]
+        postInfo = await db.getAggregation("connection", aggregationQuery)
+
+        return ctx.response.body = { status: 1, data: JSON.stringify(postInfo) }
+    } catch (error) {
+        console.log(error)
+        return ctx.response.body = { status: 0, response: `Error in post controllers - ${error.message}` }
+    }
+}
+
+
 module.exports = {
     addPost, deletePost, getMyPost, postComment, deleteComment, addReply,
-    deleteReply, getCommentsAndReplies, updateLike, getTrendingPost, getForYouPost, reportPost, getPostById
+    deleteReply, getCommentsAndReplies, updateLike, getTrendingPost, getForYouPost, reportPost, getPostById, getFriendsPost
 }

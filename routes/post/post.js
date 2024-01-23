@@ -1,6 +1,7 @@
 const Router = require('koa-router')
 const { addPost, deletePost, getMyPost, postComment, deleteComment, addReply, deleteReply, getCommentsAndReplies, updateLike, 
-    getTrendingPost, getForYouPost, reportPost, getPostById } = require('../../controllers/post/post')
+    getTrendingPost, getForYouPost, reportPost, getPostById, 
+    getFriendsPost} = require('../../controllers/post/post')
 const postRouter = new Router({ prefix: "/post" })
 
 try {
@@ -15,7 +16,7 @@ try {
     postRouter.post("/getCommentAndReply", getCommentsAndReplies)
     postRouter.post("/updatePostLike", updateLike)
     postRouter.get("/getTrendingPost",getTrendingPost)
-    postRouter.post("/getFriendsPost")
+    postRouter.post("/getFriendsPost", getFriendsPost)
     postRouter.post("/getForYouPost", getForYouPost)
     postRouter.post("/reportPost", reportPost)
 
