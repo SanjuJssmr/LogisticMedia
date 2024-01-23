@@ -169,6 +169,14 @@ const uploadFileAzure = async (filePath, folderName, fileData) => {
 
         directoryName = CONFIGJSON.azureFilePath.directory + `/posts/${folderName}`
       }
+      if (filePath === 'userProfile') {
+        fileDirectory = CONFIGJSON.azureFilePath.directory + '/userProfile'
+        directoryFolder = shareClient.getDirectoryClient(fileDirectory)
+        directoryFolderExists = await directoryFolder.exists()
+        if (!directoryFolderExists) { await directoryFolder.create() }
+
+        directoryName = CONFIGJSON.azureFilePath.directory + `/userProfile/${folderName}`
+      }
       directoryClient = shareClient.getDirectoryClient(directoryName)
       directoryExists = await directoryClient.exists()
       if (!directoryExists) { await directoryClient.create() }

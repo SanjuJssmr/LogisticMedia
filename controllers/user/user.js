@@ -102,12 +102,12 @@ const userRegister = async (ctx) => {
     let data = { status: 0, response: "Something went wrong" }, userData, checkEmailExist, userInsert, fileData;
     try {
         userData = ctx.request.body;
-        // if (Object.keys(userData).length === 0 && userData.data === undefined) {
-        //     ctx.response.body = data
+        if (Object.keys(userData).length === 0 && userData.data === undefined) {
+            ctx.response.body = data
 
-        //     return
-        // }
-        // userData = userData.data[0]
+            return
+        }
+        userData = userData.data[0]
         fileData = ctx.request.files
         checkEmailExist = await db.findOneDocumentExists("user", { email: userData.email })
         if (checkEmailExist == true) {
@@ -119,10 +119,10 @@ const userRegister = async (ctx) => {
 
         userInsert = await db.insertSingleDocument("user", userData)
         if (Object.keys(userInsert).length !== 0) {
-           if(fileData.length !== 0) {
+            if (fileData.length !== 0) {
                 await common.uploadFileAzure(profileFolderPath, `${userInsert._id}`, fileData[0])
                 filePath = `/${profileFolderPath}/${userInsert._id}/${fileData[0].originalname}`
-                await db.findByIdAndUpdate("user", userInsert._id, { $push: { profile: filePath } })
+                await db.findByIdAndUpdate("user", userInsert._id, { profile: filePath })
             }
             await registrationOtpMail(
                 {
