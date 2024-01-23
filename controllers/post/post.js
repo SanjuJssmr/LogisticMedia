@@ -9,6 +9,11 @@ const addPost = async (ctx) => {
     let data = { status: 0, response: "Invalid request" }
     try {
         let postData = ctx.request.body, fileData = ctx.request.files, postInfo, likeInfo, postFolderpath = "posts", filePath;
+        if (Object.keys(postData).length === 0 && postData.data === undefined) {
+            res.send(data)
+
+            return
+        }
         postData = postData.data[0];
         postInfo = await db.insertSingleDocument("post", postData)
         if (Object.keys(postInfo).length !== 0) {
@@ -31,7 +36,7 @@ const addPost = async (ctx) => {
         return ctx.response.body = data
     } catch (error) {
         console.log(error)
-        return ctx.response.body = { status: 0, response: `Error in post controllers - ${error.message}` }
+        return ctx.response.body = { status: 0, response: `Error in post controllers/addPost - ${error.message}` }
     }
 }
 
@@ -39,6 +44,11 @@ const deletePost = async (ctx) => {
     let data = { status: 0, response: "Invalid request" }
     try {
         let postData = ctx.request.body, postInfo, updateInfo;
+        if (Object.keys(postData).length === 0 && postData.data === undefined) {
+            res.send(data)
+
+            return
+        }
         postData = postData.data[0];
         postInfo = await db.findSingleDocument("post", { _id: postData.postId, createdBy: postData.userId })
         if (postInfo == null || postInfo.status === 0) {
@@ -55,13 +65,19 @@ const deletePost = async (ctx) => {
         return ctx.response.body = data
     } catch (error) {
         console.log(error)
-        return ctx.response.body = { status: 0, response: `Error in post controllers - ${error.message}` }
+        return ctx.response.body = { status: 0, response: `Error in post controllers/deletePost - ${error.message}` }
     }
 }
 
 const getMyPost = async (ctx) => {
+    let data = { status: 0, response: "Invalid request" }
     try {
         let postData = ctx.request.body, postInfo, aggregationQuery = [];
+        if (Object.keys(postData).length === 0 && postData.data === undefined) {
+            res.send(data)
+
+            return
+        }
         postData = postData.data[0];
         aggregationQuery = [
             {
@@ -123,13 +139,19 @@ const getMyPost = async (ctx) => {
         return ctx.response.body = { status: 1, data: JSON.stringify(postInfo) }
     } catch (error) {
         console.log(error)
-        return ctx.response.body = { status: 0, response: `Error in post controllers - ${error.message}` }
+        return ctx.response.body = { status: 0, response: `Error in post controllers/getMyPost - ${error.message}` }
     }
 }
 
 const getPagePost = async (ctx) => {
+    let data = { status: 0, response: "Invalid request" }
     try {
         let postData = ctx.request.body, postInfo, aggregationQuery = [];
+        if (Object.keys(postData).length === 0 && postData.data === undefined) {
+            res.send(data)
+
+            return
+        }
         postData = postData.data[0];
         aggregationQuery = [
             {
@@ -168,8 +190,8 @@ const getPagePost = async (ctx) => {
                     fullName: "$userInfo.fullName",
                     designation: "$userInfo.designation",
                     profile: "$userInfo.profile",
-                    companyName : "$companyInfo.companyName",
-                    companyProfile : "$companyInfo.profile"
+                    companyName: "$companyInfo.companyName",
+                    companyProfile: "$companyInfo.profile"
                 }
             },
             {
@@ -204,7 +226,7 @@ const getPagePost = async (ctx) => {
         return ctx.response.body = { status: 1, data: JSON.stringify(postInfo) }
     } catch (error) {
         console.log(error)
-        return ctx.response.body = { status: 0, response: `Error in post controllers - ${error.message}` }
+        return ctx.response.body = { status: 0, response: `Error in post controllers/getPagePost - ${error.message}` }
     }
 }
 
@@ -248,8 +270,8 @@ const getTrendingPost = async (ctx) => {
                     fullName: "$userInfo.fullName",
                     designation: "$userInfo.designation",
                     profile: "$userInfo.profile",
-                    companyName : "$companyInfo.companyName",
-                    companyProfile : "$companyInfo.profile"
+                    companyName: "$companyInfo.companyName",
+                    companyProfile: "$companyInfo.profile"
                 }
             },
             {
@@ -284,7 +306,7 @@ const getTrendingPost = async (ctx) => {
         return ctx.response.body = { status: 1, data: JSON.stringify(postInfo) }
     } catch (error) {
         console.log(error)
-        return ctx.response.body = { status: 0, response: `Error in post controllers - ${error.message}` }
+        return ctx.response.body = { status: 0, response: `Error in post controllers/getTrendingPost - ${error.message}` }
     }
 }
 
@@ -292,6 +314,11 @@ const postComment = async (ctx) => {
     let data = { status: 0, response: "Invalid request" }
     try {
         let commentData = ctx.request.body, postInfo, commentInfo;
+        if (Object.keys(commentData).length === 0 && commentData.data === undefined) {
+            res.send(data)
+
+            return
+        }
         commentData = commentData.data[0];
         postInfo = await db.findSingleDocument("post", { _id: commentData.postId })
         if (postInfo == null || postInfo.status === 0) {
@@ -306,7 +333,7 @@ const postComment = async (ctx) => {
         return ctx.response.body = data
     } catch (error) {
         console.log(error)
-        return ctx.response.body = { status: 0, response: `Error in post controllers - ${error.message}` }
+        return ctx.response.body = { status: 0, response: `Error in post controllers/postComment - ${error.message}` }
     }
 }
 
@@ -314,6 +341,11 @@ const deleteComment = async (ctx) => {
     let data = { status: 0, response: "Invalid request" }
     try {
         let commentData = ctx.request.body, commentInfo, updateInfo;
+        if (Object.keys(commentData).length === 0 && commentData.data === undefined) {
+            res.send(data)
+
+            return
+        }
         commentData = commentData.data[0];
         commentInfo = await db.findSingleDocument("postComment", { _id: commentData.commentId, userId: commentData.userId })
         if (commentInfo == null || commentInfo.status === 0) {
@@ -328,7 +360,7 @@ const deleteComment = async (ctx) => {
         return ctx.response.body = data
     } catch (error) {
         console.log(error)
-        return ctx.response.body = { status: 0, response: `Error in post controllers - ${error.message}` }
+        return ctx.response.body = { status: 0, response: `Error in post controllers/deleteComment - ${error.message}` }
     }
 }
 
@@ -336,6 +368,11 @@ const addReply = async (ctx) => {
     let data = { status: 0, response: "Invalid request" }
     try {
         let replyData = ctx.request.body, commentInfo, updateInfo, userInfo;
+        if (Object.keys(replyData).length === 0 && replyData.data === undefined) {
+            res.send(data)
+
+            return
+        }
         replyData = replyData.data[0];
         commentInfo = await db.findSingleDocument("postComment", { _id: replyData.commentId })
         if (commentInfo == null || commentInfo.status === 0) {
@@ -350,7 +387,7 @@ const addReply = async (ctx) => {
         return ctx.response.body = data
     } catch (error) {
         console.log(error)
-        return ctx.response.body = { status: 0, response: `Error in post controllers - ${error.message}` }
+        return ctx.response.body = { status: 0, response: `Error in post controllers/addReply - ${error.message}` }
     }
 }
 
@@ -358,6 +395,11 @@ const deleteReply = async (ctx) => {
     let data = { status: 0, response: "Invalid request" }
     try {
         let replyData = ctx.request.body, commentInfo, updateInfo, replyInfo, userInfo;
+        if (Object.keys(replyData).length === 0 && replyData.data === undefined) {
+            res.send(data)
+
+            return
+        }
         replyData = replyData.data[0];
         commentInfo = await db.findSingleDocument("postComment", { _id: replyData.commentId })
         if (commentInfo == null || commentInfo.status === 0) {
@@ -377,7 +419,7 @@ const deleteReply = async (ctx) => {
         return ctx.response.body = data
     } catch (error) {
         console.log(error)
-        return ctx.response.body = { status: 0, response: `Error in post controllers - ${error.message}` }
+        return ctx.response.body = { status: 0, response: `Error in post controllers/deleteReply - ${error.message}` }
     }
 }
 
@@ -385,6 +427,11 @@ const getCommentsAndReplies = async (ctx) => {
     let data = { status: 0, response: "Invalid request" }
     try {
         let postData = ctx.request.body, postInfo, commentAndReplies, aggregationQuery = [];
+        if (Object.keys(postData).length === 0 && postData.data === undefined) {
+            res.send(data)
+
+            return
+        }
         postData = postData.data[0];
         postInfo = await db.findSingleDocument("post", { _id: postData.postId, status: 1 })
         if (postInfo == null || postInfo.status === 0) {
@@ -467,7 +514,7 @@ const getCommentsAndReplies = async (ctx) => {
         return ctx.response.body = { status: 1, data: JSON.stringify(commentAndReplies) }
     } catch (error) {
         console.log(error)
-        return ctx.response.body = { status: 0, response: `Error in post controllers - ${error.message}` }
+        return ctx.response.body = { status: 0, response: `Error in post controllers/getCommentsAndReplies - ${error.message}` }
     }
 }
 
@@ -475,6 +522,11 @@ const updateLike = async (ctx) => {
     let data = { status: 0, response: "Invalid request" }
     try {
         let postData = ctx.request.body, postInfo, likeInfo;
+        if (Object.keys(postData).length === 0 && postData.data === undefined) {
+            res.send(data)
+
+            return
+        }
         postData = postData.data[0];
         postInfo = await db.findSingleDocument("postLike", { postId: postData.postId })
         if (postInfo == null || postInfo.status === 0) {
@@ -499,13 +551,19 @@ const updateLike = async (ctx) => {
         return ctx.response.body = data
     } catch (error) {
         console.log(error)
-        return ctx.response.body = { status: 0, response: `Error in post controllers - ${error.message}` }
+        return ctx.response.body = { status: 0, response: `Error in post controllers/updateLike - ${error.message}` }
     }
 }
 
 const getForYouPost = async (ctx) => {
+    let data = { status: 0, response: "Invalid request" }
     try {
         let postData = ctx.request.body, postInfo, aggregationQuery = [];
+        if (Object.keys(postData).length === 0 && postData.data === undefined) {
+            res.send(data)
+
+            return
+        }
         postData = postData.data[0]
         aggregationQuery = [
             {
@@ -550,8 +608,8 @@ const getForYouPost = async (ctx) => {
                     fullName: "$userInfo.fullName",
                     designation: "$userInfo.designation",
                     profile: "$userInfo.profile",
-                    companyName : "$companyInfo.companyName",
-                    companyProfile : "$companyInfo.profile"
+                    companyName: "$companyInfo.companyName",
+                    companyProfile: "$companyInfo.profile"
                 }
             },
             {
@@ -585,7 +643,7 @@ const getForYouPost = async (ctx) => {
         return ctx.response.body = { status: 1, data: JSON.stringify(postInfo) }
     } catch (error) {
         console.log(error)
-        return ctx.response.body = { status: 0, response: `Error in post controllers - ${error.message}` }
+        return ctx.response.body = { status: 0, response: `Error in post controllers/getForYouPost - ${error.message}` }
     }
 }
 
@@ -593,6 +651,11 @@ const reportPost = async (ctx) => {
     let data = { status: 0, response: "Invalid request" }
     try {
         let postData = ctx.request.body, postInfo;
+        if (Object.keys(postData).length === 0 && postData.data === undefined) {
+            res.send(data)
+
+            return
+        }
         postData = postData.data[0];
         postInfo = await db.findSingleDocument("post", { _id: postData.postId, status: 1 })
         if (postInfo == null || postInfo.status === 0) {
@@ -614,13 +677,19 @@ const reportPost = async (ctx) => {
         return ctx.response.body = data
     } catch (error) {
         console.log(error)
-        return ctx.response.body = { status: 0, response: `Error in post controllers - ${error.message}` }
+        return ctx.response.body = { status: 0, response: `Error in post controllers/reportPost - ${error.message}` }
     }
 }
 
 const getPostById = async (ctx) => {
+    let data = { status: 0, response: "Invalid request" }
     try {
         let postData = ctx.request.body, postInfo, aggregationQuery = [];
+        if (Object.keys(postData).length === 0 && postData.data === undefined) {
+            res.send(data)
+
+            return
+        }
         postData = postData.data[0]
         aggregationQuery = [
             { $match: { $and: [{ _id: new ObjectId(postData.postId) }, { status: 1 }] } },
@@ -652,13 +721,19 @@ const getPostById = async (ctx) => {
         return ctx.response.body = { status: 1, data: JSON.stringify(postInfo) }
     } catch (error) {
         console.log(error)
-        return ctx.response.body = { status: 0, response: `Error in post controllers - ${error.message}` }
+        return ctx.response.body = { status: 0, response: `Error in post controllers/getPostById - ${error.message}` }
     }
 }
 
 const getFriendsPost = async (ctx) => {
+    let data = { status: 0, response: "Invalid request" }
     try {
         let connectionData = ctx.request.body, postInfo, aggregationQuery = [];
+        if (Object.keys(connectionData).length === 0 && connectionData.data === undefined) {
+            res.send(data)
+
+            return
+        }
         connectionData = connectionData.data[0]
         aggregationQuery = [
             {
@@ -756,8 +831,8 @@ const getFriendsPost = async (ctx) => {
                     fullName: "$userInfo.fullName",
                     designation: "$userInfo.designation",
                     profile: "$userInfo.profile",
-                    companyName : "$companyInfo.companyName",
-                    companyProfile : "$companyInfo.profile"
+                    companyName: "$companyInfo.companyName",
+                    companyProfile: "$companyInfo.profile"
                 }
             },
             {
@@ -795,13 +870,81 @@ const getFriendsPost = async (ctx) => {
         return ctx.response.body = { status: 1, data: JSON.stringify(postInfo) }
     } catch (error) {
         console.log(error)
-        return ctx.response.body = { status: 0, response: `Error in post controllers - ${error.message}` }
+        return ctx.response.body = { status: 0, response: `Error in post controllers/getFriendsPost - ${error.message}` }
     }
 }
 
+const getAllNews = async (ctx) => {
+    try {
+        let postInfo, aggregationQuery = [];
+        aggregationQuery = [
+            {
+                $match: {
+                    status: 1,
+                    hashtags: { $in: ["news"] }
+                },
+            },
+            {
+                $lookup:
+                {
+                    from: "users",
+                    localField: "createdBy",
+                    foreignField: "_id",
+                    as: "userInfo",
+                }
+            },
+            {
+                $lookup:
+                {
+                    from: "postlikes",
+                    localField: "_id",
+                    foreignField: "postId",
+                    as: "postInfo",
+                }
+            },
+            {
+                $addFields: {
+                    likedBy: "$postInfo.likedBy",
+                    fullName: "$userInfo.fullName",
+                    designation: "$userInfo.designation",
+                    profile: "$userInfo.profile"
+                }
+            },
+            {
+                $project: {
+                    "createdBy": "$createdBy",
+                    "description": "$description",
+                    "hashtags": "$hashtags",
+                    "files": "$files",
+                    "createdAt": "$createdAt",
+                    "fullName": { '$arrayElemAt': ['$fullName', 0] },
+                    "designation": { '$arrayElemAt': ['$designation', 0] },
+                    "profile": { '$arrayElemAt': ['$profile', 0] },
+                    "likedBy": { '$arrayElemAt': ['$likedBy', 0] },
+                }
+            },
+            {
+                $addFields: {
+                    likes: { $size: "$likedBy" },
+                }
+            },
+            {
+                $sort: {
+                    createdAt: -1,
+                }
+            },
+        ]
+        postInfo = await db.getAggregation("post", aggregationQuery)
+
+        return ctx.response.body = { status: 1, data: JSON.stringify(postInfo) }
+    } catch (error) {
+        console.log(error)
+        return ctx.response.body = { status: 0, response: `Error in post controllers/getAllNews - ${error.message}` }
+    }
+}
 
 module.exports = {
     addPost, deletePost, getMyPost, postComment, deleteComment, addReply,
     deleteReply, getCommentsAndReplies, updateLike, getTrendingPost, getForYouPost, reportPost,
-     getPostById, getFriendsPost, getPagePost
+    getPostById, getFriendsPost, getPagePost, getAllNews
 }

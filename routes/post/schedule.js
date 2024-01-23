@@ -15,7 +15,7 @@ try {
     scheduleRouter.post("/updateScheduleLike", updateLike)
 
 } catch (error) {
-    console.log(`error in schedule router - ${error}`);
+    console.log(`Error in schedule router - ${error}`);
 }
 
 module.exports = { scheduleRouter }

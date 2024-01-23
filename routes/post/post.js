@@ -2,7 +2,8 @@ const Router = require('koa-router')
 const { addPost, deletePost, getMyPost, postComment, deleteComment, addReply, deleteReply, getCommentsAndReplies, updateLike, 
     getTrendingPost, getForYouPost, reportPost, getPostById, 
     getFriendsPost,
-    getPagePost} = require('../../controllers/post/post')
+    getPagePost,
+    getAllNews} = require('../../controllers/post/post')
 const postRouter = new Router({ prefix: "/post" })
 
 try {
@@ -21,9 +22,10 @@ try {
     postRouter.post("/getForYouPost", getForYouPost)
     postRouter.post("/reportPost", reportPost)
     postRouter.post("/getPagePost", getPagePost)
+    postRouter.get("/getAllNews", getAllNews)
 
 } catch (error) {
-    console.log(`error in post router - ${error}`);
+    console.log(`Error in post router - ${error}`);
 }
 
 module.exports = { postRouter }
