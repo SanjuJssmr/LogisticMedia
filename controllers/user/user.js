@@ -507,17 +507,17 @@ const navSearch = async (ctx) => {
         }, { companyName: 1, profile: 1 }, 10)
         if (userData.length > 9 || pageData.length === 0) {
 
-            return ctx.response.body = { status: 1, data: userData }
+            return ctx.response.body = { status: 1, data: JSON.stringify(userData) }
         }
         if (userData.length === 0 && pageData.length !== 0) {
 
-            return ctx.response.body = { status: 1, data: pageData }
+            return ctx.response.body = { status: 1, data: JSON.stringify(pageData) }
         }
         pageDataCount = 10 - userData.length
         pageData = pageData.splice(0, pageDataCount)
         searchedInfo = [...userData, ...pageData]
 
-        return ctx.response.body = { status: 1, data: searchedInfo }
+        return ctx.response.body = { status: 1, data: JSON.stringify(searchedInfo) }
     } catch (error) {
         console.log(error.message)
         return ctx.response.body = { status: 0, response: `Error in user Controller - userConnectionRequest:-${error.message}` }

@@ -198,6 +198,77 @@ const postComment = async (ctx) => {
     }
 }
 
+const deleteComment = async (ctx) => {
+    let data = { status: 0, response: "Invalid request" }
+    try {
+        let commentData = ctx.request.body, commentInfo, updateInfo;
+        commentData = commentData.data[0];
+        commentInfo = await db.findSingleDocument("scheduleComment", { _id: commentData.commentId, userId: commentData.userId })
+        if (commentInfo == null || commentInfo.status === 0) {
+
+            return ctx.response.body = { status: 0, response: "No comment found" }
+        }
+        updateInfo = await db.updateOneDocument("scheduleComment", { _id: commentInfo._id }, { status: 0 })
+        if (updateInfo.modifiedCount !== 0 && updateInfo.matchedCount !== 0) {
+
+            return ctx.response.body = { status: 1, response: "Comment deleted successfully" }
+        }
+        return ctx.response.body = data
+    } catch (error) {
+        console.log(error)
+        return ctx.response.body = { status: 0, response: `Error in schedule controllers - ${error.message}` }
+    }
+}
+
+const addReply = async (ctx) => {
+    let data = { status: 0, response: "Invalid request" }
+    try {
+        let replyData = ctx.request.body, commentInfo, updateInfo;
+        replyData = replyData.data[0];
+        commentInfo = await db.findSingleDocument("scheduleComment", { _id: replyData.commentId })
+        if (commentInfo == null || commentInfo.status === 0) {
+
+            return ctx.response.body = { status: 0, response: "No comment found" }
+        }
+        updateInfo = await db.updateOneDocument("scheduleComment", { _id: commentInfo._id }, { $push: { replies: { userReplied: replyData.userId, message: replyData.message } } })
+        if (updateInfo.modifiedCount !== 0 && updateInfo.matchedCount !== 0) {
+
+            return ctx.response.body = { status: 1, response: "Reply added successfully" }
+        }
+        return ctx.response.body = data
+    } catch (error) {
+        console.log(error)
+        return ctx.response.body = { status: 0, response: `Error in schedule controllers - ${error.message}` }
+    }
+}
+
+const deleteReply = async (ctx) => {
+    let data = { status: 0, response: "Invalid request" }
+    try {
+        let replyData = ctx.request.body, commentInfo, updateInfo, replyInfo, userInfo;
+        replyData = replyData.data[0];
+        commentInfo = await db.findSingleDocument("scheduleComment", { _id: replyData.commentId })
+        if (commentInfo == null || commentInfo.status === 0) {
+
+            return ctx.response.body = { status: 0, response: "No comment found" }
+        }
+        replyInfo = await db.findSingleDocument("scheduleComment", { _id: replyData.commentId, replies: { $elemMatch: { _id: replyData.replyId, userReplied: replyData.userId, status: 1 } } })
+        if (replyInfo == null) {
+
+            return ctx.response.body = { status: 1, response: "No reply found" }
+        }
+        updateInfo = await db.updateOneDocument("scheduleComment", { _id: commentInfo._id, "replies._id": replyData.replyId }, { "replies.$.status": 0 })
+        if (updateInfo.modifiedCount !== 0 && updateInfo.matchedCount !== 0) {
+
+            return ctx.response.body = { status: 1, response: "Reply deleted successfully" }
+        }
+        return ctx.response.body = data
+    } catch (error) {
+        console.log(error)
+        return ctx.response.body = { status: 0, response: `Error in schedule controllers - ${error.message}` }
+    }
+}
+
 const getCommentsAndReplies = async (ctx) => {
     let data = { status: 0, response: "Invalid request" }
     try {
@@ -281,11 +352,44 @@ const getCommentsAndReplies = async (ctx) => {
         ]
         commentAndReplies = await db.getAggregation("scheduleComment", aggregationQuery)
 
-        return ctx.response.body = { status: 0, data: commentAndReplies }
+        return ctx.response.body = { status: 0, data: JSON.stringify(commentAndReplies) }
     } catch (error) {
         console.log(error)
         return ctx.response.body = { status: 0, response: `Error in post controllers - ${error.message}` }
     }
 }
 
-module.exports = { addSchedule, deleteSchedule, getMySchedule, getScheduleById, postComment, getCommentsAndReplies }
+const updateLike = async (ctx) => {
+    let data = { status: 0, response: "Invalid request" }
+    try {
+        let scheduleData = ctx.request.body, scheduleInfo, likeInfo;
+        scheduleData = scheduleData.data[0];
+        scheduleInfo = await db.findSingleDocument("scheduleLike", { scheduleId: scheduleData.scheduleId })
+        if (scheduleInfo == null || scheduleInfo.status === 0) {
+
+            return ctx.response.body = { status: 0, response: "No schedule found" }
+        }
+        if (scheduleData.status === 1) {
+            updateInfo = await db.updateOneDocument("scheduleLike", { _id: scheduleInfo._id }, { $push: { likedBy: scheduleData.userId } })
+            if (updateInfo.modifiedCount !== 0 && updateInfo.matchedCount !== 0) {
+
+                return ctx.response.body = { status: 1, response: "Like added successfully" }
+            }
+        }
+        if (scheduleData.status === 2) {
+            updateInfo = await db.updateOneDocument("scheduleLike", { _id: scheduleInfo._id }, { $pull: { likedBy: scheduleData.userId } })
+            if (updateInfo.modifiedCount !== 0 && updateInfo.matchedCount !== 0) {
+
+                return ctx.response.body = { status: 1, response: "Disliked successfully" }
+            }
+        }
+
+        return ctx.response.body = data
+    } catch (error) {
+        console.log(error)
+        return ctx.response.body = { status: 0, response: `Error in schedule controllers - ${error.message}` }
+    }
+}
+
+module.exports = { addSchedule, deleteSchedule, getMySchedule, getScheduleById, postComment, getCommentsAndReplies,
+    deleteComment, addReply, deleteReply, updateLike }
