@@ -352,7 +352,7 @@ const getCommentsAndReplies = async (ctx) => {
         ]
         commentAndReplies = await db.getAggregation("scheduleComment", aggregationQuery)
 
-        return ctx.response.body = { status: 0, data: JSON.stringify(commentAndReplies) }
+        return ctx.response.body = { status: 1, data: JSON.stringify(commentAndReplies) }
     } catch (error) {
         console.log(error)
         return ctx.response.body = { status: 0, response: `Error in post controllers - ${error.message}` }
