@@ -2,7 +2,9 @@ const Router = require('koa-router')
 const { userRegister, updateRegisterData, resendOtp,
     login, verifyOtp, updateUserDetails, userConnectionRequest,
     getProfileById, getAllUser, getConnectionRequestListById,
-    acceptConnectionRequest,getFollowListByUserId, getFollowingListByUserId } = require("../../controllers/user/user")
+    acceptConnectionRequest, getFollowListByUserId, getFollowingListByUserId } = require("../../controllers/user/user")
+
+const { getReportPost, deleteReportedPost } = require("../../controllers/user/admin")
 // const { userRegisterValidation } = require("../../validation/userValidation")
 const userRouter = new Router({ prefix: "/users" })
 
