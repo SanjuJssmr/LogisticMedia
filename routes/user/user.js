@@ -20,6 +20,8 @@ try {
     userRouter.post("/acceptConnectionRequest", acceptConnectionRequest)
     userRouter.post("/getFollowListByUserId", getFollowListByUserId)
     userRouter.post("/getFollowingListByUserId", getFollowingListByUserId)
+    userRouter.get("/getReportPost", getReportPost)
+    userRouter.post("/deleteReportedPost", deleteReportedPost)
 
 } catch (error) {
     console.log(`error in user router - ${error}`);
