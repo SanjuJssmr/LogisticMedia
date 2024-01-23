@@ -1,6 +1,8 @@
 const Router = require('koa-router')
 const { userRegister, updateRegisterData, resendOtp,
-    login, verifyOtp, updateUserDetails, userConnectionRequest, getProfileById, getAllUser } = require("../../controllers/user/user")
+    login, verifyOtp, updateUserDetails, userConnectionRequest,
+    getProfileById, getAllUser, getConnectionRequestListById,
+    acceptConnectionRequest,getFollowListByUserId, getFollowingListByUserId } = require("../../controllers/user/user")
 // const { userRegisterValidation } = require("../../validation/userValidation")
 const userRouter = new Router({ prefix: "/users" })
 
@@ -14,6 +16,10 @@ try {
     userRouter.post("/userConnectionRequest", userConnectionRequest)
     userRouter.post("/getProfileById", getProfileById)
     userRouter.post("/getAllUser", getAllUser)
+    userRouter.post("/getConnectionRequestListById", getConnectionRequestListById)
+    userRouter.post("/acceptConnectionRequest", acceptConnectionRequest)
+    userRouter.post("/getFollowListByUserId", getFollowListByUserId)
+    userRouter.post("/getFollowingListByUserId", getFollowingListByUserId)
 
 } catch (error) {
     console.log(`error in user router - ${error}`);
