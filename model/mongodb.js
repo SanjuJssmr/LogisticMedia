@@ -311,6 +311,15 @@ const performCaseInsensitiveSearch = async (collection, options, queryField, sea
     }
 };
 
+const getCountAsync = async (collection, query) => {
+    try {
+        const count = await db[collection].countDocuments(query);
+        return count;
+    } catch (error) {
+        throw new Error(`Error counting documents: ${error.message}`);
+    }
+};
+
 module.exports = {
     updateDocument,
     updateManyDocuments,
@@ -330,5 +339,6 @@ module.exports = {
     getAggregation,
     performCaseInsensitiveSearch,
     findDocumentsWithLimit,
-    findDocumentsWithPagination
+    findDocumentsWithPagination,
+    getCountAsync
 }

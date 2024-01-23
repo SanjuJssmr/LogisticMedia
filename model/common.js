@@ -185,6 +185,25 @@ const uploadFileAzure = async (filePath, folderName, fileData) => {
   }
 }
 
+const getImageFromShare = async ( filePath) => {
+  const connectionString = CONFIG.AZURECONNECTIONSTRING
+  if (!connectionString) throw Error('Azure Storage ConnectionString not found');
+
+  shareName = CONFIGJSON.azureFilePath.shareName
+
+  const shareServiceClient = ShareServiceClient.fromConnectionString(connectionString);
+  const shareClient = shareServiceClient.getShareClient(shareName);
+  const directoryClient = shareClient.getDirectoryClient(filePath);
+
+  const fileClient = directoryClient.getFileClient('image.png');
+
+  const downloadFileResponse = await fileClient.download();
+  const imageBuffer = await streamToBuffer(downloadFileResponse.readableStreamBody);
+
+  return imageBuffer;
+}
+
+
 // //Azure File Share Download - downloadFileAzure(lclbookingId)
 // const downloadFileAzure = async (folderName, fileToDownload, type) => {
 //   let serviceClient, shareName, shareClient, shareExists,
