@@ -480,10 +480,53 @@ const acceptConnectionRequest = async (ctx) => {
     }
 }
 
+const navSearch = async (ctx) => {
+    let data = { status: 0, response: "Something went wrong" }, userData, pageData, aggregationQuery = [], searchData, pageDataCount, searchedInfo;
+    try {
+        searchData = ctx.request.body;
+        if (Object.keys(searchData).length === 0 && searchData.data === undefined) {
+            res.send(data)
+
+            return
+        }
+        searchData = searchData.data[0]
+        searchTerm = searchData.term.trim()
+        userData = await db.findDocumentsWithLimit('user', {
+            $or: [
+                { fullName: { $regex: searchTerm, $options: 'i' } },
+                { designation: { $regex: searchTerm, $options: 'i' } },
+                { about: { $regex: searchTerm, $options: 'i' } }
+            ]
+        }, { fullName: 1, profile: 1 }, 10)
+
+        pageData = await db.findDocumentsWithLimit('companyPage', {
+            $or: [
+                { companyName: { $regex: searchTerm, $options: 'i' } },
+                { about: { $regex: searchTerm, $options: 'i' } }
+            ]
+        }, { companyName: 1, profile: 1 }, 10)
+        if (userData.length > 9 || pageData.length === 0) {
+
+            return ctx.response.body = { status: 1, data: userData }
+        }
+        if (userData.length === 0 && pageData.length !== 0) {
+
+            return ctx.response.body = { status: 1, data: pageData }
+        }
+        pageDataCount = 10 - userData.length
+        pageData = pageData.splice(0, pageDataCount)
+        searchedInfo = [...userData, ...pageData]
+
+        return ctx.response.body = { status: 1, data: searchedInfo }
+    } catch (error) {
+        console.log(error.message)
+        return ctx.response.body = { status: 0, response: `Error in user Controller - userConnectionRequest:-${error.message}` }
+    }
+}
 
 
 module.exports = {
     userRegister, updateRegisterData, resendOtp,
     login, verifyOtp, updateUserDetails, userConnectionRequest, getProfileById,
-    getAllUser, acceptConnectionRequest
+    getAllUser, acceptConnectionRequest, navSearch
 }
