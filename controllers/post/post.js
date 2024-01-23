@@ -185,9 +185,9 @@ const getTrendingPost = async (ctx) => {
             },
 
         ]
-        postInfo = await db.getAggregation("post", JSON.stringify(aggregationQuery))
+        postInfo = await db.getAggregation("post", aggregationQuery)
 
-        return ctx.response.body = { status: 1, data: postInfo }
+        return ctx.response.body = { status: 1, data: JSON.stringify(postInfo) }
     } catch (error) {
         console.log(error)
         return ctx.response.body = { status: 0, response: `Error in post controllers - ${error.message}` }
