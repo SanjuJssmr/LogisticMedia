@@ -2,15 +2,14 @@ const mongoose = require("mongoose")
 const ObjectId = mongoose.Schema.Types.ObjectId
 
 const scheduleSchema = mongoose.Schema({
-    createBy: {
+    createdBy: {
         type: ObjectId,
-        ref: "page",
-        required: true
+        ref: "user",
     },
     companyId: {
         type: ObjectId,
-        ref: "page",
-        required: true
+        ref: "companyPage",
+
     },
     pol: {
         type: String,

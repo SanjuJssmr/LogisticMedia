@@ -127,6 +127,87 @@ const getMyPost = async (ctx) => {
     }
 }
 
+const getPagePost = async (ctx) => {
+    try {
+        let postData = ctx.request.body, postInfo, aggregationQuery = [];
+        postData = postData.data[0];
+        aggregationQuery = [
+            {
+                $match: { status: 1, createdBy: new ObjectId(postData.userId), companyId: new ObjectId(postData.companyId) },
+            },
+            {
+                $lookup:
+                {
+                    from: "users",
+                    localField: "createdBy",
+                    foreignField: "_id",
+                    as: "userInfo",
+                }
+            },
+            {
+                $lookup:
+                {
+                    from: "companypages",
+                    localField: "companyId",
+                    foreignField: "_id",
+                    as: "companyInfo",
+                }
+            },
+            {
+                $lookup:
+                {
+                    from: "postlikes",
+                    localField: "_id",
+                    foreignField: "postId",
+                    as: "postInfo",
+                }
+            },
+            {
+                $addFields: {
+                    likedBy: "$postInfo.likedBy",
+                    fullName: "$userInfo.fullName",
+                    designation: "$userInfo.designation",
+                    profile: "$userInfo.profile",
+                    companyName : "$companyInfo.companyName",
+                    companyProfile : "$companyInfo.profile"
+                }
+            },
+            {
+                $project: {
+                    "createdBy": 1,
+                    "description": 1,
+                    "hashtags": 1,
+                    "country": 1,
+                    "files": 1,
+                    "createdAt": 1,
+                    "fullName": { '$arrayElemAt': ['$fullName', 0] },
+                    "designation": { '$arrayElemAt': ['$designation', 0] },
+                    "profile": { '$arrayElemAt': ['$profile', 0] },
+                    'likedBy': { '$arrayElemAt': ['$likedBy', 0] },
+                    "companyName": { '$arrayElemAt': ['$companyName', 0] },
+                    'companyProfile': { '$arrayElemAt': ['$companyProfile', 0] },
+                }
+            },
+            {
+                $addFields: {
+                    likes: { $size: "$likedBy" }
+                }
+            },
+            {
+                $sort: {
+                    createdAt: -1,
+                }
+            }
+        ]
+        postInfo = await db.getAggregation("post", aggregationQuery)
+
+        return ctx.response.body = { status: 1, data: JSON.stringify(postInfo) }
+    } catch (error) {
+        console.log(error)
+        return ctx.response.body = { status: 0, response: `Error in post controllers - ${error.message}` }
+    }
+}
+
 const getTrendingPost = async (ctx) => {
     try {
         let postInfo, aggregationQuery = [];
@@ -146,6 +227,15 @@ const getTrendingPost = async (ctx) => {
             {
                 $lookup:
                 {
+                    from: "companypages",
+                    localField: "companyId",
+                    foreignField: "_id",
+                    as: "companyInfo",
+                }
+            },
+            {
+                $lookup:
+                {
                     from: "postlikes",
                     localField: "_id",
                     foreignField: "postId",
@@ -157,7 +247,9 @@ const getTrendingPost = async (ctx) => {
                     likedBy: "$postInfo.likedBy",
                     fullName: "$userInfo.fullName",
                     designation: "$userInfo.designation",
-                    profile: "$userInfo.profile"
+                    profile: "$userInfo.profile",
+                    companyName : "$companyInfo.companyName",
+                    companyProfile : "$companyInfo.profile"
                 }
             },
             {
@@ -171,6 +263,8 @@ const getTrendingPost = async (ctx) => {
                     "designation": { '$arrayElemAt': ['$designation', 0] },
                     "profile": { '$arrayElemAt': ['$profile', 0] },
                     "likedBy": { '$arrayElemAt': ['$likedBy', 0] },
+                    "companyName": { '$arrayElemAt': ['$companyName', 0] },
+                    'companyProfile': { '$arrayElemAt': ['$companyProfile', 0] },
                 }
             },
             {
@@ -435,6 +529,15 @@ const getForYouPost = async (ctx) => {
             {
                 $lookup:
                 {
+                    from: "companypages",
+                    localField: "companyId",
+                    foreignField: "_id",
+                    as: "companyInfo",
+                }
+            },
+            {
+                $lookup:
+                {
                     from: "postlikes",
                     localField: "_id",
                     foreignField: "postId",
@@ -446,7 +549,9 @@ const getForYouPost = async (ctx) => {
                     likedBy: "$postInfo.likedBy",
                     fullName: "$userInfo.fullName",
                     designation: "$userInfo.designation",
-                    profile: "$userInfo.profile"
+                    profile: "$userInfo.profile",
+                    companyName : "$companyInfo.companyName",
+                    companyProfile : "$companyInfo.profile"
                 }
             },
             {
@@ -460,6 +565,8 @@ const getForYouPost = async (ctx) => {
                     "designation": { '$arrayElemAt': ['$designation', 0] },
                     "profile": { '$arrayElemAt': ['$profile', 0] },
                     "likedBy": { '$arrayElemAt': ['$likedBy', 0] },
+                    "companyName": { '$arrayElemAt': ['$companyName', 0] },
+                    'companyProfile': { '$arrayElemAt': ['$companyProfile', 0] },
                 }
             },
             {
@@ -628,6 +735,15 @@ const getFriendsPost = async (ctx) => {
             {
                 $lookup:
                 {
+                    from: "companypages",
+                    localField: "postInfo.companyId",
+                    foreignField: "_id",
+                    as: "companyInfo",
+                }
+            },
+            {
+                $lookup:
+                {
                     from: "postlikes",
                     localField: "postInfo._id",
                     foreignField: "postId",
@@ -639,7 +755,9 @@ const getFriendsPost = async (ctx) => {
                     likedBy: "$postLikes.likedBy",
                     fullName: "$userInfo.fullName",
                     designation: "$userInfo.designation",
-                    profile: "$userInfo.profile"
+                    profile: "$userInfo.profile",
+                    companyName : "$companyInfo.companyName",
+                    companyProfile : "$companyInfo.profile"
                 }
             },
             {
@@ -657,6 +775,8 @@ const getFriendsPost = async (ctx) => {
                     "designation": { '$arrayElemAt': ['$designation', 0] },
                     "profile": { '$arrayElemAt': ['$profile', 0] },
                     'likedBy': { '$arrayElemAt': ['$likedBy', 0] },
+                    "companyName": { '$arrayElemAt': ['$companyName', 0] },
+                    'companyProfile': { '$arrayElemAt': ['$companyProfile', 0] },
                 }
             },
             {
@@ -682,5 +802,6 @@ const getFriendsPost = async (ctx) => {
 
 module.exports = {
     addPost, deletePost, getMyPost, postComment, deleteComment, addReply,
-    deleteReply, getCommentsAndReplies, updateLike, getTrendingPost, getForYouPost, reportPost, getPostById, getFriendsPost
+    deleteReply, getCommentsAndReplies, updateLike, getTrendingPost, getForYouPost, reportPost,
+     getPostById, getFriendsPost, getPagePost
 }
