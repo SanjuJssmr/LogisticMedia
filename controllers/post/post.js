@@ -313,7 +313,7 @@ const postComment = async (ctx) => {
 const deleteComment = async (ctx) => {
     let data = { status: 0, response: "Invalid request" }
     try {
-        let commentData = ctx.request.body, commentInfo, updateInfo, userInfo;
+        let commentData = ctx.request.body, commentInfo, updateInfo;
         commentData = commentData.data[0];
         commentInfo = await db.findSingleDocument("postComment", { _id: commentData.commentId, userId: commentData.userId })
         if (commentInfo == null || commentInfo.status === 0) {
