@@ -5,7 +5,8 @@ const bodyParser = require("koa-bodyparser");
 const CONFIG = require("./config/config");
 const { postRouter } = require("./routes/post/post");;
 const cors = require('@koa/cors');
-const multer = require("@koa/multer")
+const multer = require("@koa/multer");
+const { scheduleRouter } = require("./routes/post/schedule");
 
 const app = new koa()
 app.use(bodyParser())
@@ -32,6 +33,7 @@ mongoose.connection.on('connected', () => {
   try {
     app.use(userRouter.routes())
     app.use(postRouter.routes())
+    app.use(scheduleRouter.routes())
     app.listen(CONFIG.PORT, () => {
       console.log("Server turned on with Koa", CONFIG.ENV, "mode on port", CONFIG.PORT);
     });

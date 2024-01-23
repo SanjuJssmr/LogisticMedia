@@ -7,6 +7,10 @@ const postSchema = mongoose.Schema({
         required: true,
         ref: "user"
     },
+    companyId: {
+        type: ObjectId,
+        ref: "companyPage"
+    },
     description: {
         type: String
     },
