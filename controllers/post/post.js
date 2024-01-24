@@ -9,12 +9,11 @@ const addPost = async (ctx) => {
     let data = { status: 0, response: "Invalid request" }
     try {
         let postData = ctx.request.body, fileData = ctx.request.files, postInfo, likeInfo, postFolderpath = "posts", filePath;
-        if (Object.keys(postData).length === 0 && postData.data === undefined) {
+        if (Object.keys(postData).length === 0 && postData == undefined) {
             res.send(data)
 
             return
         }
-        postData = postData.data[0];
         postInfo = await db.insertSingleDocument("post", postData)
         if (Object.keys(postInfo).length !== 0) {
             likeInfo = await db.insertSingleDocument("postLike", { postId: postInfo._id })

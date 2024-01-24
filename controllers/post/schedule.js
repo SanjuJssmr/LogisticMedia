@@ -132,6 +132,73 @@ const getMySchedule = async (ctx) => {
     }
 }
 
+const getAllSchedule = async (ctx) => {
+    let data = { status: 0, response: "Invalid request" }
+    try {
+        let scheduleInfo, aggregationQuery = [];
+        aggregationQuery = [
+            {
+                $match: { status: 1 },
+            },
+            {
+                $lookup:
+                {
+                    from: "companypages",
+                    localField: "companyId",
+                    foreignField: "_id",
+                    as: "companyInfo",
+                }
+            },
+            {
+                $lookup:
+                {
+                    from: "schedulelikes",
+                    localField: "_id",
+                    foreignField: "scheduleId",
+                    as: "scheduleInfo",
+                }
+            },
+            {
+                $addFields: {
+                    likedBy: "$scheduleInfo.likedBy",
+                    fullName: "$companyInfo.companyName",
+                    profile: "$companyInfo.profile"
+                }
+            },
+            {
+                $project: {
+                    "pol": 1,
+                    "pod": 1,
+                    "openingOn": 1,
+                    "bookingCutOff": 1,
+                    "createdBy": 1,
+                    "description": 1,
+                    "createdAt": 1,
+                    "companyName": { '$arrayElemAt': ['$fullName', 0] },
+                    "companyProfile": { '$arrayElemAt': ['$profile', 0] },
+                    'likedBy': { '$arrayElemAt': ['$likedBy', 0] },
+                }
+            },
+            {
+                $addFields: {
+                    likes: { $size: "$likedBy" }
+                }
+            },
+            {
+                $sort: {
+                    createdAt: -1,
+                }
+            }
+        ]
+        scheduleInfo = await db.getAggregation("schedule", aggregationQuery)
+
+        return ctx.response.body = { status: 1, data: JSON.stringify(scheduleInfo) }
+    } catch (error) {
+        console.log(error)
+        return ctx.response.body = { status: 0, response: `Error in schedule controllers/getAllSchedule - ${error.message}` }
+    }
+}
+
 const getScheduleById = async (ctx) => {
     let data = { status: 0, response: "Invalid request" }
     try {
@@ -444,4 +511,4 @@ const updateLike = async (ctx) => {
 }
 
 module.exports = { addSchedule, deleteSchedule, getMySchedule, getScheduleById, postComment, getCommentsAndReplies,
-    deleteComment, addReply, deleteReply, updateLike }
+    deleteComment, addReply, deleteReply, updateLike, getAllSchedule }

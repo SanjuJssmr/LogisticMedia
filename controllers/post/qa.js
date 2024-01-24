@@ -9,7 +9,7 @@ const askQuestion = async (ctx) => {
     let data = { status: 0, response: "Invalid request" }
     try {
         let questionData = ctx.request.body, fileData = ctx.request.files, questionInfo, likeInfo, postFolderpath = "posts", filePath;
-        if (Object.keys(questionData).length === 0 && questionData.data === undefined) {
+        if (Object.keys(questionData).length === 0 && questionData == undefined) {
             res.send(data)
 
             return
