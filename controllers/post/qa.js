@@ -267,7 +267,7 @@ const getAnswersAndReplies = async (ctx) => {
         ]
         answersAndReplies = await db.getAggregation("answer", aggregationQuery)
 
-        return ctx.response.body = { status: 1, data: answersAndReplies }
+        return ctx.response.body = { status: 1, data: JSON.stringify(answersAndReplies) }
     } catch (error) {
         console.log(error)
         return ctx.response.body = { status: 0, response: `Error in Qa controllers/getAnswersAndReplies - ${error.message}` }
@@ -369,7 +369,7 @@ const getAllQa = async (ctx) => {
         ]
         qaData = await db.getAggregation("question", aggregationQuery)
 
-        return ctx.response.body = { status: 1, data: qaData }
+        return ctx.response.body = { status: 1, data: JSON.stringify(qaData) }
     } catch (error) {
         console.log(error)
         return ctx.response.body = { status: 0, response: `Error in Qa controllers/getAllQa - ${error.message}` }
