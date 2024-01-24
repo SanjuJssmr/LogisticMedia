@@ -143,7 +143,7 @@ const getScheduleById = async (ctx) => {
         }
         scheduleData = scheduleData.data[0]
         aggregationQuery = [
-            { $match: { $and: [{ _id: new ObjectId(scheduleData.companyId) }, { status: 1 }] } },
+            { $match: { $and: [{ _id: new ObjectId(scheduleData.scheduleId) }, { status: 1 }] } },
             {
                 $lookup:
                 {

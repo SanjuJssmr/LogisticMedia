@@ -22,10 +22,10 @@ const answerSchema = mongoose.Schema({
                 type: ObjectId,
                 ref: "user"
             },
-            reply: {
+            message: {
                 type: String
             },
-            replyStatus: {
+            status: {
                 type: Number,
                 default: 1
             },

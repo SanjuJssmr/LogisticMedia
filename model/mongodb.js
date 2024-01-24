@@ -8,6 +8,7 @@ const post = require('../schema/post')
 const postComment = require('../schema/postComment')
 const postLike = require("../schema/postLike")
 const question = require("../schema/question")
+const questionLike = require("../schema/questionLike")
 const answer = require("../schema/answer")
 const schedule = require("../schema/schedule")
 const scheduleComment = require("../schema/scheduleComment")
@@ -25,6 +26,7 @@ const db = {
     follower,
     postLike,
     question,
+    questionLike,
     answer,
     schedule,
     scheduleComment,
