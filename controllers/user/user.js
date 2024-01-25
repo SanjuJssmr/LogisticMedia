@@ -7,7 +7,7 @@ const fs = require("fs").promises
 const jwt = require("jsonwebtoken")
 const { ObjectId } = require("bson")
 const { transporter } = require('../../model/mail')
-const mailResendAttempts = 2
+let mailResendAttempts = 2
 let templatePathUser = path.resolve('./templates')
 let profileFolderPath = "userProfile"
 
@@ -108,7 +108,7 @@ const userRegister = async (ctx) => {
             return
         }
         userData = userData.data[0]
-        fileData = ctx.request.files
+        // fileData = ctx.request.files
         checkEmailExist = await db.findOneDocumentExists("user", { email: userData.email })
         if (checkEmailExist == true) {
 
@@ -119,11 +119,11 @@ const userRegister = async (ctx) => {
 
         userInsert = await db.insertSingleDocument("user", userData)
         if (Object.keys(userInsert).length !== 0) {
-            if (fileData.length !== 0) {
-                await common.uploadFileAzure(profileFolderPath, `${userInsert._id}`, fileData[0])
-                filePath = `/${profileFolderPath}/${userInsert._id}/${fileData[0].originalname}`
-                await db.findByIdAndUpdate("user", userInsert._id, { profile: filePath })
-            }
+            // if (fileData.length !== 0) {
+            //     await common.uploadFileAzure(profileFolderPath, `${userInsert._id}`, fileData[0])
+            //     filePath = `/${profileFolderPath}/${userInsert._id}/${fileData[0].originalname}`
+            //     await db.findByIdAndUpdate("user", userInsert._id, { profile: filePath })
+            // }
             await registrationOtpMail(
                 {
                     emailTo: userInsert.email,
@@ -152,7 +152,7 @@ const updateRegisterData = async (ctx) => {
             return
         }
         userData = userData.data[0]
-        checkEmailExist = await db.findOneDocumentExists("user", { email: userData.email })
+        checkEmailExist = await db.findOneDocumentExists("user", { email: userData.email, _id: { $nin: new ObjectId(userData.id) } })
         if (checkEmailExist == true) {
 
             return ctx.response.body = { status: 0, response: "Email Already Exists" }
@@ -196,7 +196,7 @@ const userDetailsById = async (ctx) => {
 
             return ctx.response.body = { status: 0, response: "Invalid id" }
         }
-
+        // checkId.profile = await common.getImageFromShare(checkId.profile)
         return ctx.response.body = { status: 1, data: JSON.stringify(checkId) }
     } catch (error) {
         console.log(error.message)
@@ -253,14 +253,14 @@ const verifyOtp = async (ctx) => {
         }
         otpData = otpData.data[0]
         privateKey = await fs.readFile('privateKey.key', 'utf8');
-        checkOtp = await db.findDocumentExist("user", { _id: new ObjectId(otpData.id), otp: otpData.otp, status: 2 })
-        if (checkOtp == true) {
+        checkOtp = await db.findSingleDocument("user", { _id: new ObjectId(otpData.id), otp: otpData.otp, status: 2 })
+        if (checkOtp !== null) {
             changeUserstatus = await db.findByIdAndUpdate("user", otpData.id, { status: 1 })
             if (changeUserstatus.modifiedCount !== 0 && changeUserstatus.matchedCount !== 0) {
                 generatedToken = jwt.sign({
-                    userId: checkEmail._id,
-                    role: checkEmail.role,
-                    status: checkEmail.status,
+                    userId: checkOtp._id,
+                    role: checkOtp.role,
+                    status: checkOtp.status,
                 }, privateKey, { algorithm: 'RS256' })
 
                 if (generatedToken) {
@@ -386,7 +386,7 @@ const userConnectionRequest = async (ctx) => {
 
 const getProfileById = async (ctx) => {
     let data = { status: 0, response: "Something went wrong" }, ProfileIdData, checkId, profileData,
-        getConnectionCount, postCount, getFowllersCount, getFowllingCount;
+        getConnectionCount, postCount, getFowllersCount, getFowllingCount, pageDetails;
     try {
         ProfileIdData = ctx.request.body;
         if (Object.keys(ProfileIdData).length === 0 && ProfileIdData.data === undefined) {
@@ -410,6 +410,7 @@ const getProfileById = async (ctx) => {
         getFowllersCount = await db.getCountAsync('connection', { recipientId: new ObjectId(ProfileIdData.id), status: { $nin: [3] } })
         getFowllingCount = await db.getCountAsync('connection', { senderId: new ObjectId(ProfileIdData.id), status: { $nin: [3] } })
         postCount = await db.getCountAsync("post", { createdBy: new ObjectId(ProfileIdData.id), status: 1 })
+        pageDetails = await db.findAndSelect("companyPage", { createdBy: new ObjectId(ProfileIdData.id) }, { updateAt: 0 })
 
         profileData =
         {
@@ -419,7 +420,8 @@ const getProfileById = async (ctx) => {
                 "followingCount": getFowllingCount,
                 "connectionCount": getConnectionCount
             },
-            "userData": checkId
+            "userData": checkId,
+            "pageData": pageDetails
         }
 
         return ctx.response.body = { status: 1, data: JSON.stringify(profileData) }

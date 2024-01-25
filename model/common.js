@@ -193,22 +193,81 @@ const uploadFileAzure = async (filePath, folderName, fileData) => {
   }
 }
 
-const getImageFromShare = async ( filePath) => {
-  const connectionString = CONFIG.AZURECONNECTIONSTRING
-  if (!connectionString) throw Error('Azure Storage ConnectionString not found');
+const getImageFromShare = async (filePath) => {
+  try {
+    let connectionString, shareName, folderPath, fileName, shareServiceClient, shareClient, shareExists,
+      directoryClient, directoryClientExists, fileClient, downloadFileResponse, imageBuffer
+    connectionString = CONFIG.AZURECONNECTIONSTRING
+    shareName = CONFIGJSON.azureFilePath.shareName
+    if (!connectionString) throw Error('Azure Storage ConnectionString not found');
 
-  shareName = CONFIGJSON.azureFilePath.shareName
+    if (Array.isArray(filePath)) {
+      for (let i = 0; i < filePath.length; i++) {
+        filePath = `${CONFIGJSON.azureFilePath.directory}${filePath[i]}`
+        folderPath = filePath.slice(0, filePath.lastIndexOf('/'))
+        fileName = filePath.substring(filePath.lastIndexOf('/') + 1)
+        shareServiceClient = ShareServiceClient.fromConnectionString(connectionString);
+        shareClient = shareServiceClient.getShareClient(shareName);
+        shareExists = await shareClient.exists()
+        // if(!shareExists) return 
+        directoryClient = shareClient.getDirectoryClient(folderPath);
+        directoryClientExists = await shareClient.exists()
+        // if(!directoryClientExists) return 
 
-  const shareServiceClient = ShareServiceClient.fromConnectionString(connectionString);
-  const shareClient = shareServiceClient.getShareClient(shareName);
-  const directoryClient = shareClient.getDirectoryClient(filePath);
+        fileClient = directoryClient.getFileClient(fileName);
+        const
+          requestOptions = {
+            version
+              :
+              "2020-10-02"
+            ,
+            // Replace with the desired version
+          };
+        // Get the URL with the specified headers
+        const
+          imageUrl = fileClient.url +
+            "?"
+            +
+            new
+              URLSearchParams
+              (requestOptions).
+              toString
+              ();
+        downloadFileResponse = await fileClient.downloadToBuffer();
+        // imageBuffer = await streamToBuffer(downloadFileResponse.readableStreamBody);
+        // imageBuffer = Buffer.from(imageBuffer);
+        return downloadFileResponse;
+      }
+    } else {
+      filePath = `${CONFIGJSON.azureFilePath.directory}${filePath}`
+      folderPath = filePath.slice(0, filePath.lastIndexOf('/'))
+      fileName = filePath.substring(filePath.lastIndexOf('/') + 1)
+      shareServiceClient = ShareServiceClient.fromConnectionString(connectionString);
+      shareClient = shareServiceClient.getShareClient(shareName);
+      shareExists = await shareClient.exists()
+      // if(!shareExists) return 
+      directoryClient = shareClient.getDirectoryClient(folderPath);
+      directoryClientExists = await shareClient.exists()
+      // if(!directoryClientExists) return 
 
-  const fileClient = directoryClient.getFileClient('image.png');
+      fileClient = directoryClient.getFileClient(fileName);
+      fileClient.setProperties({   
+        xMsVersion
+        :
+        "2021-06-08"
+        ,
+        // Or the appropriate version for your API
+        });
+      let accountName = "dokonalyshare"
 
-  const downloadFileResponse = await fileClient.download();
-  const imageBuffer = await streamToBuffer(downloadFileResponse.readableStreamBody);
-
-  return imageBuffer;
+      // downloadFileResponse = await fileClient.downloadToBuffer();
+      // imageBuffer = await streamToBuffer(downloadFileResponse.readableStreamBody);
+      // imageBuffer = Buffer.from(imageBuffer);
+      return fileClient.url;
+    }
+  } catch (error) {
+    console.log(error.message)
+  }
 }
 
 
@@ -353,5 +412,6 @@ module.exports = {
   // checkAccess,
   // deleteFilesInFolder,
   // getImageAsBase64,
-  errorMail
+  errorMail,
+  getImageFromShare
 }

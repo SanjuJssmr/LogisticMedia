@@ -76,13 +76,13 @@ const addCompanyPages = async (ctx) => {
                 }
             )
 
-            return ctx.response.body = { status: 1, response: "Registration successfully", data: JSON.stringify(userInsert._id) }
+            return ctx.response.body = { status: 1, response: "Page Added successfully", data: JSON.stringify(userInsert._id) }
         }
 
         return ctx.response.body = data
     } catch (error) {
         console.log(error.message)
-        return ctx.response.body = { status: 0, response: `Error in page Controller - userRegister:-${error.message}` }
+        return ctx.response.body = { status: 0, response: `Error in page Controller - addCompanyPages:-${error.message}` }
     }
 }
 

@@ -3,7 +3,8 @@ const mongoose = require("mongoose")
 const { userRouter } = require('./routes/user/user');
 const bodyParser = require("koa-bodyparser");
 const CONFIG = require("./config/config");
-const { postRouter } = require("./routes/post/post");;
+const { postRouter } = require("./routes/post/post");
+const { pageRouter } = require("./routes/user/page");
 const cors = require('@koa/cors');
 const multer = require("@koa/multer");
 const { scheduleRouter } = require("./routes/post/schedule");
@@ -32,6 +33,7 @@ mongoose.connection.on('close', () => console.log('close'));
 mongoose.connection.on('connected', () => {
   try {
     app.use(userRouter.routes())
+    app.use(pageRouter.routes())
     app.use(postRouter.routes())
     app.use(scheduleRouter.routes())
     app.listen(CONFIG.PORT, () => {
