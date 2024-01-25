@@ -49,7 +49,9 @@ const getAllChatInfo = async (ctx) => {
             {
                 $addFields: {
                     "senderName": "$senderInfo.fullName",
-                    "recipientName": "$recipientInfo.fullName"
+                    "senderProfile": "$senderInfo.profile",
+                    "recipientName": "$recipientInfo.fullName",
+                    "recipientProfile": "$recipientInfo.profile"
                 }
             },
             {
@@ -67,6 +69,8 @@ const getAllChatInfo = async (ctx) => {
                     "senderId": "$senderId",
                     "senderName": { '$arrayElemAt': ['$senderName', 0] },
                     "recipientName": { '$arrayElemAt': ['$recipientName', 0] },
+                    "senderProfile": { '$arrayElemAt': ['$senderProfile', 0] },
+                    "recipientProfile": { '$arrayElemAt': ['$recipientProfile', 0] },
                     "recipientId": "$recipientId",
                     "chatInfo": {
                         $filter: {
@@ -123,14 +127,43 @@ const updateChatStatus = async (ctx) => {
 const getChatsByConnectionId = async (ctx) => {
     let data = { status: 0, response: "Invalid request" }
     try {
-        let chatData = ctx.request.body, chatInfo;
+        let chatData = ctx.request.body, chatInfo, aggregationQuery = [];
         if (Object.keys(chatData).length === 0 && chatData.data === undefined) {
             res.send(data)
 
             return
         }
         chatData = chatData.data[0]
-        chatInfo = await db.findAndSelect("chat", { connectionId: chatData.connectionId }, { _id: 0, sender: 1, message: 1 })
+        aggregationQuery = [
+            {
+                $match: { connectionId: new ObjectId(chatData.connectionId) }
+            },
+            {
+                $lookup: {
+                    from: "users",
+                    localField: "sender",
+                    foreignField: "_id",
+                    as: "userInfo"
+                }
+            },
+            {
+                $addFields: {
+                    "fullName": "$userInfo.fullName",
+                    "profile": "$userInfo.profile"
+                }
+            },
+            {
+                $project:{
+                    "_id":0,
+                    "senderId":"$sender",
+                    "message":"$message",
+                    "fullName": {"$arrayElemAt":["$fullName",0]},
+                    "profile":{"$arrayElemAt":["$profile",0]},
+                    "createdAt":"$createdAt"
+                }
+            }
+        ]
+        chatInfo = await db.getAggregation("chat", aggregationQuery)
 
         return ctx.response.body = { status: 1, data: JSON.stringify(chatInfo) }
     } catch (error) {
