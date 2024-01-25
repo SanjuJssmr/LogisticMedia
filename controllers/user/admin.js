@@ -64,7 +64,7 @@ const getReportPost = async (ctx) => {
         return ctx.response.body = { status: 1, data: postInfo }
     } catch (error) {
         console.log(error)
-        return ctx.response.body = { status: 0, response: `Error in admin controllers - ${error.message}` }
+        return ctx.response.body = { status: 0, response: `Error in admin controllers/getReportPost - ${error.message}` }
     }
 }
 
@@ -72,6 +72,11 @@ const deleteReportedPost = async (ctx) => {
     let data = { status: 0, response: "Invalid request" }
     try {
         let postData = ctx.request.body, postInfo, updateInfo;
+        if (Object.keys(postData).length === 0 && postData.data === undefined) {
+            res.send(data)
+
+            return
+        }
         postData = postData.data[0];
         postInfo = await db.findSingleDocument("post", { _id: postData.postId, status: 1 })
         if (postInfo == null || postInfo.status === 0) {
@@ -87,7 +92,7 @@ const deleteReportedPost = async (ctx) => {
         return ctx.response.body = data
     } catch (error) {
         console.log(error)
-        return ctx.response.body = { status: 0, response: `Error in admin controllers - ${error.message}` }
+        return ctx.response.body = { status: 0, response: `Error in admin controllers/deleteReportedPost - ${error.message}` }
     }
 }
 

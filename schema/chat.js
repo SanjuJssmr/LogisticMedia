@@ -18,7 +18,7 @@ const chatSchema = mongoose.Schema({
     },
     status: {
         type: Number,
-        default: 1
+        default: 0
     }
 }, {
     timestamps: true,

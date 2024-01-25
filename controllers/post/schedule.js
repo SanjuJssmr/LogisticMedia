@@ -7,6 +7,11 @@ const addSchedule = async (ctx) => {
     let data = { status: 0, response: "Invalid request" }
     try {
         let scheduleData = ctx.request.body, scheduleInfo, likeInfo;
+        if (Object.keys(scheduleData).length === 0 && scheduleData.data === undefined) {
+            res.send(data)
+
+            return
+        }
         scheduleData = scheduleData.data[0];
         scheduleInfo = await db.insertSingleDocument("schedule", scheduleData)
         if (Object.keys(scheduleInfo).length !== 0) {
@@ -21,7 +26,7 @@ const addSchedule = async (ctx) => {
         return ctx.response.body = data
     } catch (error) {
         console.log(error)
-        return ctx.response.body = { status: 0, response: `Error in schedule controllers - ${error.message}` }
+        return ctx.response.body = { status: 0, response: `Error in schedule controllers/addSchedule - ${error.message}` }
     }
 }
 
@@ -29,6 +34,11 @@ const deleteSchedule = async (ctx) => {
     let data = { status: 0, response: "Invalid request" }
     try {
         let scheduleData = ctx.request.body, scheduleInfo, updateInfo;
+        if (Object.keys(scheduleData).length === 0 && scheduleData.data === undefined) {
+            res.send(data)
+
+            return
+        }
         scheduleData = scheduleData.data[0];
         scheduleInfo = await db.findSingleDocument("schedule", { _id: scheduleData.scheduleId, companyId: scheduleData.companyId })
         if (scheduleInfo == null || scheduleInfo.status === 0) {
@@ -45,13 +55,19 @@ const deleteSchedule = async (ctx) => {
         return ctx.response.body = data
     } catch (error) {
         console.log(error)
-        return ctx.response.body = { status: 0, response: `Error in schedule controllers - ${error.message}` }
+        return ctx.response.body = { status: 0, response: `Error in schedule controllers/deleteSchedule - ${error.message}` }
     }
 }
 
 const getMySchedule = async (ctx) => {
+    let data = { status: 0, response: "Invalid request" }
     try {
         let scheduleData = ctx.request.body, scheduleInfo, aggregationQuery = [];
+        if (Object.keys(scheduleData).length === 0 && scheduleData.data === undefined) {
+            res.send(data)
+
+            return
+        }
         scheduleData = scheduleData.data[0];
         aggregationQuery = [
             {
@@ -112,16 +128,89 @@ const getMySchedule = async (ctx) => {
         return ctx.response.body = { status: 1, data: JSON.stringify(scheduleInfo) }
     } catch (error) {
         console.log(error)
-        return ctx.response.body = { status: 0, response: `Error in schedule controllers - ${error.message}` }
+        return ctx.response.body = { status: 0, response: `Error in schedule controllers/getMySchedule - ${error.message}` }
+    }
+}
+
+const getAllSchedule = async (ctx) => {
+    let data = { status: 0, response: "Invalid request" }
+    try {
+        let scheduleInfo, aggregationQuery = [];
+        aggregationQuery = [
+            {
+                $match: { status: 1 },
+            },
+            {
+                $lookup:
+                {
+                    from: "companypages",
+                    localField: "companyId",
+                    foreignField: "_id",
+                    as: "companyInfo",
+                }
+            },
+            {
+                $lookup:
+                {
+                    from: "schedulelikes",
+                    localField: "_id",
+                    foreignField: "scheduleId",
+                    as: "scheduleInfo",
+                }
+            },
+            {
+                $addFields: {
+                    likedBy: "$scheduleInfo.likedBy",
+                    fullName: "$companyInfo.companyName",
+                    profile: "$companyInfo.profile"
+                }
+            },
+            {
+                $project: {
+                    "pol": 1,
+                    "pod": 1,
+                    "openingOn": 1,
+                    "bookingCutOff": 1,
+                    "createdBy": 1,
+                    "description": 1,
+                    "createdAt": 1,
+                    "companyName": { '$arrayElemAt': ['$fullName', 0] },
+                    "companyProfile": { '$arrayElemAt': ['$profile', 0] },
+                    'likedBy': { '$arrayElemAt': ['$likedBy', 0] },
+                }
+            },
+            {
+                $addFields: {
+                    likes: { $size: "$likedBy" }
+                }
+            },
+            {
+                $sort: {
+                    createdAt: -1,
+                }
+            }
+        ]
+        scheduleInfo = await db.getAggregation("schedule", aggregationQuery)
+
+        return ctx.response.body = { status: 1, data: JSON.stringify(scheduleInfo) }
+    } catch (error) {
+        console.log(error)
+        return ctx.response.body = { status: 0, response: `Error in schedule controllers/getAllSchedule - ${error.message}` }
     }
 }
 
 const getScheduleById = async (ctx) => {
+    let data = { status: 0, response: "Invalid request" }
     try {
         let scheduleData = ctx.request.body, scheduleInfo, aggregationQuery = [];
+        if (Object.keys(scheduleData).length === 0 && scheduleData.data === undefined) {
+            res.send(data)
+
+            return
+        }
         scheduleData = scheduleData.data[0]
         aggregationQuery = [
-            { $match: { $and: [{ _id: new ObjectId(scheduleData.companyId) }, { status: 1 }] } },
+            { $match: { $and: [{ _id: new ObjectId(scheduleData.scheduleId) }, { status: 1 }] } },
             {
                 $lookup:
                 {
@@ -172,7 +261,7 @@ const getScheduleById = async (ctx) => {
         return ctx.response.body = { status: 1, data: JSON.stringify(scheduleInfo) }
     } catch (error) {
         console.log(error)
-        return ctx.response.body = { status: 0, response: `Error in post controllers - ${error.message}` }
+        return ctx.response.body = { status: 0, response: `Error in schedule controllers/getScheduleById - ${error.message}` }
     }
 }
 
@@ -180,6 +269,11 @@ const postComment = async (ctx) => {
     let data = { status: 0, response: "Invalid request" }
     try {
         let commentData = ctx.request.body, scheduleInfo, commentInfo;
+        if (Object.keys(commentData).length === 0 && commentData.data === undefined) {
+            res.send(data)
+
+            return
+        }
         commentData = commentData.data[0];
         scheduleInfo = await db.findSingleDocument("schedule", { _id: commentData.scheduleId })
         if (scheduleInfo == null || scheduleInfo.status === 0) {
@@ -194,7 +288,7 @@ const postComment = async (ctx) => {
         return ctx.response.body = data
     } catch (error) {
         console.log(error)
-        return ctx.response.body = { status: 0, response: `Error in schedule controllers - ${error.message}` }
+        return ctx.response.body = { status: 0, response: `Error in schedule controllers/postComment - ${error.message}` }
     }
 }
 
@@ -202,6 +296,11 @@ const deleteComment = async (ctx) => {
     let data = { status: 0, response: "Invalid request" }
     try {
         let commentData = ctx.request.body, commentInfo, updateInfo;
+        if (Object.keys(commentData).length === 0 && commentData.data === undefined) {
+            res.send(data)
+
+            return
+        }
         commentData = commentData.data[0];
         commentInfo = await db.findSingleDocument("scheduleComment", { _id: commentData.commentId, userId: commentData.userId })
         if (commentInfo == null || commentInfo.status === 0) {
@@ -216,7 +315,7 @@ const deleteComment = async (ctx) => {
         return ctx.response.body = data
     } catch (error) {
         console.log(error)
-        return ctx.response.body = { status: 0, response: `Error in schedule controllers - ${error.message}` }
+        return ctx.response.body = { status: 0, response: `Error in schedule controllers/deleteComment - ${error.message}` }
     }
 }
 
@@ -224,6 +323,11 @@ const addReply = async (ctx) => {
     let data = { status: 0, response: "Invalid request" }
     try {
         let replyData = ctx.request.body, commentInfo, updateInfo;
+        if (Object.keys(replyData).length === 0 && replyData.data === undefined) {
+            res.send(data)
+
+            return
+        }
         replyData = replyData.data[0];
         commentInfo = await db.findSingleDocument("scheduleComment", { _id: replyData.commentId })
         if (commentInfo == null || commentInfo.status === 0) {
@@ -238,7 +342,7 @@ const addReply = async (ctx) => {
         return ctx.response.body = data
     } catch (error) {
         console.log(error)
-        return ctx.response.body = { status: 0, response: `Error in schedule controllers - ${error.message}` }
+        return ctx.response.body = { status: 0, response: `Error in schedule controllers/addReply - ${error.message}` }
     }
 }
 
@@ -246,6 +350,11 @@ const deleteReply = async (ctx) => {
     let data = { status: 0, response: "Invalid request" }
     try {
         let replyData = ctx.request.body, commentInfo, updateInfo, replyInfo, userInfo;
+        if (Object.keys(replyData).length === 0 && replyData.data === undefined) {
+            res.send(data)
+
+            return
+        }
         replyData = replyData.data[0];
         commentInfo = await db.findSingleDocument("scheduleComment", { _id: replyData.commentId })
         if (commentInfo == null || commentInfo.status === 0) {
@@ -265,7 +374,7 @@ const deleteReply = async (ctx) => {
         return ctx.response.body = data
     } catch (error) {
         console.log(error)
-        return ctx.response.body = { status: 0, response: `Error in schedule controllers - ${error.message}` }
+        return ctx.response.body = { status: 0, response: `Error in schedule controllers/deleteReply - ${error.message}` }
     }
 }
 
@@ -273,6 +382,11 @@ const getCommentsAndReplies = async (ctx) => {
     let data = { status: 0, response: "Invalid request" }
     try {
         let scheduleData = ctx.request.body, scheduleInfo, commentAndReplies, aggregationQuery = [];
+        if (Object.keys(scheduleData).length === 0 && scheduleData.data === undefined) {
+            res.send(data)
+
+            return
+        }
         scheduleData = scheduleData.data[0];
         scheduleInfo = await db.findSingleDocument("schedule", { _id: scheduleData.scheduleId, status: 1 })
         if (scheduleInfo == null || scheduleInfo.status === 0) {
@@ -355,7 +469,7 @@ const getCommentsAndReplies = async (ctx) => {
         return ctx.response.body = { status: 1, data: JSON.stringify(commentAndReplies) }
     } catch (error) {
         console.log(error)
-        return ctx.response.body = { status: 0, response: `Error in post controllers - ${error.message}` }
+        return ctx.response.body = { status: 0, response: `Error in schedule controllers/getCommentsAndReplies - ${error.message}` }
     }
 }
 
@@ -363,6 +477,11 @@ const updateLike = async (ctx) => {
     let data = { status: 0, response: "Invalid request" }
     try {
         let scheduleData = ctx.request.body, scheduleInfo, likeInfo;
+        if (Object.keys(scheduleData).length === 0 && scheduleData.data === undefined) {
+            res.send(data)
+
+            return
+        }
         scheduleData = scheduleData.data[0];
         scheduleInfo = await db.findSingleDocument("scheduleLike", { scheduleId: scheduleData.scheduleId })
         if (scheduleInfo == null || scheduleInfo.status === 0) {
@@ -387,9 +506,9 @@ const updateLike = async (ctx) => {
         return ctx.response.body = data
     } catch (error) {
         console.log(error)
-        return ctx.response.body = { status: 0, response: `Error in schedule controllers - ${error.message}` }
+        return ctx.response.body = { status: 0, response: `Error in schedule controllers/updateLike - ${error.message}` }
     }
 }
 
 module.exports = { addSchedule, deleteSchedule, getMySchedule, getScheduleById, postComment, getCommentsAndReplies,
-    deleteComment, addReply, deleteReply, updateLike }
+    deleteComment, addReply, deleteReply, updateLike, getAllSchedule }
