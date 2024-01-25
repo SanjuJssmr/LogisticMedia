@@ -410,7 +410,7 @@ const getProfileById = async (ctx) => {
         getFowllersCount = await db.getCountAsync('connection', { recipientId: new ObjectId(ProfileIdData.id), status: { $nin: [3] } })
         getFowllingCount = await db.getCountAsync('connection', { senderId: new ObjectId(ProfileIdData.id), status: { $nin: [3] } })
         postCount = await db.getCountAsync("post", { createdBy: new ObjectId(ProfileIdData.id), status: 1 })
-        pageDetails = await db.findAndSelect("companyPage", { createdBy: new ObjectId(ProfileIdData.id) }, { updateAt: 0 })
+        pageDetails = await db.findSingleDocument("companyPage", { createdBy: new ObjectId(ProfileIdData.id) }, { updateAt: 0 })
 
         profileData =
         {
@@ -705,6 +705,7 @@ const getFollowingListByUserId = async (ctx) => {
         return ctx.response.body = { status: 0, response: `Error in user Controller - getConnectionListByUserId:-${error.message}` }
     }
 }
+
 const navSearch = async (ctx) => {
     let data = { status: 0, response: "Something went wrong" }, userData, pageData, aggregationQuery = [], searchData, pageDataCount, searchedInfo;
     try {
@@ -748,7 +749,6 @@ const navSearch = async (ctx) => {
         return ctx.response.body = { status: 0, response: `Error in user Controller - userConnectionRequest:-${error.message}` }
     }
 }
-
 
 module.exports = {
     userRegister, updateRegisterData, resendOtp,

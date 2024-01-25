@@ -1,5 +1,11 @@
 const db = require("../../model/mongodb")
 const common = require("../../model/common")
+const ejs = require('ejs')
+const path = require("path")
+const { ObjectId } = require("bson")
+const { transporter } = require('../../model/mail')
+let mailResendAttempts = 2
+let templatePathUser = path.resolve('./templates')
 
 const registrationOtpMail = async (mailData) => {
     let errorData, mailOptions
@@ -43,9 +49,52 @@ const registrationOtpMail = async (mailData) => {
         console.log(`Error sending Registration OTP verification : ${error.message}`)
     }
 }
+//Resend OTP Mail
+const resendOtpMail = async (mailData) => {
+    let errorData, mailOptions
+    try {
+        errorData = { location: "Resend otp", funName: "resendOtpMail" }
+        ejs.renderFile(`${templatePathUser}/resendOtp.ejs`,
+            {
+                fullName: mailData.fullName,
+                email: mailData.emailTo,
+                otp: mailData.otp
+            }
+            , async (err, data) => {
+                if (err) {
+                    console.log(err);
+                    await common.errorMail(errorData)
+                } else {
+                    mailOptions = {
+                        from: process.env.SMTP_AUTH_USER,
+                        to: mailData.emailTo,
+                        subject: `AllMasterSocial | Attention! - New OTP Request |`,
+                        html: data
+                    }
+                    //Send Mail
+                    transporter.sendMail(mailOptions, async (error, info) => {
+                        if (error) {
+                            if (mailResendAttempts !== 0) {
+                                resendOtpMail(mailData)
+                                mailResendAttempts--
+                            } else {
+                                mailResendAttempts = 2
+                                await common.errorMail(errorData)
+                            }
+                            console.log(`Resend otp Mail Not Sent - ${error}`)
+                            return console.log(error)
+                        }
+                        console.log(`Resend otp Mail sent:  - ${info.messageId}`)
+                    })
+                }
+            })
+    } catch (error) {
+        console.log(`Error sending user/resendOtpMail : ${error.message}`)
+    }
+}
 
 const addCompanyPages = async (ctx) => {
-    let data = { status: 0, response: "Something went wrong" }, pageData, checkUserEmailExist,checkPageEmailExist, userInsert;
+    let data = { status: 0, response: "Something went wrong" }, pageData, checkUserEmailExist, checkPageEmailExist, pageInsert;
     try {
         pageData = ctx.request.body;
         if (Object.keys(pageData).length === 0 && pageData.data === undefined) {
@@ -59,24 +108,24 @@ const addCompanyPages = async (ctx) => {
 
             return ctx.response.body = { status: 0, response: "Email Already Exists" }
         }
-        checkPageEmailExist = await db.findOneDocumentExists("page", { email: pageData.email })
+        checkPageEmailExist = await db.findOneDocumentExists("companyPage", { $or: [{ email: pageData.email }, { createdBy: new ObjectId(pageData.createdBy) }] })
         if (checkPageEmailExist == true) {
 
-            return ctx.response.body = { status: 0, response: "Email Already Exists" }
+            return ctx.response.body = { status: 0, response: "Email Already Exists or user Having Already an page" }
         }
-        userData.otp = common.otpGenerate()
+        pageData.otp = common.otpGenerate()
 
-        userInsert = await db.insertSingleDocument("page", userData)
-        if (Object.keys(userInsert).length !== 0) {
+        pageInsert = await db.insertSingleDocument("companyPage", pageData)
+        if (Object.keys(pageInsert).length !== 0) {
             await registrationOtpMail(
                 {
-                    emailTo: userInsert.email,
-                    fullName: userInsert.fullName,
-                    otp: userInsert.otp
+                    emailTo: pageInsert.email,
+                    fullName: pageInsert.fullName,
+                    otp: pageInsert.otp
                 }
             )
 
-            return ctx.response.body = { status: 1, response: "Page Added successfully", data: JSON.stringify(userInsert._id) }
+            return ctx.response.body = { status: 1, response: "Page Added successfully", data: JSON.stringify(pageInsert._id) }
         }
 
         return ctx.response.body = data
@@ -86,4 +135,98 @@ const addCompanyPages = async (ctx) => {
     }
 }
 
-module.exports= {addCompanyPages}
+const resendOtp = async (ctx) => {
+    let data = { status: 0, response: "Something went wrong" }, pageData, updateOtp, checkEmail;
+    try {
+        pageData = ctx.request.body;
+        if (Object.keys(pageData).length === 0 && pageData.data === undefined) {
+            ctx.response.body = data
+
+            return
+        }
+        pageData = pageData.data[0]
+        checkEmail = await db.findSingleDocument("companyPage", { email: pageData.email }, { fullName: 1 })
+        if (checkEmail == null || Object.keys(checkEmail).length == 0) {
+
+            return ctx.response.body = { status: 0, response: "Invalid Request" }
+        }
+
+        userData.otp = common.otpGenerate()
+
+        updateOtp = await db.findOneAndUpdate("companyPage", { email: userData.email }, { otp: userData.otp })
+        if (Object.keys(updateOtp).length !== 0) {
+            await resendOtpMail(
+                {
+                    emailTo: userData.email,
+                    fullName: checkEmail.fullName,
+                    otp: userData.otp
+                }
+            )
+
+            return ctx.response.body = { status: 1, response: "OTP sended sucessfully" }
+        }
+
+        return ctx.response.body = data
+    } catch (error) {
+        console.log(error.message)
+        return ctx.response.body = { status: 0, response: `Error in page Controller - resendOtp:-${error.message}` }
+    }
+}
+
+const pageDataById = async (ctx) => {
+    let data = { status: 0, response: "Something went wrong" }, updateData, checkId;
+    try {
+        updateData = ctx.request.body;
+        if (Object.keys(updateData).length === 0 && updateData.data === undefined) {
+            ctx.response.body = data
+
+            return
+        }
+        updateData = updateData.data[0]
+
+        checkId = await db.findSingleDocument("companyPage", { _id: new ObjectId(updateData.id) }, { password: 0, otp: 0, createdAt: 0, updatedAt: 0 })
+        if (checkId == null || Object.keys(checkId).length == 0) {
+
+            return ctx.response.body = { status: 0, response: "Invalid id" }
+        }
+        // checkId.profile = await common.getImageFromShare(checkId.profile)
+        return ctx.response.body = { status: 1, data: JSON.stringify(checkId) }
+    } catch (error) {
+        console.log(error.message)
+        return ctx.response.body = { status: 0, response: `Error in page Controller - pageDataById:-${error.message}` }
+    }
+}
+
+const verifyOtp = async (ctx) => {
+    let data = { status: 0, response: "Something went wrong" }, otpData, checkOtp, changeUserstatus;
+    try {
+        otpData = ctx.request.body;
+        if (Object.keys(otpData).length === 0 && otpData.data === undefined) {
+            ctx.response.body = data
+
+            return
+        }
+        otpData = otpData.data[0]
+        checkOtp = await db.findSingleDocument("companyPage", { _id: new ObjectId(otpData.id), otp: otpData.otp, status: 2 })
+        if (checkOtp !== null) {
+            changeUserstatus = await db.findByIdAndUpdate("companyPage", otpData.id, { status: 3 })
+            if (changeUserstatus.modifiedCount !== 0 && changeUserstatus.matchedCount !== 0) {
+
+                return ctx.response.body = { status: 1, response: "OTP Verified successfully" }
+
+            }
+
+            return ctx.response.body = data
+        }
+        return ctx.response.body = { status: 1, response: "Invalid Request" }
+
+    } catch (error) {
+        console.log(error.message)
+        return ctx.response.body = { status: 0, response: `Error in page Controller - verifyOtp:-${error.message}` }
+    }
+}
+
+
+
+
+module.exports = { addCompanyPages, resendOtp, pageDataById, verifyOtp }
