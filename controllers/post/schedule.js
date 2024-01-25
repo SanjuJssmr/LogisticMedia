@@ -162,7 +162,8 @@ const getAllSchedule = async (ctx) => {
                 $addFields: {
                     likedBy: "$scheduleInfo.likedBy",
                     fullName: "$companyInfo.companyName",
-                    profile: "$companyInfo.profile"
+                    profile: "$companyInfo.profile",
+                    companyId: "$companyInfo._id"
                 }
             },
             {
@@ -176,6 +177,7 @@ const getAllSchedule = async (ctx) => {
                     "createdAt": 1,
                     "companyName": { '$arrayElemAt': ['$fullName', 0] },
                     "companyProfile": { '$arrayElemAt': ['$profile', 0] },
+                    "companyId": { '$arrayElemAt': ['$companyId', 0] },
                     'likedBy': { '$arrayElemAt': ['$likedBy', 0] },
                 }
             },
@@ -510,5 +512,7 @@ const updateLike = async (ctx) => {
     }
 }
 
-module.exports = { addSchedule, deleteSchedule, getMySchedule, getScheduleById, postComment, getCommentsAndReplies,
-    deleteComment, addReply, deleteReply, updateLike, getAllSchedule }
+module.exports = {
+    addSchedule, deleteSchedule, getMySchedule, getScheduleById, postComment, getCommentsAndReplies,
+    deleteComment, addReply, deleteReply, updateLike, getAllSchedule
+}

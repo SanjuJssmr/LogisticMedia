@@ -120,7 +120,7 @@ const addCompanyPages = async (ctx) => {
             await registrationOtpMail(
                 {
                     emailTo: pageInsert.email,
-                    fullName: pageInsert.fullName,
+                    fullName: pageInsert.companyName,
                     otp: pageInsert.otp
                 }
             )
@@ -226,7 +226,37 @@ const verifyOtp = async (ctx) => {
     }
 }
 
+const pageFollow = async (ctx) => {
+    let data = { status: 0, response: "Something went wrong" }, followData, checkCompanyId, checkFollowerId, insertFollowData;
+    try {
+        followData = ctx.request.body;
+        if (Object.keys(followData).length === 0 && followData.data === undefined) {
+            ctx.response.body = data
 
+            return
+        }
+        followData = followData.data[0]
 
+        checkCompanyId = await db.findOneDocumentExists("companyPage", { _id: new ObjectId(followData.companyId), status: 1 })
+        if (checkCompanyId == false) {
 
-module.exports = { addCompanyPages, resendOtp, pageDataById, verifyOtp }
+            return ctx.response.body = { status: 0, response: "Invalid company id" }
+        }
+        checkFollowerId = await db.findOneDocumentExists("user", { _id: new ObjectId(followData.followerId), status: 1 })
+        if (checkCompanyId == false) {
+
+            return ctx.response.body = { status: 0, response: "Invalid FollowerId" }
+        }
+        insertFollowData = await db.insertSingleDocument("follower", followData)
+        if (insertFollowData) {
+
+            return ctx.response.body = { status: 1, response: "followed Sucessfully" }
+        }
+        return ctx.response.body = data
+    } catch (error) {
+        console.log(error.message)
+        return ctx.response.body = { status: 0, response: `Error in page Controller - pageFollow:-${error.message}` }
+    }
+}
+
+module.exports = { addCompanyPages, resendOtp, pageDataById, verifyOtp, pageFollow }

@@ -11,6 +11,7 @@ try {
     pageRouter.post("/pageDataById", pageDataById)
     pageRouter.post("/verifiyCompanyPages", verifiyCompanyPages)
     pageRouter.post("/getAllUnverifiedPages", getAllUnverifiedPages)
+    pageRouter.post("/getAllUnverifiedPages", getAllUnverifiedPages)
 
 } catch (error) {
     console.log(`error in user router - ${error}`);

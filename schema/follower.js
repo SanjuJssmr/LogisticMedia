@@ -21,4 +21,4 @@ const followerSchema = mongoose.Schema({
     versionKey: false
 })
 
-module.exports = mongoose.model("followers", followerSchema)
+module.exports = mongoose.model("follower", followerSchema)
