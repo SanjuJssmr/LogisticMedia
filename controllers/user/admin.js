@@ -62,7 +62,7 @@ const getReportPost = async (ctx) => {
         ]
         postInfo = await db.getAggregation("post", aggregationQuery)
 
-        return ctx.response.body = { status: 1, data: postInfo }
+        return ctx.response.body = { status: 1, data: JSON.stringify(postInfo) }
     } catch (error) {
         console.log(error)
         return ctx.response.body = { status: 0, response: `Error in admin controllers/getReportPost - ${error.message}` }
