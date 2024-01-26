@@ -10,7 +10,7 @@ const addPost = async (ctx) => {
     try {
         let postData = ctx.request.body, fileData = ctx.request.files, postInfo, likeInfo, postFolderpath = "posts", filePath;
         if (Object.keys(postData).length === 0 && postData == undefined) {
-            res.send(data)
+            ctx.response.body = data
 
             return
         }
@@ -44,7 +44,7 @@ const deletePost = async (ctx) => {
     try {
         let postData = ctx.request.body, postInfo, updateInfo;
         if (Object.keys(postData).length === 0 && postData.data === undefined) {
-            res.send(data)
+            ctx.response.body = data
 
             return
         }
@@ -73,7 +73,7 @@ const getMyPost = async (ctx) => {
     try {
         let postData = ctx.request.body, postInfo, aggregationQuery = [];
         if (Object.keys(postData).length === 0 && postData.data === undefined) {
-            res.send(data)
+            ctx.response.body = data
 
             return
         }
@@ -147,7 +147,7 @@ const getPagePost = async (ctx) => {
     try {
         let postData = ctx.request.body, postInfo, aggregationQuery = [];
         if (Object.keys(postData).length === 0 && postData.data === undefined) {
-            res.send(data)
+            ctx.response.body = data
 
             return
         }
@@ -314,7 +314,7 @@ const postComment = async (ctx) => {
     try {
         let commentData = ctx.request.body, postInfo, commentInfo;
         if (Object.keys(commentData).length === 0 && commentData.data === undefined) {
-            res.send(data)
+            ctx.response.body = data
 
             return
         }
@@ -341,7 +341,7 @@ const deleteComment = async (ctx) => {
     try {
         let commentData = ctx.request.body, commentInfo, updateInfo;
         if (Object.keys(commentData).length === 0 && commentData.data === undefined) {
-            res.send(data)
+            ctx.response.body = data
 
             return
         }
@@ -368,7 +368,7 @@ const addReply = async (ctx) => {
     try {
         let replyData = ctx.request.body, commentInfo, updateInfo, userInfo;
         if (Object.keys(replyData).length === 0 && replyData.data === undefined) {
-            res.send(data)
+            ctx.response.body = data
 
             return
         }
@@ -395,7 +395,7 @@ const deleteReply = async (ctx) => {
     try {
         let replyData = ctx.request.body, commentInfo, updateInfo, replyInfo, userInfo;
         if (Object.keys(replyData).length === 0 && replyData.data === undefined) {
-            res.send(data)
+            ctx.response.body = data
 
             return
         }
@@ -427,7 +427,7 @@ const getCommentsAndReplies = async (ctx) => {
     try {
         let postData = ctx.request.body, postInfo, commentAndReplies, aggregationQuery = [];
         if (Object.keys(postData).length === 0 && postData.data === undefined) {
-            res.send(data)
+            ctx.response.body = data
 
             return
         }
@@ -522,7 +522,7 @@ const updateLike = async (ctx) => {
     try {
         let postData = ctx.request.body, postInfo, likeInfo;
         if (Object.keys(postData).length === 0 && postData.data === undefined) {
-            res.send(data)
+            ctx.response.body = data
 
             return
         }
@@ -559,7 +559,7 @@ const getForYouPost = async (ctx) => {
     try {
         let postData = ctx.request.body, postInfo, aggregationQuery = [];
         if (Object.keys(postData).length === 0 && postData.data === undefined) {
-            res.send(data)
+            ctx.response.body = data
 
             return
         }
@@ -651,7 +651,7 @@ const reportPost = async (ctx) => {
     try {
         let postData = ctx.request.body, postInfo;
         if (Object.keys(postData).length === 0 && postData.data === undefined) {
-            res.send(data)
+            ctx.response.body = data
 
             return
         }
@@ -685,7 +685,7 @@ const getPostById = async (ctx) => {
     try {
         let postData = ctx.request.body, postInfo, aggregationQuery = [];
         if (Object.keys(postData).length === 0 && postData.data === undefined) {
-            res.send(data)
+            ctx.response.body = data
 
             return
         }
@@ -729,7 +729,7 @@ const getFriendsPost = async (ctx) => {
     try {
         let connectionData = ctx.request.body, postInfo, aggregationQuery = [];
         if (Object.keys(connectionData).length === 0 && connectionData.data === undefined) {
-            res.send(data)
+            ctx.response.body = data
 
             return
         }

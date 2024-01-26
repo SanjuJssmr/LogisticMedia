@@ -337,7 +337,7 @@ const getImageFromShare = async (filePath) => {
 //   catch (error) {
 //     console.log('Error in Azure File downloadFileAzure: ' + error.message + '');
 //     data.response = error.message;
-//     res.send(data);
+//     ctx.response.body = data;
 //   }
 // }
 

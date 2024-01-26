@@ -10,7 +10,7 @@ const askQuestion = async (ctx) => {
     try {
         let questionData = ctx.request.body, fileData = ctx.request.files, questionInfo, likeInfo, postFolderpath = "posts", filePath;
         if (Object.keys(questionData).length === 0 && questionData == undefined) {
-            res.send(data)
+            ctx.response.body = data
 
             return
         }
@@ -42,7 +42,7 @@ const deleteQuestion = async (ctx) => {
     try {
         let questionData = ctx.request.body, questionInfo, updateInfo;
         if (Object.keys(questionData).length === 0 && questionData.data === undefined) {
-            res.send(data)
+            ctx.response.body = data
 
             return
         }
@@ -71,7 +71,7 @@ const postAnswer = async (ctx) => {
     try {
         let answerData = ctx.request.body, questionInfo, answerInfo;
         if (Object.keys(answerData).length === 0 && answerData.data === undefined) {
-            res.send(data)
+            ctx.response.body = data
 
             return
         }
@@ -98,7 +98,7 @@ const deleteAnswer = async (ctx) => {
     try {
         let answerData = ctx.request.body, answerInfo, updateInfo;
         if (Object.keys(answerData).length === 0 && answerData.data === undefined) {
-            res.send(data)
+            ctx.response.body = data
 
             return
         }
@@ -125,7 +125,7 @@ const addReply = async (ctx) => {
     try {
         let replyData = ctx.request.body, answerInfo, updateInfo;
         if (Object.keys(replyData).length === 0 && replyData.data === undefined) {
-            res.send(data)
+            ctx.response.body = data
 
             return
         }
@@ -152,7 +152,7 @@ const deleteReply = async (ctx) => {
     try {
         let replyData = ctx.request.body, answerInfo, updateInfo, replyInfo;
         if (Object.keys(replyData).length === 0 && replyData.data === undefined) {
-            res.send(data)
+            ctx.response.body = data
 
             return
         }
@@ -184,7 +184,7 @@ const getAnswersAndReplies = async (ctx) => {
     try {
         let questionData = ctx.request.body, questionInfo, answersAndReplies, aggregationQuery = [];
         if (Object.keys(questionData).length === 0 && questionData.data === undefined) {
-            res.send(data)
+            ctx.response.body = data
 
             return
         }
@@ -279,7 +279,7 @@ const updateLike = async (ctx) => {
     try {
         let questionData = ctx.request.body, questionInfo, likeInfo;
         if (Object.keys(questionData).length === 0 && questionData.data === undefined) {
-            res.send(data)
+            ctx.response.body = data
 
             return
         }

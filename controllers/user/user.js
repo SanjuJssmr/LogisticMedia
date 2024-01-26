@@ -386,7 +386,7 @@ const userConnectionRequest = async (ctx) => {
 
 const getProfileById = async (ctx) => {
     let data = { status: 0, response: "Something went wrong" }, ProfileIdData, checkId, profileData,
-        getConnectionCount, postCount, getFowllersCount, getFowllingCount, pageDetails;
+        getConnectionCount, postCount, getFowllersCount, getFowllingCount, pageDetails, getPagesFollowingCount;
     try {
         ProfileIdData = ctx.request.body;
         if (Object.keys(ProfileIdData).length === 0 && ProfileIdData.data === undefined) {
@@ -409,6 +409,7 @@ const getProfileById = async (ctx) => {
         })
         getFowllersCount = await db.getCountAsync('connection', { recipientId: new ObjectId(ProfileIdData.id), status: { $nin: [3] } })
         getFowllingCount = await db.getCountAsync('connection', { senderId: new ObjectId(ProfileIdData.id), status: { $nin: [3] } })
+        getPagesFollowingCount = await db.getCountAsync('follower', { followerId: new ObjectId(ProfileIdData.id), status: 1 })
         postCount = await db.getCountAsync("post", { createdBy: new ObjectId(ProfileIdData.id), status: 1 })
         pageDetails = await db.findSingleDocument("companyPage", { createdBy: new ObjectId(ProfileIdData.id) }, { updateAt: 0 })
 
@@ -417,7 +418,7 @@ const getProfileById = async (ctx) => {
             "detailsCounts": {
                 "postCount": postCount,
                 "followersCount": getFowllersCount,
-                "followingCount": getFowllingCount,
+                "followingCount": getFowllingCount + getPagesFollowingCount,
                 "connectionCount": getConnectionCount
             },
             "userData": checkId,
@@ -653,7 +654,8 @@ const getConnectionListByUserId = async (ctx) => {
 }
 
 const getFollowingListByUserId = async (ctx) => {
-    let data = { status: 0, response: "Something went wrong" }, userData, aggregationQuery, followingData;
+    let data = { status: 0, response: "Something went wrong" }, userData, userAggregationQuery, followingData,
+        pageAggregationQuery, userfollowingData, pagefollowinData, allData = [];
     try {
         userData = ctx.request.body;
         if (Object.keys(userData).length === 0 && userData.data === undefined) {
@@ -663,7 +665,7 @@ const getFollowingListByUserId = async (ctx) => {
         }
         userData = userData.data[0]
 
-        aggregationQuery = [
+        userAggregationQuery = [
             { $match: { senderId: new ObjectId(userData.id), status: { $nin: [3] } } },
             {
                 $lookup: {
@@ -672,7 +674,6 @@ const getFollowingListByUserId = async (ctx) => {
                     foreignField: "_id",
                     as: "senderData"
                 }
-
             },
             {
                 $lookup: {
@@ -695,10 +696,35 @@ const getFollowingListByUserId = async (ctx) => {
             }
         ]
 
-        followingData = await db.getAggregation('connection', aggregationQuery)
-        if (followingData) {
+        pageAggregationQuery = [
+            { $match: { followerId: new ObjectId(userData.id), status: 1 } },
+            {
+                $lookup: {
+                    from: "users",
+                    localField: "followerId",
+                    foreignField: "_id",
+                    as: "followData"
+                }
 
-            return ctx.response.body = { status: 1, data: JSON.stringify(followingData) }
+            },
+            {
+                $project: {
+                    _id: 1,
+                    followerId: 1,
+                    followerName: { '$arrayElemAt': ['$followData.fullName', 0] },
+                    profile: { '$arrayElemAt': ['$followData.profile', 0] },
+                    status: 1,
+                    createdAt: 1
+                }
+            }
+        ]
+
+        userfollowingData = await db.getAggregation('connection', userAggregationQuery)
+        pagefollowinData = await db.getAggregation('follower', pageAggregationQuery)
+        allData = [...userfollowingData, ...pagefollowinData]
+        if (allData) {
+
+            return ctx.response.body = { status: 1, data: JSON.stringify(allData) }
         }
     } catch (error) {
         console.log(error.message)
@@ -711,7 +737,7 @@ const navSearch = async (ctx) => {
     try {
         searchData = ctx.request.body;
         if (Object.keys(searchData).length === 0 && searchData.data === undefined) {
-            res.send(data)
+            ctx.response.body = data
 
             return
         }

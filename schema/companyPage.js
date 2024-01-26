@@ -24,6 +24,10 @@ const companyPageSchema = mongoose.Schema({
         type: String,
         required: true
     },
+    otp: {
+        type: String,
+        require:true
+    },
     about: {
         type: String
     },

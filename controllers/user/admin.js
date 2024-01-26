@@ -74,7 +74,7 @@ const deleteReportedPost = async (ctx) => {
     try {
         let postData = ctx.request.body, postInfo, updateInfo;
         if (Object.keys(postData).length === 0 && postData.data === undefined) {
-            res.send(data)
+            ctx.response.body = data
 
             return
         }
@@ -102,7 +102,7 @@ const verifiyCompanyPages = async (ctx) => {
     try {
         let pageData = ctx.request.body, pageExists, updateInfo;
         if (Object.keys(pageData).length === 0 && pageData.data === undefined) {
-            res.send(data)
+            ctx.response.body = data
 
             return
         }
@@ -112,7 +112,7 @@ const verifiyCompanyPages = async (ctx) => {
 
             return ctx.response.body = { status: 0, response: "Invalid Request" }
         }
-        updateInfo = await db.findByIdAndUpdate("comapnyPage", pageData.id, { status: pageData.status })
+        updateInfo = await db.findByIdAndUpdate("companyPage", pageData.id, { status: pageData.status })
         if (updateInfo.modifiedCount !== 0 && updateInfo.matchedCount !== 0) {
 
             return ctx.response.body = { status: 1, response: "updated Sucessfully" }
@@ -128,7 +128,7 @@ const verifiyCompanyPages = async (ctx) => {
 const getAllUnverifiedPages = async (ctx) => {
     let data = { status: 0, response: "Invalid request" }, pageDetails
     try {
-        pageDetails = await db.findDocuments("comapnyPage", { status: 3 }, { updatedAt: 0 })
+        pageDetails = await db.findDocuments("companyPage", { status: 3 }, { updatedAt: 0, otp: 0 })
         if (pageDetails) {
 
             return ctx.response.body = { status: 1, data: JSON.stringify(pageDetails) }
