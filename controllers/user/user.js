@@ -700,10 +700,10 @@ const getFollowingListByUserId = async (ctx) => {
             { $match: { followerId: new ObjectId(userData.id), status: 1 } },
             {
                 $lookup: {
-                    from: "users",
-                    localField: "followerId",
+                    from: "companypages",
+                    localField: "companyId",
                     foreignField: "_id",
-                    as: "followData"
+                    as: "companyData"
                 }
 
             },
@@ -711,8 +711,9 @@ const getFollowingListByUserId = async (ctx) => {
                 $project: {
                     _id: 1,
                     followerId: 1,
-                    followerName: { '$arrayElemAt': ['$followData.fullName', 0] },
-                    profile: { '$arrayElemAt': ['$followData.profile', 0] },
+                    companyId: 1,
+                    followerName: { '$arrayElemAt': ['$companyData.companyName', 0] },
+                    profile: { '$arrayElemAt': ['$companyData.profile', 0] },
                     status: 1,
                     createdAt: 1
                 }

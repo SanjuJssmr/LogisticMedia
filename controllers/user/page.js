@@ -311,7 +311,8 @@ const followListByCompanyId = async (ctx) => {
 }
 
 const getCompanyProfileById = async (ctx) => {
-    let data = { status: 0, response: "Something went wrong" }, idData, checkId, getFowllersCount, getPostCount, allData;
+    let data = { status: 0, response: "Something went wrong" }, idData, checkId, getFowllersCount,
+        getPostCount, allData, getScheduleCount;
     try {
         idData = ctx.request.body;
         if (Object.keys(idData).length === 0 && idData.data === undefined) {
@@ -328,12 +329,14 @@ const getCompanyProfileById = async (ctx) => {
         }
         getFowllersCount = await db.getCountAsync('follower', { companyId: new ObjectId(idData.id), status: 1 })
         getPostCount = await db.getCountAsync('post', { companyId: new ObjectId(idData.id), status: 1 })
+        getScheduleCount = await db.getCountAsync('schedule', { companyId: new ObjectId(idData.id), status: 1 })
 
         allData = {
             companyPageData: checkId,
             countData: {
                 followCount: getFowllersCount,
-                postCount: getPostCount
+                postCount: getPostCount,
+                scheduleCount: getScheduleCount
             }
         }
 
