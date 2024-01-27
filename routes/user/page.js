@@ -1,6 +1,6 @@
 const Router = require('koa-router')
 const { addCompanyPages, pageDataById, resendOtp, pageFollow, followListByCompanyId,
-     verifyOtp,getCompanyProfileById, unfollowPages } = require("../../controllers/user/page")
+     verifyOtp,getCompanyProfileById, unfollowPages, getCompanyDataByFollowersDescending } = require("../../controllers/user/page")
 const { verifiyCompanyPages, getAllUnverifiedPages } = require("../../controllers/user/admin")
 
 // const { userRegisterValidation } = require("../../validation/userValidation")
@@ -17,6 +17,7 @@ try {
     pageRouter.post("/followListByCompanyId", followListByCompanyId)
     pageRouter.post("/getCompanyProfileById", getCompanyProfileById)
     pageRouter.post("/unfollowPages", unfollowPages)
+    pageRouter.get("/getCompanyDataByFollowersDescending", getCompanyDataByFollowersDescending)
 
 
 } catch (error) {

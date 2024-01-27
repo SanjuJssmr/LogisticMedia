@@ -368,7 +368,74 @@ const unfollowPages = async (ctx) => {
     }
 }
 
+const getCompanyDataByFollowersDescending = async (ctx) => {
+    let data = { status: 0, response: "Something went wrong" }, popularPageData, aggregationQuery;
+    try {
+
+        aggregationQuery = [
+            {
+                $group: {
+                    _id: '$companyId',
+                    count: { $sum: 1 }
+                }
+            },
+            {
+                $sort: { count: -1 }
+            },
+            {
+                $lookup: {
+                    from: 'companypages', // Replace with the actual collection name
+                    localField: '_id',
+                    foreignField: '_id',
+                    as: 'companyData'
+                }
+            },
+            {
+                $project: {
+                    _id: 1,
+                    count: 1,
+                    companyData: {
+                        $arrayElemAt: [
+                            '$companyData',
+                            0
+                        ]
+                    }
+                }
+            },
+            {
+                $project: {
+                    _id: 1,
+                    count: 1,
+                    companyData: {
+                        _id: '$companyData._id',
+                        companyName: '$companyData.companyName',
+                        profile: '$companyData.profile',
+                        email: '$companyData.email',
+                        licenseNo: '$companyData.licenseNo',
+                        about: '$companyData.about',
+                        status: '$companyData.status',
+                        createdAt: '$companyData.createdAt',
+                    }
+                }
+            }
+        ];
+
+        popularPageData = await db.getAggregation('follower', aggregationQuery);
+
+        if (popularPageData) {
+
+            return ctx.response.body = { status: 1, data: JSON.stringify(popularPageData) }
+        }
+
+        return ctx.response.body = data
+
+    } catch (error) {
+        console.log(error.message)
+        return ctx.response.body = { status: 0, response: `Error in page Controller - getCompanyDataByFollowersDescending:-${error.message}` }
+    }
+}
+
 module.exports = {
     addCompanyPages, resendOtp, pageDataById, verifyOtp, pageFollow,
-    followListByCompanyId, getCompanyProfileById, unfollowPages
+    followListByCompanyId, getCompanyProfileById, unfollowPages, getCompanyDataByFollowersDescending
 }
