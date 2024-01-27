@@ -13,7 +13,7 @@ try {
     scheduleRouter.post("/deleteReply", deleteReply)
     scheduleRouter.post("/getCommentAndReply", getCommentsAndReplies)
     scheduleRouter.post("/updateScheduleLike", updateLike)
-    scheduleRouter.get("/getAllSchedule", getAllSchedule)
+    scheduleRouter.post("/getAllSchedule", getAllSchedule)
 
 } catch (error) {
     console.log(`Error in schedule router - ${error}`);

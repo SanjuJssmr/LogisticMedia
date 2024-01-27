@@ -17,12 +17,12 @@ try {
     postRouter.post("/deleteReply", deleteReply)
     postRouter.post("/getCommentAndReply", getCommentsAndReplies)
     postRouter.post("/updatePostLike", updateLike)
-    postRouter.get("/getTrendingPost",getTrendingPost)
+    postRouter.post("/getTrendingPost",getTrendingPost)
     postRouter.post("/getFriendsPost", getFriendsPost)
     postRouter.post("/getForYouPost", getForYouPost)
     postRouter.post("/reportPost", reportPost)
     postRouter.post("/getPagePost", getPagePost)
-    postRouter.get("/getAllNews", getAllNews)
+    postRouter.post("/getAllNews", getAllNews)
 
 } catch (error) {
     console.log(`Error in post router - ${error}`);

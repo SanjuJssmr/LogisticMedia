@@ -312,8 +312,15 @@ const updateLike = async (ctx) => {
 }
 
 const getAllQa = async (ctx) => {
+    let data = { status: 0, response: "Invalid request" }
     try {
-        let qaData, aggregationQuery = [];
+        let questionData = ctx.request.body, qaData, aggregationQuery=[];
+        if (Object.keys(questionData).length === 0 && questionData.data === undefined) {
+            res.send(data)
+
+            return
+        }
+        questionData = questionData.data[0];
         aggregationQuery = [
             {
                 $match: { status: 1 },
@@ -366,10 +373,21 @@ const getAllQa = async (ctx) => {
                     likes: -1,
                 }
             },
+            {
+                $facet: {
+                    data: [
+                        { $skip: (questionData.page - 1) * questionData.pageSize },
+                        { $limit: questionData.pageSize }
+                    ],
+                    totalCount: [
+                        { $count: "value" }
+                    ]
+                }
+            }
         ]
         qaData = await db.getAggregation("question", aggregationQuery)
 
-        return ctx.response.body = { status: 1, data: JSON.stringify(qaData) }
+        return ctx.response.body = { status: 1, data: JSON.stringify(qaData[0].data), totalCount: qaData[0].totalCount[0].value}
     } catch (error) {
         console.log(error)
         return ctx.response.body = { status: 0, response: `Error in Qa controllers/getAllQa - ${error.message}` }
