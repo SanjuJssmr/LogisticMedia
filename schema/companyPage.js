@@ -13,22 +13,26 @@ const companyPageSchema = mongoose.Schema({
     },
     profile: {
         type: String,
-        default: "https://t4.ftcdn.net/jpg/03/59/58/91/360_F_359589186_JDLl8dIWoBNf1iqEkHxhUeeOulx0wOC5.jpg"
+        default: "https://i.pinimg.com/originals/ec/d9/c2/ecd9c2e8ed0dbbc96ac472a965e4afda.jpg"
     },
-    email :{
-        type :String,
-        required:true,
-        lowercase :true
+    email: {
+        type: String,
+        required: true,
+        lowercase: true
     },
     licenseNo: {
         type: String,
         required: true
     },
-    about :{
-        type : String
+    otp: {
+        type: String,
+        require:true
+    },
+    about: {
+        type: String
     },
     status: {
-        type: Number,
+        type: Number,     // 2- otp , 3- verifation BY admin 1- verified 4- rejected By admin
         default: 2
     }
 }, {

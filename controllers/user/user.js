@@ -7,7 +7,7 @@ const fs = require("fs").promises
 const jwt = require("jsonwebtoken")
 const { ObjectId } = require("bson")
 const { transporter } = require('../../model/mail')
-const mailResendAttempts = 2
+let mailResendAttempts = 2
 let templatePathUser = path.resolve('./templates')
 let profileFolderPath = "userProfile"
 
@@ -99,15 +99,15 @@ const resendOtpMail = async (mailData) => {
 }
 
 const userRegister = async (ctx) => {
-    let data = { status: 0, response: "Something went wrong" }, userData, checkEmailExist, userInsert, fileData;
+    let data = { status: 0, response: "Something went wrong" }, userData, checkEmailExist, userInsert, fileData, fileUrl;
     try {
         userData = ctx.request.body;
-        if (Object.keys(userData).length === 0 && userData.data === undefined) {
-            ctx.response.body = data
+        // if (Object.keys(userData).length === 0 && userData.data === undefined) {
+        //     ctx.response.body = data
 
-            return
-        }
-        userData = userData.data[0]
+        //     return
+        // }
+        // userData = userData.data[0]
         fileData = ctx.request.files
         checkEmailExist = await db.findOneDocumentExists("user", { email: userData.email })
         if (checkEmailExist == true) {
@@ -116,14 +116,11 @@ const userRegister = async (ctx) => {
         }
         userData.password = await bcrypt.hash(userData.password, 10)
         userData.otp = common.otpGenerate()
-
+        if (fileData.length !== 0) {
+            userData.profile = await common.uploadBufferToAzureBlob(fileData[0])
+        }
         userInsert = await db.insertSingleDocument("user", userData)
         if (Object.keys(userInsert).length !== 0) {
-            if (fileData.length !== 0) {
-                await common.uploadFileAzure(profileFolderPath, `${userInsert._id}`, fileData[0])
-                filePath = `/${profileFolderPath}/${userInsert._id}/${fileData[0].originalname}`
-                await db.findByIdAndUpdate("user", userInsert._id, { profile: filePath })
-            }
             await registrationOtpMail(
                 {
                     emailTo: userInsert.email,
@@ -143,22 +140,26 @@ const userRegister = async (ctx) => {
 }
 
 const updateRegisterData = async (ctx) => {
-    let data = { status: 0, response: "Something went wrong" }, userData, checkEmailExist, updateuserData;
+    let data = { status: 0, response: "Something went wrong" }, userData, checkEmailExist, updateuserData, fileData;
     try {
         userData = ctx.request.body;
-        if (Object.keys(userData).length === 0 && userData.data === undefined) {
-            ctx.response.body = data
+        // if (Object.keys(userData).length === 0 && userData.data === undefined) {
+        //     ctx.response.body = data
 
-            return
-        }
-        userData = userData.data[0]
-        checkEmailExist = await db.findOneDocumentExists("user", { email: userData.email })
+        //     return
+        // }
+        // userData = userData.data[0]
+        fileData = ctx.request.files
+        checkEmailExist = await db.findOneDocumentExists("user", { email: userData.email, _id: { $nin: new ObjectId(userData.id) } })
         if (checkEmailExist == true) {
 
             return ctx.response.body = { status: 0, response: "Email Already Exists" }
         }
         userData.password = await bcrypt.hash(userData.password, 10)
         userData.otp = common.otpGenerate()
+        if (fileData.length !== 0) {
+            userData.profile = await common.uploadBufferToAzureBlob(fileData[0])
+        }
 
         updateuserData = await db.findByIdAndUpdate("user", userData.id, userData)
         if (updateuserData.modifiedCount !== 0 && updateuserData.matchedCount !== 0) {
@@ -196,7 +197,6 @@ const userDetailsById = async (ctx) => {
 
             return ctx.response.body = { status: 0, response: "Invalid id" }
         }
-
         return ctx.response.body = { status: 1, data: JSON.stringify(checkId) }
     } catch (error) {
         console.log(error.message)
@@ -253,14 +253,14 @@ const verifyOtp = async (ctx) => {
         }
         otpData = otpData.data[0]
         privateKey = await fs.readFile('privateKey.key', 'utf8');
-        checkOtp = await db.findDocumentExist("user", { _id: new ObjectId(otpData.id), otp: otpData.otp, status: 2 })
-        if (checkOtp == true) {
+        checkOtp = await db.findSingleDocument("user", { _id: new ObjectId(otpData.id), otp: otpData.otp, status: 2 })
+        if (checkOtp !== null) {
             changeUserstatus = await db.findByIdAndUpdate("user", otpData.id, { status: 1 })
             if (changeUserstatus.modifiedCount !== 0 && changeUserstatus.matchedCount !== 0) {
                 generatedToken = jwt.sign({
-                    userId: checkEmail._id,
-                    role: checkEmail.role,
-                    status: checkEmail.status,
+                    userId: checkOtp._id,
+                    role: checkOtp.role,
+                    status: checkOtp.status,
                 }, privateKey, { algorithm: 'RS256' })
 
                 if (generatedToken) {
@@ -326,17 +326,21 @@ const updateUserDetails = async (ctx) => {
     let data = { status: 0, response: "Something went wrong" }, updateData, checkId, updateUserData;
     try {
         updateData = ctx.request.body;
-        if (Object.keys(updateData).length === 0 && updateData.data === undefined) {
-            ctx.response.body = data
+        // if (Object.keys(updateData).length === 0 && updateData.data === undefined) {
+        //     ctx.response.body = data
 
-            return
-        }
-        updateData = updateData.data[0]
+        //     return
+        // }
+        // updateData = updateData.data[0]
+        fileData = ctx.request.files
 
         checkId = await db.findSingleDocument("user", { _id: new ObjectId(updateData.id), status: 1 })
         if (checkId == null || Object.keys(checkId).length == 0) {
 
             return ctx.response.body = { status: 0, response: "Invalid id" }
+        }
+        if (fileData.length !== 0) {
+            updateData.profile = await common.uploadBufferToAzureBlob(fileData[0])
         }
         updateUserData = await db.findByIdAndUpdate("user", updateData.id, updateData)
         if (updateUserData.modifiedCount !== 0 && updateUserData.matchedCount !== 0) {
@@ -386,7 +390,7 @@ const userConnectionRequest = async (ctx) => {
 
 const getProfileById = async (ctx) => {
     let data = { status: 0, response: "Something went wrong" }, ProfileIdData, checkId, profileData,
-        getConnectionCount, postCount, getFowllersCount, getFowllingCount;
+        getConnectionCount, postCount, getFowllersCount, getFowllingCount, pageDetails, getPagesFollowingCount;
     try {
         ProfileIdData = ctx.request.body;
         if (Object.keys(ProfileIdData).length === 0 && ProfileIdData.data === undefined) {
@@ -409,17 +413,20 @@ const getProfileById = async (ctx) => {
         })
         getFowllersCount = await db.getCountAsync('connection', { recipientId: new ObjectId(ProfileIdData.id), status: { $nin: [3] } })
         getFowllingCount = await db.getCountAsync('connection', { senderId: new ObjectId(ProfileIdData.id), status: { $nin: [3] } })
+        getPagesFollowingCount = await db.getCountAsync('follower', { followerId: new ObjectId(ProfileIdData.id), status: 1 })
         postCount = await db.getCountAsync("post", { createdBy: new ObjectId(ProfileIdData.id), status: 1 })
+        pageDetails = await db.findSingleDocument("companyPage", { createdBy: new ObjectId(ProfileIdData.id) }, { updateAt: 0 })
 
         profileData =
         {
             "detailsCounts": {
                 "postCount": postCount,
                 "followersCount": getFowllersCount,
-                "followingCount": getFowllingCount,
+                "followingCount": getFowllingCount + getPagesFollowingCount,
                 "connectionCount": getConnectionCount
             },
-            "userData": checkId
+            "userData": checkId,
+            "pageData": pageDetails
         }
 
         return ctx.response.body = { status: 1, data: JSON.stringify(profileData) }
@@ -651,7 +658,8 @@ const getConnectionListByUserId = async (ctx) => {
 }
 
 const getFollowingListByUserId = async (ctx) => {
-    let data = { status: 0, response: "Something went wrong" }, userData, aggregationQuery, followingData;
+    let data = { status: 0, response: "Something went wrong" }, userData, userAggregationQuery, followingData,
+        pageAggregationQuery, userfollowingData, pagefollowinData, allData = [];
     try {
         userData = ctx.request.body;
         if (Object.keys(userData).length === 0 && userData.data === undefined) {
@@ -661,7 +669,7 @@ const getFollowingListByUserId = async (ctx) => {
         }
         userData = userData.data[0]
 
-        aggregationQuery = [
+        userAggregationQuery = [
             { $match: { senderId: new ObjectId(userData.id), status: { $nin: [3] } } },
             {
                 $lookup: {
@@ -670,7 +678,6 @@ const getFollowingListByUserId = async (ctx) => {
                     foreignField: "_id",
                     as: "senderData"
                 }
-
             },
             {
                 $lookup: {
@@ -693,22 +700,49 @@ const getFollowingListByUserId = async (ctx) => {
             }
         ]
 
-        followingData = await db.getAggregation('connection', aggregationQuery)
-        if (followingData) {
+        pageAggregationQuery = [
+            { $match: { followerId: new ObjectId(userData.id), status: 1 } },
+            {
+                $lookup: {
+                    from: "companypages",
+                    localField: "companyId",
+                    foreignField: "_id",
+                    as: "companyData"
+                }
 
-            return ctx.response.body = { status: 1, data: JSON.stringify(followingData) }
+            },
+            {
+                $project: {
+                    _id: 1,
+                    followerId: 1,
+                    companyId: 1,
+                    followerName: { '$arrayElemAt': ['$companyData.companyName', 0] },
+                    profile: { '$arrayElemAt': ['$companyData.profile', 0] },
+                    status: 1,
+                    createdAt: 1
+                }
+            }
+        ]
+
+        userfollowingData = await db.getAggregation('connection', userAggregationQuery)
+        pagefollowinData = await db.getAggregation('follower', pageAggregationQuery)
+        allData = [...userfollowingData, ...pagefollowinData]
+        if (allData) {
+
+            return ctx.response.body = { status: 1, data: JSON.stringify(allData) }
         }
     } catch (error) {
         console.log(error.message)
         return ctx.response.body = { status: 0, response: `Error in user Controller - getConnectionListByUserId:-${error.message}` }
     }
 }
+
 const navSearch = async (ctx) => {
     let data = { status: 0, response: "Something went wrong" }, userData, pageData, aggregationQuery = [], searchData, pageDataCount, searchedInfo;
     try {
         searchData = ctx.request.body;
         if (Object.keys(searchData).length === 0 && searchData.data === undefined) {
-            res.send(data)
+            ctx.response.body = data
 
             return
         }
@@ -746,7 +780,6 @@ const navSearch = async (ctx) => {
         return ctx.response.body = { status: 0, response: `Error in user Controller - userConnectionRequest:-${error.message}` }
     }
 }
-
 
 module.exports = {
     userRegister, updateRegisterData, resendOtp,

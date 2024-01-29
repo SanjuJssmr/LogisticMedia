@@ -12,7 +12,7 @@ const questionSchema = mongoose.Schema({
         required: true
     },
     files: {
-        type: Array
+        type: String
     },
     status: {
         type: Number,

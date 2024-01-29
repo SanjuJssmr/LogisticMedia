@@ -1,32 +1,29 @@
 const mongoose = require("mongoose");
 const db = require("../../model/mongodb")
-const path = require("path");
 const common = require("../../model/common");
 const ObjectId = mongoose.Types.ObjectId
-const fs = require("fs")
 
 const addPost = async (ctx) => {
     let data = { status: 0, response: "Invalid request" }
     try {
-        let postData = ctx.request.body, fileData = ctx.request.files, postInfo, likeInfo, postFolderpath = "posts", filePath;
+        let postData = ctx.request.body, fileData = ctx.request.files, postInfo, likeInfo, filePath;
         if (Object.keys(postData).length === 0 && postData == undefined) {
-            res.send(data)
+            ctx.response.body = data
 
             return
+        }
+        postData.files = []
+        if (fileData.length !== 0) {
+            for (let file of fileData) {
+                filePath = await common.uploadBufferToAzureBlob(file)
+                postData.files.push(filePath)
+            }
         }
         postInfo = await db.insertSingleDocument("post", postData)
         if (Object.keys(postInfo).length !== 0) {
             likeInfo = await db.insertSingleDocument("postLike", { postId: postInfo._id })
             if (Object.keys(likeInfo).length !== 0) {
-                if (fileData.length !== 0) {
-                    for (const fileInfo of fileData) {
-                        await common.uploadFileAzure(postFolderpath, `${postInfo._id}`, fileInfo)
-                        filePath = `/posts/${postInfo._id}/${fileInfo.originalname}`
-                        await db.updateOneDocument("post", { _id: postInfo._id }, { $push: { files: filePath } })
-                    }
 
-                    return ctx.response.body = { status: 1, response: "Post added successfully" }
-                }
                 return ctx.response.body = { status: 1, response: "Post added successfully" }
             }
             return ctx.response.body = data
@@ -44,7 +41,7 @@ const deletePost = async (ctx) => {
     try {
         let postData = ctx.request.body, postInfo, updateInfo;
         if (Object.keys(postData).length === 0 && postData.data === undefined) {
-            res.send(data)
+            ctx.response.body = data
 
             return
         }
@@ -73,7 +70,7 @@ const getMyPost = async (ctx) => {
     try {
         let postData = ctx.request.body, postInfo, aggregationQuery = [];
         if (Object.keys(postData).length === 0 && postData.data === undefined) {
-            res.send(data)
+            ctx.response.body = data
 
             return
         }
@@ -147,7 +144,7 @@ const getMyPagePost = async (ctx) => {
     try {
         let postData = ctx.request.body, postInfo, aggregationQuery = [];
         if (Object.keys(postData).length === 0 && postData.data === undefined) {
-            res.send(data)
+            ctx.response.body = data
 
             return
         }
@@ -314,7 +311,7 @@ const postComment = async (ctx) => {
     try {
         let commentData = ctx.request.body, postInfo, commentInfo;
         if (Object.keys(commentData).length === 0 && commentData.data === undefined) {
-            res.send(data)
+            ctx.response.body = data
 
             return
         }
@@ -341,7 +338,7 @@ const deleteComment = async (ctx) => {
     try {
         let commentData = ctx.request.body, commentInfo, updateInfo;
         if (Object.keys(commentData).length === 0 && commentData.data === undefined) {
-            res.send(data)
+            ctx.response.body = data
 
             return
         }
@@ -368,7 +365,7 @@ const addReply = async (ctx) => {
     try {
         let replyData = ctx.request.body, commentInfo, updateInfo, userInfo;
         if (Object.keys(replyData).length === 0 && replyData.data === undefined) {
-            res.send(data)
+            ctx.response.body = data
 
             return
         }
@@ -395,7 +392,7 @@ const deleteReply = async (ctx) => {
     try {
         let replyData = ctx.request.body, commentInfo, updateInfo, replyInfo, userInfo;
         if (Object.keys(replyData).length === 0 && replyData.data === undefined) {
-            res.send(data)
+            ctx.response.body = data
 
             return
         }
@@ -427,7 +424,7 @@ const getCommentsAndReplies = async (ctx) => {
     try {
         let postData = ctx.request.body, postInfo, commentAndReplies, aggregationQuery = [];
         if (Object.keys(postData).length === 0 && postData.data === undefined) {
-            res.send(data)
+            ctx.response.body = data
 
             return
         }
@@ -522,7 +519,7 @@ const updateLike = async (ctx) => {
     try {
         let postData = ctx.request.body, postInfo, likeInfo;
         if (Object.keys(postData).length === 0 && postData.data === undefined) {
-            res.send(data)
+            ctx.response.body = data
 
             return
         }
@@ -559,7 +556,7 @@ const getForYouPost = async (ctx) => {
     try {
         let postData = ctx.request.body, postInfo, aggregationQuery = [];
         if (Object.keys(postData).length === 0 && postData.data === undefined) {
-            res.send(data)
+            ctx.response.body = data
 
             return
         }
@@ -651,7 +648,7 @@ const reportPost = async (ctx) => {
     try {
         let postData = ctx.request.body, postInfo;
         if (Object.keys(postData).length === 0 && postData.data === undefined) {
-            res.send(data)
+            ctx.response.body = data
 
             return
         }
@@ -685,7 +682,7 @@ const getPostById = async (ctx) => {
     try {
         let postData = ctx.request.body, postInfo, aggregationQuery = [];
         if (Object.keys(postData).length === 0 && postData.data === undefined) {
-            res.send(data)
+            ctx.response.body = data
 
             return
         }
@@ -729,7 +726,7 @@ const getFriendsPost = async (ctx) => {
     try {
         let connectionData = ctx.request.body, postInfo, aggregationQuery = [];
         if (Object.keys(connectionData).length === 0 && connectionData.data === undefined) {
-            res.send(data)
+            ctx.response.body = data
 
             return
         }

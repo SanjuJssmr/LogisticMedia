@@ -7,7 +7,7 @@ const getAllChatInfo = async (ctx) => {
     try {
         let connectionData = ctx.request.body, chatInfo, aggregationQuery = [];
         if (Object.keys(connectionData).length === 0 && connectionData.data === undefined) {
-            res.send(data)
+            ctx.response.body = data
 
             return
         }
@@ -102,7 +102,7 @@ const updateChatStatus = async (ctx) => {
     try {
         let chatData = ctx.request.body, chatInfo, updateInfo;
         if (Object.keys(chatData).length === 0 && chatData.data === undefined) {
-            res.send(data)
+            ctx.response.body = data
 
             return
         }
@@ -129,7 +129,7 @@ const getChatsByConnectionId = async (ctx) => {
     try {
         let chatData = ctx.request.body, chatInfo, aggregationQuery = [];
         if (Object.keys(chatData).length === 0 && chatData.data === undefined) {
-            res.send(data)
+            ctx.response.body = data
 
             return
         }

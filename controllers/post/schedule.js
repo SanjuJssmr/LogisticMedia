@@ -8,7 +8,7 @@ const addSchedule = async (ctx) => {
     try {
         let scheduleData = ctx.request.body, scheduleInfo, likeInfo;
         if (Object.keys(scheduleData).length === 0 && scheduleData.data === undefined) {
-            res.send(data)
+            ctx.response.body = data
 
             return
         }
@@ -35,7 +35,7 @@ const deleteSchedule = async (ctx) => {
     try {
         let scheduleData = ctx.request.body, scheduleInfo, updateInfo;
         if (Object.keys(scheduleData).length === 0 && scheduleData.data === undefined) {
-            res.send(data)
+            ctx.response.body = data
 
             return
         }
@@ -64,7 +64,7 @@ const getMySchedule = async (ctx) => {
     try {
         let scheduleData = ctx.request.body, scheduleInfo, aggregationQuery = [];
         if (Object.keys(scheduleData).length === 0 && scheduleData.data === undefined) {
-            res.send(data)
+            ctx.response.body = data
 
             return
         }
@@ -162,7 +162,8 @@ const getAllSchedule = async (ctx) => {
                 $addFields: {
                     likedBy: "$scheduleInfo.likedBy",
                     fullName: "$companyInfo.companyName",
-                    profile: "$companyInfo.profile"
+                    profile: "$companyInfo.profile",
+                    companyId: "$companyInfo._id"
                 }
             },
             {
@@ -176,6 +177,7 @@ const getAllSchedule = async (ctx) => {
                     "createdAt": 1,
                     "companyName": { '$arrayElemAt': ['$fullName', 0] },
                     "companyProfile": { '$arrayElemAt': ['$profile', 0] },
+                    "companyId": { '$arrayElemAt': ['$companyId', 0] },
                     'likedBy': { '$arrayElemAt': ['$likedBy', 0] },
                 }
             },
@@ -204,7 +206,7 @@ const getScheduleById = async (ctx) => {
     try {
         let scheduleData = ctx.request.body, scheduleInfo, aggregationQuery = [];
         if (Object.keys(scheduleData).length === 0 && scheduleData.data === undefined) {
-            res.send(data)
+            ctx.response.body = data
 
             return
         }
@@ -270,7 +272,7 @@ const postComment = async (ctx) => {
     try {
         let commentData = ctx.request.body, scheduleInfo, commentInfo;
         if (Object.keys(commentData).length === 0 && commentData.data === undefined) {
-            res.send(data)
+            ctx.response.body = data
 
             return
         }
@@ -297,7 +299,7 @@ const deleteComment = async (ctx) => {
     try {
         let commentData = ctx.request.body, commentInfo, updateInfo;
         if (Object.keys(commentData).length === 0 && commentData.data === undefined) {
-            res.send(data)
+            ctx.response.body = data
 
             return
         }
@@ -324,7 +326,7 @@ const addReply = async (ctx) => {
     try {
         let replyData = ctx.request.body, commentInfo, updateInfo;
         if (Object.keys(replyData).length === 0 && replyData.data === undefined) {
-            res.send(data)
+            ctx.response.body = data
 
             return
         }
@@ -351,7 +353,7 @@ const deleteReply = async (ctx) => {
     try {
         let replyData = ctx.request.body, commentInfo, updateInfo, replyInfo, userInfo;
         if (Object.keys(replyData).length === 0 && replyData.data === undefined) {
-            res.send(data)
+            ctx.response.body = data
 
             return
         }
@@ -383,7 +385,7 @@ const getCommentsAndReplies = async (ctx) => {
     try {
         let scheduleData = ctx.request.body, scheduleInfo, commentAndReplies, aggregationQuery = [];
         if (Object.keys(scheduleData).length === 0 && scheduleData.data === undefined) {
-            res.send(data)
+            ctx.response.body = data
 
             return
         }
@@ -478,7 +480,7 @@ const updateLike = async (ctx) => {
     try {
         let scheduleData = ctx.request.body, scheduleInfo, likeInfo;
         if (Object.keys(scheduleData).length === 0 && scheduleData.data === undefined) {
-            res.send(data)
+            ctx.response.body = data
 
             return
         }
@@ -510,5 +512,7 @@ const updateLike = async (ctx) => {
     }
 }
 
-module.exports = { addSchedule, deleteSchedule, getMySchedule, getScheduleById, postComment, getCommentsAndReplies,
-    deleteComment, addReply, deleteReply, updateLike, getAllSchedule }
+module.exports = {
+    addSchedule, deleteSchedule, getMySchedule, getScheduleById, postComment, getCommentsAndReplies,
+    deleteComment, addReply, deleteReply, updateLike, getAllSchedule
+}
