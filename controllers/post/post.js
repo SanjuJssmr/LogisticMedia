@@ -142,7 +142,7 @@ const getMyPost = async (ctx) => {
     }
 }
 
-const getPagePost = async (ctx) => {
+const getMyPagePost = async (ctx) => {
     let data = { status: 0, response: "Invalid request" }
     try {
         let postData = ctx.request.body, postInfo, aggregationQuery = [];
@@ -942,8 +942,88 @@ const getAllNews = async (ctx) => {
     }
 }
 
+const getPagePost = async (ctx) => {
+    try {
+        let postInfo, aggregationQuery = [];
+        aggregationQuery = [
+            {
+                $match: { companyId: { $exists: true } },
+            },
+            {
+                $lookup:
+                {
+                    from: "users",
+                    localField: "createdBy",
+                    foreignField: "_id",
+                    as: "userInfo",
+                }
+            },
+            {
+                $lookup:
+                {
+                    from: "companypages",
+                    localField: "companyId",
+                    foreignField: "_id",
+                    as: "companyInfo",
+                }
+            },
+            {
+                $lookup:
+                {
+                    from: "postlikes",
+                    localField: "_id",
+                    foreignField: "postId",
+                    as: "postInfo",
+                }
+            },
+            {
+                $addFields: {
+                    likedBy: "$postInfo.likedBy",
+                    fullName: "$userInfo.fullName",
+                    designation: "$userInfo.designation",
+                    profile: "$userInfo.profile",
+                    companyName: "$companyInfo.companyName",
+                    companyProfile: "$companyInfo.profile"
+                }
+            },
+            {
+                $project: {
+                    "createdBy": "$createdBy",
+                    "description": "$description",
+                    "hashtags": "$hashtags",
+                    "files": "$files",
+                    "createdAt": "$createdAt",
+                    "fullName": { '$arrayElemAt': ['$fullName', 0] },
+                    "designation": { '$arrayElemAt': ['$designation', 0] },
+                    "profile": { '$arrayElemAt': ['$profile', 0] },
+                    "likedBy": { '$arrayElemAt': ['$likedBy', 0] },
+                    "companyName": { '$arrayElemAt': ['$companyName', 0] },
+                    'companyProfile': { '$arrayElemAt': ['$companyProfile', 0] },
+                }
+            },
+            {
+                $addFields: {
+                    likes: { $size: "$likedBy" },
+                }
+            },
+            {
+                $sort: {
+                    createdAt: -1,
+                }
+            },
+
+        ]
+        postInfo = await db.getAggregation("post", aggregationQuery)
+
+        return ctx.response.body = { status: 1, data: postInfo }
+    } catch (error) {
+        console.log(error)
+        return ctx.response.body = { status: 0, response: `Error in post controllers/getTrendingPost - ${error.message}` }
+    }
+}
+
 module.exports = {
     addPost, deletePost, getMyPost, postComment, deleteComment, addReply,
     deleteReply, getCommentsAndReplies, updateLike, getTrendingPost, getForYouPost, reportPost,
-    getPostById, getFriendsPost, getPagePost, getAllNews
+    getPostById, getFriendsPost, getMyPagePost, getAllNews, getPagePost
 }
