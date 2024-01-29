@@ -391,6 +391,9 @@ const getCompanyDataByFollowersDescending = async (ctx) => {
                 $sort: { count: -1 }
             },
             {
+                $limit: 10 // Add $limit stage to limit the results to 10 documents
+            },
+            {
                 $lookup: {
                     from: 'companypages', // Replace with the actual collection name
                     localField: '_id',

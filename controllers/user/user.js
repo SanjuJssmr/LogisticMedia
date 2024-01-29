@@ -9,7 +9,6 @@ const { ObjectId } = require("bson")
 const { transporter } = require('../../model/mail')
 let mailResendAttempts = 2
 let templatePathUser = path.resolve('./templates')
-let profileFolderPath = "userProfile"
 
 const registrationOtpMail = async (mailData) => {
     let errorData, mailOptions
@@ -53,7 +52,6 @@ const registrationOtpMail = async (mailData) => {
         console.log(`Error sending Registration OTP verification : ${error.message}`)
     }
 }
-
 //Resend OTP Mail
 const resendOtpMail = async (mailData) => {
     let errorData, mailOptions
@@ -577,6 +575,7 @@ const getFollowListByUserId = async (ctx) => {
                     _id: 1,
                     senderId: 1,
                     senderName: { '$arrayElemAt': ['$senderData.fullName', 0] },
+                    profile: { '$arrayElemAt': ['$senderData.profile', 0] },
                     recipientId: 1,
                     recipientName: { '$arrayElemAt': ['$recipientData.fullName', 0] },
                     status: 1,
@@ -640,6 +639,7 @@ const getConnectionListByUserId = async (ctx) => {
                     senderName: { '$arrayElemAt': ['$senderData.fullName', 0] },
                     recipientId: 1,
                     recipientName: { '$arrayElemAt': ['$recipientData.fullName', 0] },
+                    profile: { '$arrayElemAt': ['$recipientData.profile', 0] },
                     status: 1,
                     createdAt: 1,
                 }
@@ -694,6 +694,7 @@ const getFollowingListByUserId = async (ctx) => {
                     senderName: { '$arrayElemAt': ['$senderData.fullName', 0] },
                     recipientId: 1,
                     recipientName: { '$arrayElemAt': ['$recipientData.fullName', 0] },
+                    profile: { '$arrayElemAt': ['$recipientData.profile', 0] },
                     status: 1,
                     createdAt: 1,
                 }
