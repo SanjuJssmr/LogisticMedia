@@ -24,7 +24,7 @@ const app = new koa()
 app.use(bodyParser())
 
 app.use(cors({
-  origin: 'http://localhost:5173',   // specify the allowed origins
+  origin: '*',   // specify the allowed origins
   credentials: true,               // include credentials in CORS requests
   methods: ['GET', 'POST'],        // specify allowed HTTP methods
   allowedHeaders: ["Origin", "X-Requested-with", "Content-Type", "Accept", "Authorization"], // specify allowed headers
