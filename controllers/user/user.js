@@ -99,16 +99,16 @@ const resendOtpMail = async (mailData) => {
 }
 
 const userRegister = async (ctx) => {
-    let data = { status: 0, response: "Something went wrong" }, userData, checkEmailExist, userInsert, fileData;
+    let data = { status: 0, response: "Something went wrong" }, userData, checkEmailExist, userInsert, fileData, fileUrl;
     try {
         userData = ctx.request.body;
-        if (Object.keys(userData).length === 0 && userData.data === undefined) {
-            ctx.response.body = data
+        // if (Object.keys(userData).length === 0 && userData.data === undefined) {
+        //     ctx.response.body = data
 
-            return
-        }
-        userData = userData.data[0]
-        // fileData = ctx.request.files
+        //     return
+        // }
+        // userData = userData.data[0]
+        fileData = ctx.request.files
         checkEmailExist = await db.findOneDocumentExists("user", { email: userData.email })
         if (checkEmailExist == true) {
 
@@ -116,14 +116,11 @@ const userRegister = async (ctx) => {
         }
         userData.password = await bcrypt.hash(userData.password, 10)
         userData.otp = common.otpGenerate()
-
+        if (fileData.length !== 0) {
+            userData.profile = await common.uploadBufferToAzureBlob(fileData[0])
+        }
         userInsert = await db.insertSingleDocument("user", userData)
         if (Object.keys(userInsert).length !== 0) {
-            // if (fileData.length !== 0) {
-            //     await common.uploadFileAzure(profileFolderPath, `${userInsert._id}`, fileData[0])
-            //     filePath = `/${profileFolderPath}/${userInsert._id}/${fileData[0].originalname}`
-            //     await db.findByIdAndUpdate("user", userInsert._id, { profile: filePath })
-            // }
             await registrationOtpMail(
                 {
                     emailTo: userInsert.email,
@@ -143,15 +140,16 @@ const userRegister = async (ctx) => {
 }
 
 const updateRegisterData = async (ctx) => {
-    let data = { status: 0, response: "Something went wrong" }, userData, checkEmailExist, updateuserData;
+    let data = { status: 0, response: "Something went wrong" }, userData, checkEmailExist, updateuserData, fileData;
     try {
         userData = ctx.request.body;
-        if (Object.keys(userData).length === 0 && userData.data === undefined) {
-            ctx.response.body = data
+        // if (Object.keys(userData).length === 0 && userData.data === undefined) {
+        //     ctx.response.body = data
 
-            return
-        }
-        userData = userData.data[0]
+        //     return
+        // }
+        // userData = userData.data[0]
+        fileData = ctx.request.files
         checkEmailExist = await db.findOneDocumentExists("user", { email: userData.email, _id: { $nin: new ObjectId(userData.id) } })
         if (checkEmailExist == true) {
 
@@ -159,6 +157,9 @@ const updateRegisterData = async (ctx) => {
         }
         userData.password = await bcrypt.hash(userData.password, 10)
         userData.otp = common.otpGenerate()
+        if (fileData.length !== 0) {
+            userData.profile = await common.uploadBufferToAzureBlob(fileData[0])
+        }
 
         updateuserData = await db.findByIdAndUpdate("user", userData.id, userData)
         if (updateuserData.modifiedCount !== 0 && updateuserData.matchedCount !== 0) {
@@ -196,7 +197,6 @@ const userDetailsById = async (ctx) => {
 
             return ctx.response.body = { status: 0, response: "Invalid id" }
         }
-        // checkId.profile = await common.getImageFromShare(checkId.profile)
         return ctx.response.body = { status: 1, data: JSON.stringify(checkId) }
     } catch (error) {
         console.log(error.message)
@@ -326,17 +326,21 @@ const updateUserDetails = async (ctx) => {
     let data = { status: 0, response: "Something went wrong" }, updateData, checkId, updateUserData;
     try {
         updateData = ctx.request.body;
-        if (Object.keys(updateData).length === 0 && updateData.data === undefined) {
-            ctx.response.body = data
+        // if (Object.keys(updateData).length === 0 && updateData.data === undefined) {
+        //     ctx.response.body = data
 
-            return
-        }
-        updateData = updateData.data[0]
+        //     return
+        // }
+        // updateData = updateData.data[0]
+        fileData = ctx.request.files
 
         checkId = await db.findSingleDocument("user", { _id: new ObjectId(updateData.id), status: 1 })
         if (checkId == null || Object.keys(checkId).length == 0) {
 
             return ctx.response.body = { status: 0, response: "Invalid id" }
+        }
+        if (fileData.length !== 0) {
+            updateData.profile = await common.uploadBufferToAzureBlob(fileData[0])
         }
         updateUserData = await db.findByIdAndUpdate("user", updateData.id, updateData)
         if (updateUserData.modifiedCount !== 0 && updateUserData.matchedCount !== 0) {

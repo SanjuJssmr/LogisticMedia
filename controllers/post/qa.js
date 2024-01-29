@@ -1,9 +1,7 @@
 const mongoose = require("mongoose");
 const db = require("../../model/mongodb")
-const path = require("path");
 const common = require("../../model/common");
 const ObjectId = mongoose.Types.ObjectId
-const fs = require("fs")
 
 const askQuestion = async (ctx) => {
     let data = { status: 0, response: "Invalid request" }
@@ -14,17 +12,13 @@ const askQuestion = async (ctx) => {
 
             return
         }
+        if (fileData.length !== 0) {
+            questionData.files = await common.uploadBufferToAzureBlob(fileData[0])
+        }
         questionInfo = await db.insertSingleDocument("question", questionData)
         if (Object.keys(questionInfo).length !== 0) {
             likeInfo = await db.insertSingleDocument("questionLike", { questionId: questionInfo._id })
             if (Object.keys(likeInfo).length !== 0) {
-                if (fileData.length !== 0) {
-                    await common.uploadFileAzure(postFolderpath, `${questionInfo._id}`, fileData[0])
-                    filePath = `/posts/${questionInfo._id}/${fileData[0].originalname}`
-                    await db.updateOneDocument("question", { _id: questionInfo._id }, { $push: { files: filePath } })
-
-                    return ctx.response.body = { status: 1, response: "Question added successfully" }
-                }
 
                 return ctx.response.body = { status: 1, response: "Question added successfully" }
             }

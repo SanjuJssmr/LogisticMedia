@@ -94,15 +94,17 @@ const resendOtpMail = async (mailData) => {
 }
 
 const addCompanyPages = async (ctx) => {
-    let data = { status: 0, response: "Something went wrong" }, pageData, checkUserEmailExist, checkPageEmailExist, pageInsert;
+    let data = { status: 0, response: "Something went wrong" }, pageData, checkUserEmailExist, checkPageEmailExist,
+        pageInsert, fileData;
     try {
         pageData = ctx.request.body;
-        if (Object.keys(pageData).length === 0 && pageData.data === undefined) {
-            ctx.response.body = data
+        // if (Object.keys(pageData).length === 0 && pageData.data === undefined) {
+        //     ctx.response.body = data
 
-            return
-        }
-        pageData = pageData.data[0]
+        //     return
+        // }
+        // pageData = pageData.data[0]
+        fileData = ctx.request.files
         checkUserEmailExist = await db.findOneDocumentExists("user", { email: pageData.email })
         if (checkUserEmailExist == true) {
 
@@ -114,6 +116,9 @@ const addCompanyPages = async (ctx) => {
             return ctx.response.body = { status: 0, response: "Email Already Exists or user Having Already an page" }
         }
         pageData.otp = common.otpGenerate()
+        if (fileData.length !== 0) {
+            pageData.profile = await common.uploadBufferToAzureBlob(fileData[0])
+        }
 
         pageInsert = await db.insertSingleDocument("companyPage", pageData)
         if (Object.keys(pageInsert).length !== 0) {
