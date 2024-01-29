@@ -13,7 +13,7 @@ const jwt = require("jsonwebtoken");
 const socketIo = require("socket.io");
 const db = require("./model/mongodb")
 
-const io = socketIo(process.env.SOCKETPORT, {
+const io = socketIo(8900, {
   cors: {
     origin: "*",
   },
@@ -35,25 +35,6 @@ app.on('error', (err, ctx) => {
   console.log('server error', err, ctx)
 });
 
-io.use(async (socket, next) => {
-  try {
-    const token = socket.handshake.query.token;
-
-    let privateKey = await fs.readFile("privateKey.key", "utf8");
-
-    let verifyAccessToken = jwt.verify(token, privateKey, {
-      algorithms: ["RS256"],
-    });
-    let checkAccessAuth = await common.checkUserInDB(verifyAccessToken);
-    if (checkAccessAuth == null || checkAccessAuth.length === 0) {
-      return res.status(401).send("Unauthorized");
-    }
-    next();
-  } catch (error) {
-    next(new Error('Authentication failed'));
-  }
-});
-
 
 let users = [];
 
@@ -73,14 +54,15 @@ io.on("connection", (socket) => {
     io.emit("getUsers", users);
   });
 
-  socket.on("sendMessage", async ({ connectionId, senderId, receiverId, message }) => {
+  socket.on("sendMessage", async ({ connectionId, senderId,senderName, receiverId, message, createdAt }) => {
     const user = getUser(receiverId, users);
     if (user.length !== 0) {
       io.to(user[0].socketId).emit("getMessage", {
         senderId,
         senderName,
+        receiverId,
         message,
-        createdAt
+        createdAt,
       });
       await db.insertSingleDocument("chat", { connectionId: connectionId, sender: senderId, message: message, status: 1 })
     }
