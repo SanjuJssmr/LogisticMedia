@@ -1,7 +1,5 @@
 //Imports
 const db = require('../model/mongodb')
-const { ShareServiceClient } = require("@azure/storage-file-share")
-const fs = require('fs').promises
 const CONFIG = require('../config/config')
 let CONFIGJSON = require('../config/config.json')
 const path = require('path')
@@ -88,8 +86,6 @@ const otpGenerate = () => {
     console.log('Error in common/otpGenerate' + error.message + '');
   }
 }
-
-
 
 module.exports = {
   otpGenerate,
