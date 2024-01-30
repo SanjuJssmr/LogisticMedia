@@ -165,7 +165,8 @@ const updateRegisterData = async (ctx) => {
                 {
                     emailTo: userData.email,
                     fullName: userData.fullName,
-                    otp: userData.otp
+                    otp: userData.otp,
+                    type: "account"
                 }
             )
 
@@ -222,11 +223,12 @@ const resendOtp = async (ctx) => {
 
         updateOtp = await db.findOneAndUpdate("user", { email: userData.email }, { otp: userData.otp })
         if (Object.keys(updateOtp).length !== 0) {
-            await resendOtpMail(
+            await registrationOtpMail(
                 {
                     emailTo: userData.email,
                     fullName: checkEmail.fullName,
-                    otp: userData.otp
+                    otp: userData.otp,
+                    type: "account"
                 }
             )
 

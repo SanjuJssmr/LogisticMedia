@@ -126,7 +126,8 @@ const addCompanyPages = async (ctx) => {
                 {
                     emailTo: pageInsert.email,
                     fullName: pageInsert.companyName,
-                    otp: pageInsert.otp
+                    otp: pageInsert.otp,
+                    type: "company page"
                 }
             )
 
@@ -160,11 +161,12 @@ const resendOtp = async (ctx) => {
 
         updateOtp = await db.findOneAndUpdate("companyPage", { email: pageData.email }, { otp: pageData.otp })
         if (Object.keys(updateOtp).length !== 0) {
-            await resendOtpMail(
+            await registrationOtpMail(
                 {
                     emailTo: pageData.email,
                     fullName: checkEmail.companyName,
-                    otp: pageData.otp
+                    otp: pageData.otp,
+                    type: "company page"
                 }
             )
 
