@@ -95,7 +95,8 @@ const getMySchedule = async (ctx) => {
                 $addFields: {
                     likedBy: "$scheduleInfo.likedBy",
                     fullName: "$companyInfo.companyName",
-                    profile: "$companyInfo.profile"
+                    profile: "$companyInfo.profile",
+                    companyId:"$companyInfo._id"
                 }
             },
             {
@@ -107,6 +108,7 @@ const getMySchedule = async (ctx) => {
                     "createdBy": 1,
                     "description": 1,
                     "createdAt": 1,
+                    "companyId": { '$arrayElemAt': ['$companyId', 0] },
                     "companyName": { '$arrayElemAt': ['$fullName', 0] },
                     "companyProfile": { '$arrayElemAt': ['$profile', 0] },
                     'likedBy': { '$arrayElemAt': ['$likedBy', 0] },

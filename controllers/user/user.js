@@ -752,6 +752,7 @@ const navSearch = async (ctx) => {
         searchData = searchData.data[0]
         searchTerm = searchData.term.trim()
         userData = await db.findDocumentsWithLimit('user', {
+            status: 1,
             $or: [
                 { fullName: { $regex: searchTerm, $options: 'i' } },
                 { designation: { $regex: searchTerm, $options: 'i' } },
@@ -760,7 +761,9 @@ const navSearch = async (ctx) => {
         }, { fullName: 1, profile: 1 }, 10)
 
         pageData = await db.findDocumentsWithLimit('companyPage', {
+            status: 1,
             $or: [
+
                 { companyName: { $regex: searchTerm, $options: 'i' } },
                 { about: { $regex: searchTerm, $options: 'i' } }
             ]
