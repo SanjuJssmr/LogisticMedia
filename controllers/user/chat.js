@@ -153,14 +153,14 @@ const getChatsByConnectionId = async (ctx) => {
                 }
             },
             {
-                $project:{
-                    "_id":0,
-                    "senderId":"$sender",
-                    "message":"$message",
-                    "fullName": {"$arrayElemAt":["$fullName",0]},
-                    "profile":{"$arrayElemAt":["$profile",0]},
-                    "status":"$status",
-                    "createdAt":"$createdAt"
+                $project: {
+                    "_id": 0,
+                    "senderId": "$sender",
+                    "message": "$message",
+                    "fullName": { "$arrayElemAt": ["$fullName", 0] },
+                    "profile": { "$arrayElemAt": ["$profile", 0] },
+                    "status": "$status",
+                    "createdAt": "$createdAt"
                 }
             }
         ]

@@ -7,6 +7,7 @@ const addPost = async (ctx) => {
     let data = { status: 0, response: "Invalid request" }
     try {
         let postData = ctx.request.body, fileData = ctx.request.files, postInfo, likeInfo, filePath;
+        postData.hashtags = JSON.parse(postData.hashTags)
         if (Object.keys(postData).length === 0 && postData == undefined) {
             ctx.response.body = data
 
@@ -944,7 +945,7 @@ const getPagePost = async (ctx) => {
         let postInfo, aggregationQuery = [];
         aggregationQuery = [
             {
-                $match: { companyId: { $exists: true } },
+                $match: { $and: [{ companyId: { $exists: true } }, { status: 1 }] },
             },
             {
                 $lookup:
@@ -1012,7 +1013,7 @@ const getPagePost = async (ctx) => {
         ]
         postInfo = await db.getAggregation("post", aggregationQuery)
 
-        return ctx.response.body = { status: 1, data: postInfo }
+        return ctx.response.body = { status: 1, data: JSON.stringify(postInfo) }
     } catch (error) {
         console.log(error)
         return ctx.response.body = { status: 0, response: `Error in post controllers/getTrendingPost - ${error.message}` }
