@@ -7,6 +7,7 @@ const fs = require("fs").promises
 const jwt = require("jsonwebtoken")
 const { ObjectId } = require("bson")
 const { transporter } = require('../../model/mail')
+const CONFIG = require("../../config/config")
 let mailResendAttempts = 2
 let templatePathUser = path.resolve('./templates')
 
@@ -18,7 +19,9 @@ const registrationOtpMail = async (mailData) => {
             {
                 fullName: mailData.fullName,
                 email: mailData.emailTo,
-                otp: mailData.otp
+                otp: mailData.otp,
+                type: mailData.type,
+                url: mailData.url
             }
             , async (err, data) => {
                 if (err) {
@@ -123,7 +126,9 @@ const userRegister = async (ctx) => {
                 {
                     emailTo: userInsert.email,
                     fullName: userInsert.fullName,
-                    otp: userInsert.otp
+                    otp: userInsert.otp,
+                    type: "account",
+                    uri: `${CONFIG.UIPORT}/${userInsert._id}`
                 }
             )
 
@@ -228,7 +233,8 @@ const resendOtp = async (ctx) => {
                     emailTo: userData.email,
                     fullName: checkEmail.fullName,
                     otp: userData.otp,
-                    type: "account"
+                    type: "account",
+                    uri: `${CONFIG.UIPORT}/${checkEmail._id}`
                 }
             )
 

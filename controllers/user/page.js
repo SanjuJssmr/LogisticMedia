@@ -4,6 +4,7 @@ const ejs = require('ejs')
 const path = require("path")
 const { ObjectId } = require("bson")
 const { transporter } = require('../../model/mail')
+const CONFIG = require("../../config/config")
 let mailResendAttempts = 2
 let templatePathUser = path.resolve('./templates')
 
@@ -15,7 +16,9 @@ const registrationOtpMail = async (mailData) => {
             {
                 fullName: mailData.fullName,
                 email: mailData.emailTo,
-                otp: mailData.otp
+                otp: mailData.otp,
+                type: mailData.type,
+                url: mailData.url
             }
             , async (err, data) => {
                 if (err) {
@@ -127,7 +130,8 @@ const addCompanyPages = async (ctx) => {
                     emailTo: pageInsert.email,
                     fullName: pageInsert.companyName,
                     otp: pageInsert.otp,
-                    type: "company page"
+                    type: "company page",
+                    url: `${CONFIG.UIPORT}/${pageInsert._id}`
                 }
             )
 
@@ -166,7 +170,8 @@ const resendOtp = async (ctx) => {
                     emailTo: pageData.email,
                     fullName: checkEmail.companyName,
                     otp: pageData.otp,
-                    type: "company page"
+                    type: "company page",
+                    url: `${CONFIG.UIPORT}/${checkEmail._id}`
                 }
             )
 
