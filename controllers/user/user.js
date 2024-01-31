@@ -356,7 +356,7 @@ const updateUserDetails = async (ctx) => {
 }
 
 const userConnectionRequest = async (ctx) => {
-    let data = { status: 0, response: "Something went wrong" }, connectionData, checkId, insertConnection;
+    let data = { status: 0, response: "Something went wrong" }, connectionData, checkConnection, insertConnection;
     try {
         connectionData = ctx.request.body;
         if (Object.keys(connectionData).length === 0 && connectionData.data === undefined) {
@@ -375,6 +375,13 @@ const userConnectionRequest = async (ctx) => {
         if (checkRecipientId == false) {
 
             return ctx.response.body = { status: 0, response: "Invalid id" }
+        }
+        checkConnection = await db.findDocumentExist("connection", { senderId: new ObjectId(connectionData.senderId), recipientId: new ObjectId(connectionData.recipientId) })
+        if (checkConnection == true) {
+            updateConectionStatus = await db.findOneAndUpdate("connection", { senderId: new ObjectId(connectionData.senderId), recipientId: new ObjectId(connectionData.recipientId) }, { status: 2 })
+            if (updateConectionStatus) {
+                return ctx.response.body = { status: 1, response: "Request Sent Sucessfully" }
+            }
         }
         insertConnection = await db.insertSingleDocument("connection", connectionData)
         if (insertConnection) {
@@ -411,7 +418,7 @@ const getProfileById = async (ctx) => {
                 { recipientId: new ObjectId(ProfileIdData.id), status: 1 }
             ]
         })
-        getFowllersCount = await db.getCountAsync('connection', { recipientId: new ObjectId(ProfileIdData.id), status: { $nin: [3] } })
+        getFowllersCount = await db.getCountAsync('connection', { recipientId: new ObjectId(ProfileIdData.id) })
         getFowllingCount = await db.getCountAsync('connection', { senderId: new ObjectId(ProfileIdData.id), status: { $nin: [3] } })
         getPagesFollowingCount = await db.getCountAsync('follower', { followerId: new ObjectId(ProfileIdData.id), status: 1 })
         postCount = await db.getCountAsync("post", { createdBy: new ObjectId(ProfileIdData.id), status: 1 })
@@ -556,7 +563,7 @@ const getFollowListByUserId = async (ctx) => {
         userData = userData.data[0]
 
         aggregationQuery = [
-            { $match: { recipientId: new ObjectId(userData.id), status: { $nin: [3] } } },
+            { $match: { recipientId: new ObjectId(userData.id) } },
             {
                 $lookup: {
                     from: "users",
