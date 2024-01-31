@@ -259,6 +259,13 @@ const pageFollow = async (ctx) => {
 
             return ctx.response.body = { status: 0, response: "Invalid FollowerId" }
         }
+        checkFollow = await db.findDocumentExist("follower", { companyId: new ObjectId(followData.companyId), followerId: new ObjectId(followData.followerId) })
+        if (checkFollow == true) {
+            updateConectionStatus = await db.findOneAndUpdate("follower", { companyId: new ObjectId(followData.companyId), followerId: new ObjectId(followData.followerId) }, { status: 1 })
+            if (updateConectionStatus) {
+                return ctx.response.body = { status: 1, response: "followed Sucessfully" }
+            }
+        }
         insertFollowData = await db.insertSingleDocument("follower", followData)
         if (insertFollowData) {
 
