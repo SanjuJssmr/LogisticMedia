@@ -7,6 +7,7 @@ const fs = require("fs").promises
 const jwt = require("jsonwebtoken")
 const { ObjectId } = require("bson")
 const { transporter } = require('../../model/mail')
+const CONFIG = require("../../config/config")
 let mailResendAttempts = 2
 let templatePathUser = path.resolve('./templates')
 
@@ -18,7 +19,9 @@ const registrationOtpMail = async (mailData) => {
             {
                 fullName: mailData.fullName,
                 email: mailData.emailTo,
-                otp: mailData.otp
+                otp: mailData.otp,
+                type: mailData.type,
+                url: mailData.url
             }
             , async (err, data) => {
                 if (err) {
@@ -28,7 +31,7 @@ const registrationOtpMail = async (mailData) => {
                     mailOptions = {
                         from: process.env.SMTP_AUTH_USER,
                         to: mailData.emailTo,
-                        subject: `AllMasterSocial | Registration Verification |OTP Confirmation`,
+                        subject: `AllMaster's SocialMedia | Registration Verification |OTP Confirmation`,
                         html: data
                     }
                     //Send Mail
@@ -123,11 +126,13 @@ const userRegister = async (ctx) => {
                 {
                     emailTo: userInsert.email,
                     fullName: userInsert.fullName,
-                    otp: userInsert.otp
+                    otp: userInsert.otp,
+                    type: "account",
+                    url: `${CONFIG.UIPORT}/${userInsert._id}`
                 }
             )
 
-            return ctx.response.body = { status: 1, response: "Registration successfully", data: JSON.stringify(userInsert._id) }
+            return ctx.response.body = { status: 1, response: "OTP send successfully", data: JSON.stringify(userInsert._id) }
         }
 
         return ctx.response.body = data
@@ -228,11 +233,12 @@ const resendOtp = async (ctx) => {
                     emailTo: userData.email,
                     fullName: checkEmail.fullName,
                     otp: userData.otp,
-                    type: "account"
+                    type: "account",
+                    url: `${CONFIG.UIPORT}/${checkEmail._id}`
                 }
             )
 
-            return ctx.response.body = { status: 1, response: "OTP sended sucessfully" }
+            return ctx.response.body = { status: 1, response: "OTP send successfully" }
         }
 
         return ctx.response.body = data
@@ -297,7 +303,7 @@ const login = async (ctx) => {
         checkEmail = await db.findSingleDocument("user", { email: loginData.email })
         if (checkEmail == null || Object.keys(checkEmail).length == 0) {
 
-            return ctx.response.body = { status: 0, response: "Invalid User" }
+            return ctx.response.body = { status: 0, response: "Invalid Credentials" }
         }
         checkPasword = await bcrypt.compare(loginData.password, checkEmail.password)
         if (checkPasword === false) {
