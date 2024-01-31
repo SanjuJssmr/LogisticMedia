@@ -393,67 +393,68 @@ const unfollowPages = async (ctx) => {
 const getCompanyDataByFollowersDescending = async (ctx) => {
     let data = { status: 0, response: "Something went wrong" }, popularPageData, aggregationQuery;
     try {
+        let userData = ctx.request.body;
+        if (Object.keys(userData).length === 0 && userData.data === undefined) {
+            ctx.response.body = data
 
+            return
+        }
+        userData = userData.data[0]
         aggregationQuery = [
-            {
-                $group: {
-                    _id: '$companyId',
-                    count: { $sum: 1 }
-                }
-            },
-            {
-                $sort: { count: -1 }
-            },
-            {
-                $limit: 10 // Add $limit stage to limit the results to 10 documents
-            },
+            { $match: { status: 1 } },
             {
                 $lookup: {
-                    from: 'companypages', // Replace with the actual collection name
+                    from: 'followers', 
                     localField: '_id',
-                    foreignField: '_id',
-                    as: 'companyData'
+                    foreignField: 'companyId',
+                    as: 'followersData'
                 }
             },
             {
-                $project: {
-                    _id: 1,
-                    count: 1,
-                    companyData: {
-                        $arrayElemAt: [
-                            '$companyData',
-                            0
-                        ]
+                $match: {
+                    $expr: {
+                        $not: {
+                            $anyElementTrue: {
+                                $map: {
+                                    input: "$followersData",
+                                    as: "follower",
+                                    in: {
+                                        $eq: ["$$follower.followerId", new ObjectId(userData.userId)]
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             },
             {
+                $addFields: {
+                    followersCount: { $size: "$followersData" }
+                }
+            },
+            {
+                $sort: { followersCount: -1 }
+            },
+            {
+                $limit: 10
+            },
+            {
                 $project: {
                     _id: 1,
-                    count: 1,
-                    companyData: {
-                        _id: '$companyData._id',
-                        companyName: '$companyData.companyName',
-                        profile: '$companyData.profile',
-                        about: '$companyData.about',
-                        status: '$companyData.status',
-                        createdAt: '$companyData.createdAt',
-                    }
+                    companyName: 1,
+                    profile: 1,
+                    about: 1,
+                    followersCount:1
                 }
             }
         ];
-
-        popularPageData = await db.getAggregation('follower', aggregationQuery);
-        if (popularPageData.length === 0) {
-            popularPageData = await db.findDocuments("companyPage", { status: 1 }, { licenseNo: 0, email: 0, otp: 0 })
-        }
+        popularPageData = await db.getAggregation('companyPage', aggregationQuery);
         if (popularPageData) {
 
             return ctx.response.body = { status: 1, data: JSON.stringify(popularPageData) }
         }
 
         return ctx.response.body = data
-
     } catch (error) {
         console.log(error.message)
         return ctx.response.body = { status: 0, response: `Error in page Controller - getCompanyDataByFollowersDescending:-${error.message}` }
