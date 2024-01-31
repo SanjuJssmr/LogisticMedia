@@ -115,7 +115,7 @@ const verifiyCompanyPages = async (ctx) => {
         updateInfo = await db.findByIdAndUpdate("companyPage", pageData.id, { status: pageData.status })
         if (updateInfo.modifiedCount !== 0 && updateInfo.matchedCount !== 0) {
 
-            return ctx.response.body = { status: 1, response: "updated Sucessfully" }
+            return ctx.response.body = { status: 1, response: "Company approved" }
         }
 
         return ctx.response.body = data
@@ -128,7 +128,7 @@ const verifiyCompanyPages = async (ctx) => {
 const getAllUnverifiedPages = async (ctx) => {
     let data = { status: 0, response: "Invalid request" }, pageDetails
     try {
-        pageDetails = await db.findDocuments("companyPage", { status: 3 }, { updatedAt: 0, otp: 0 })
+        pageDetails = await db.findDocuments("companyPage", { status: { $in: [1, 3, 4] } }, { updatedAt: 0, otp: 0 })
         if (pageDetails) {
 
             return ctx.response.body = { status: 1, data: JSON.stringify(pageDetails) }
