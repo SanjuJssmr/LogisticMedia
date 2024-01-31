@@ -1,12 +1,79 @@
 const koa = require("koa")
 const mongoose = require("mongoose")
 const { userRouter } = require('./routes/user/user');
-const bodyParser = require("koa-bodyparser")
-const CONFIG = require("./config/config")
+const bodyParser = require("koa-bodyparser");
+const CONFIG = require("./config/config");
+const { postRouter } = require("./routes/post/post");
+const { pageRouter } = require("./routes/user/page");
+const cors = require('@koa/cors');
+const multer = require("@koa/multer");
+const { scheduleRouter } = require("./routes/post/schedule");
+const { qaRouter } = require("./routes/post/qa");
+const fs = require("fs").promises;
+const jwt = require("jsonwebtoken");
+const socketIo = require("socket.io");
+const db = require("./model/mongodb")
+
+const io = socketIo(8900, {
+  cors: {
+    origin: "*",
+  },
+});
+
 const app = new koa()
 app.use(bodyParser())
+
+app.use(cors({
+  origin: '*',   // specify the allowed origins
+  credentials: true,               // include credentials in CORS requests
+  methods: ['GET', 'POST'],        // specify allowed HTTP methods
+  allowedHeaders: ["Origin", "X-Requested-with", "Content-Type", "Accept", "Authorization"], // specify allowed headers
+}));
+
+app.use(multer().any())
+
 app.on('error', (err, ctx) => {
   console.log('server error', err, ctx)
+});
+
+
+let users = [];
+
+const addUser = (connectionId, userId, socketId) => {
+  users = users.filter((user) => user.userId !== userId)
+  users.push({ connectionId, userId, socketId });
+}
+
+const getUser = (receiverId, onlineUser) => {
+  return onlineUser.filter((user) => user.userId === receiverId);
+};
+
+io.on("connection", (socket) => {
+
+  socket.on("users", (connectionId, userId) => {
+    addUser(connectionId, userId, socket.id);
+    io.emit("getUsers", users);
+  });
+
+  socket.on("sendMessage", async ({ connectionId, senderId,senderName, receiverId, message, createdAt }) => {
+    const user = getUser(receiverId, users);
+    if (user.length !== 0) {
+      io.to(user[0].socketId).emit("getMessage", {
+        senderId,
+        senderName,
+        receiverId,
+        message,
+        createdAt,
+      });
+      await db.insertSingleDocument("chat", { connectionId: connectionId, sender: senderId, message: message, status: 1 })
+    }
+    await db.insertSingleDocument("chat", { connectionId: connectionId, sender: senderId, message: message})
+  });
+
+  socket.on("disconnect", () => {
+    users = users.filter((user) => user.socketId !== socket.id);
+    io.emit("getUsers", users);
+  });
 });
 
 mongoose.connect(CONFIG.DB_URL)
@@ -17,6 +84,10 @@ mongoose.connection.on('close', () => console.log('close'));
 mongoose.connection.on('connected', () => {
   try {
     app.use(userRouter.routes())
+    app.use(pageRouter.routes())
+    app.use(postRouter.routes())
+    app.use(scheduleRouter.routes())
+    app.use(qaRouter.routes())
     app.listen(CONFIG.PORT, () => {
       console.log("Server turned on with Koa", CONFIG.ENV, "mode on port", CONFIG.PORT);
     });

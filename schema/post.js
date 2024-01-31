@@ -7,6 +7,10 @@ const postSchema = mongoose.Schema({
         required: true,
         ref: "user"
     },
+    companyId: {
+        type: ObjectId,
+        ref: "companyPage"
+    },
     description: {
         type: String
     },
@@ -34,7 +38,8 @@ const postSchema = mongoose.Schema({
             type: String
         },
         reportedOn: {
-            type: String
+            type: Date,
+            default : Date.now()
         }
     }],
 }, {

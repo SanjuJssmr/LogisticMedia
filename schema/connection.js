@@ -2,19 +2,23 @@ const mongoose = require("mongoose")
 const ObjectId = mongoose.Schema.Types.ObjectId
 
 const connectionSchema = mongoose.Schema({
-    sender: {
+    senderId: {
         type: ObjectId,
-        ref :"user",
-        required : true
+        ref: "user",
+        required: true
     },
-    recipient: {
+    recipientId: {
         type: ObjectId,
-        ref :"user",
-        required : true
+        ref: "user",
+        required: true
     },
     status: {
-        type: Number,
+        type: Number,      // 2- friend req send, 1- conncted
         default: 2
+    },
+    connected: {
+        type: Number,
+        default: 0
     }
 }, {
     timestamps: true,
