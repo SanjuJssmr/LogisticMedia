@@ -860,6 +860,7 @@ const navSearch = async (ctx) => {
         searchTerm = searchData.term.trim()
         userData = await db.findDocumentsWithLimit('user', {
             status: 1,
+            role: 1,
             $or: [
                 { fullName: { $regex: searchTerm, $options: 'i' } },
                 { designation: { $regex: searchTerm, $options: 'i' } },
