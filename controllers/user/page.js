@@ -28,7 +28,7 @@ const registrationOtpMail = async (mailData) => {
                     mailOptions = {
                         from: process.env.SMTP_AUTH_USER,
                         to: mailData.emailTo,
-                        subject: `AllMasterSocial | Registration Verification |OTP Confirmation`,
+                        subject: `AllMaster's SocialMedia | Registration Verification |OTP Confirmation`,
                         html: data
                     }
                     //Send Mail

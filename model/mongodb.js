@@ -13,6 +13,7 @@ const answer = require("../schema/answer")
 const schedule = require("../schema/schedule")
 const scheduleComment = require("../schema/scheduleComment")
 const scheduleLike = require("../schema/scheduleLike")
+const advertisment = require("../schema/advertisment")
 const { ObjectId } = require('bson')
 
 //DB Collection Schema
@@ -30,7 +31,8 @@ const db = {
     answer,
     schedule,
     scheduleComment,
-    scheduleLike
+    scheduleLike,
+    advertisment
 }
 
 /**All mongoose queryfunction and normal functions */

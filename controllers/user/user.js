@@ -31,7 +31,7 @@ const registrationOtpMail = async (mailData) => {
                     mailOptions = {
                         from: process.env.SMTP_AUTH_USER,
                         to: mailData.emailTo,
-                        subject: `AllMasterSocial | Registration Verification |OTP Confirmation`,
+                        subject: `AllMaster's SocialMedia | Registration Verification |OTP Confirmation`,
                         html: data
                     }
                     //Send Mail
@@ -128,11 +128,11 @@ const userRegister = async (ctx) => {
                     fullName: userInsert.fullName,
                     otp: userInsert.otp,
                     type: "account",
-                    uri: `${CONFIG.UIPORT}/${userInsert._id}`
+                    url: `${CONFIG.UIPORT}/${userInsert._id}`
                 }
             )
 
-            return ctx.response.body = { status: 1, response: "Registration successfully", data: JSON.stringify(userInsert._id) }
+            return ctx.response.body = { status: 1, response: "OTP send successfully", data: JSON.stringify(userInsert._id) }
         }
 
         return ctx.response.body = data
@@ -234,11 +234,11 @@ const resendOtp = async (ctx) => {
                     fullName: checkEmail.fullName,
                     otp: userData.otp,
                     type: "account",
-                    uri: `${CONFIG.UIPORT}/${checkEmail._id}`
+                    url: `${CONFIG.UIPORT}/${checkEmail._id}`
                 }
             )
 
-            return ctx.response.body = { status: 1, response: "OTP sended sucessfully" }
+            return ctx.response.body = { status: 1, response: "OTP send successfully" }
         }
 
         return ctx.response.body = data
@@ -303,7 +303,7 @@ const login = async (ctx) => {
         checkEmail = await db.findSingleDocument("user", { email: loginData.email, status: 1 })
         if (checkEmail == null || Object.keys(checkEmail).length == 0) {
 
-            return ctx.response.body = { status: 0, response: "Invalid User" }
+            return ctx.response.body = { status: 0, response: "Invalid Credentials" }
         }
         checkPasword = await bcrypt.compare(loginData.password, checkEmail.password)
         if (checkPasword === false) {
