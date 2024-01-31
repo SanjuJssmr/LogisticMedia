@@ -430,8 +430,6 @@ const getCompanyDataByFollowersDescending = async (ctx) => {
                         _id: '$companyData._id',
                         companyName: '$companyData.companyName',
                         profile: '$companyData.profile',
-                        email: '$companyData.email',
-                        licenseNo: '$companyData.licenseNo',
                         about: '$companyData.about',
                         status: '$companyData.status',
                         createdAt: '$companyData.createdAt',
@@ -441,7 +439,9 @@ const getCompanyDataByFollowersDescending = async (ctx) => {
         ];
 
         popularPageData = await db.getAggregation('follower', aggregationQuery);
-
+        if (popularPageData.length === 0) {
+            popularPageData = await db.findDocuments("companyPage", { status: 1 }, { licenseNo: 0, email: 0, otp: 0 })
+        }
         if (popularPageData) {
 
             return ctx.response.body = { status: 1, data: JSON.stringify(popularPageData) }
