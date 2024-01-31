@@ -454,7 +454,7 @@ const getAllUser = async (ctx) => {
         }
         getData = getData.data[0]
 
-        getUserData = await db.findDocumentsWithPagination("user", {}, { password: 0, otp: 0, updatedAt: 0 }, getData.pageNumber, getData.pageLimit)
+        getUserData = await db.findDocumentsWithPagination("user", { role: 1 }, { password: 0, otp: 0, updatedAt: 0 }, getData.pageNumber, getData.pageLimit)
         if (getUserData) {
             userCount = await db.getCountAsync('user', {})
             allData = {
