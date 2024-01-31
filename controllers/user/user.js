@@ -351,7 +351,7 @@ const updateUserDetails = async (ctx) => {
         updateUserData = await db.findByIdAndUpdate("user", updateData.id, updateData)
         if (updateUserData.modifiedCount !== 0 && updateUserData.matchedCount !== 0) {
 
-            return ctx.response.body = { status: 1, response: "Profile updated Sucessfully" }
+            return ctx.response.body = { status: 1, response: "Profile updated successfully" }
         }
 
         return ctx.response.body = data
@@ -386,13 +386,13 @@ const userConnectionRequest = async (ctx) => {
         if (checkConnection == true) {
             updateConectionStatus = await db.findOneAndUpdate("connection", { senderId: new ObjectId(connectionData.senderId), recipientId: new ObjectId(connectionData.recipientId) }, { status: 2 })
             if (updateConectionStatus) {
-                return ctx.response.body = { status: 1, response: "Request Sent Sucessfully" }
+                return ctx.response.body = { status: 1, response: "Request Sent successfully" }
             }
         }
         insertConnection = await db.insertSingleDocument("connection", connectionData)
         if (insertConnection) {
 
-            return ctx.response.body = { status: 1, response: "Request Sent Sucessfully" }
+            return ctx.response.body = { status: 1, response: "Request Sent successfully" }
         }
         return ctx.response.body = data
     } catch (error) {
@@ -492,14 +492,14 @@ const changeConnectionStatus = async (ctx) => {
             updateConnectionStatus = await db.findByIdAndUpdate("connection", updateConnectionData.id, { status: 1, connected: 1 })
             if (updateConnectionStatus.modifiedCount !== 0 && updateConnectionStatus.matchedCount !== 0) {
 
-                return ctx.response.body = { status: 1, response: "updated Sucessfully" }
+                return ctx.response.body = { status: 1, response: "updated successfully" }
             }
         }
 
         updateConnectionStatus = await db.findByIdAndUpdate("connection", updateConnectionData.id, { status: updateConnectionData.status })
         if (updateConnectionStatus.modifiedCount !== 0 && updateConnectionStatus.matchedCount !== 0) {
 
-            return ctx.response.body = { status: 1, response: "updated Sucessfully" }
+            return ctx.response.body = { status: 1, response: "updated successfully" }
         }
 
         return ctx.response.body = data
