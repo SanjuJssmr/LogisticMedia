@@ -294,7 +294,7 @@ const login = async (ctx) => {
         loginData = loginData.data[0]
         privateKey = await fs.readFile('privateKey.key', 'utf8');
 
-        checkEmail = await db.findSingleDocument("user", { email: loginData.email, status: 1 })
+        checkEmail = await db.findSingleDocument("user", { email: loginData.email })
         if (checkEmail == null || Object.keys(checkEmail).length == 0) {
 
             return ctx.response.body = { status: 0, response: "Invalid User" }
@@ -418,8 +418,8 @@ const getProfileById = async (ctx) => {
                 { recipientId: new ObjectId(ProfileIdData.id), status: 1 }
             ]
         })
-        getFowllersCount = await db.getCountAsync('connection', { recipientId: new ObjectId(ProfileIdData.id) })
-        getFowllingCount = await db.getCountAsync('connection', { senderId: new ObjectId(ProfileIdData.id), status: { $nin: [3] } })
+        getFowllersCount = await db.getCountAsync('connection', { recipientId: new ObjectId(ProfileIdData.id), status: { $in: [2] } })
+        getFowllingCount = await db.getCountAsync('connection', { senderId: new ObjectId(ProfileIdData.id), status: { $in: [2] } })
         getPagesFollowingCount = await db.getCountAsync('follower', { followerId: new ObjectId(ProfileIdData.id), status: 1 })
         postCount = await db.getCountAsync("post", { createdBy: new ObjectId(ProfileIdData.id), status: 1 })
         pageDetails = await db.findSingleDocument("companyPage", { createdBy: new ObjectId(ProfileIdData.id) }, { updateAt: 0 })
@@ -428,8 +428,8 @@ const getProfileById = async (ctx) => {
         {
             "detailsCounts": {
                 "postCount": postCount,
-                "followersCount": getFowllersCount,
-                "followingCount": getFowllingCount + getPagesFollowingCount,
+                "followersCount": getFowllersCount + getConnectionCount,
+                "followingCount": getFowllingCount + getPagesFollowingCount + getConnectionCount,
                 "connectionCount": getConnectionCount
             },
             "userData": checkId,
@@ -482,6 +482,13 @@ const changeConnectionStatus = async (ctx) => {
             return
         }
         updateConnectionData = updateConnectionData.data[0]
+        if (updateConnectionData.status == 1) {
+            updateConnectionStatus = await db.findByIdAndUpdate("connection", updateConnectionData.id, { status: 1, connected: 1 })
+            if (updateConnectionStatus.modifiedCount !== 0 && updateConnectionStatus.matchedCount !== 0) {
+
+                return ctx.response.body = { status: 1, response: "updated Sucessfully" }
+            }
+        }
 
         updateConnectionStatus = await db.findByIdAndUpdate("connection", updateConnectionData.id, { status: updateConnectionData.status })
         if (updateConnectionStatus.modifiedCount !== 0 && updateConnectionStatus.matchedCount !== 0) {
@@ -552,7 +559,8 @@ const getConnectionRequestListById = async (ctx) => {
 }
 
 const getFollowListByUserId = async (ctx) => {
-    let data = { status: 0, response: "Something went wrong" }, userData, aggregationQuery, followData;
+    let data = { status: 0, response: "Something went wrong" }, userData, aggregationQuery, followData,
+        connectedAggregationQuery, conectionData;
     try {
         userData = ctx.request.body;
         if (Object.keys(userData).length === 0 && userData.data === undefined) {
@@ -563,7 +571,7 @@ const getFollowListByUserId = async (ctx) => {
         userData = userData.data[0]
 
         aggregationQuery = [
-            { $match: { recipientId: new ObjectId(userData.id) } },
+            { $match: { recipientId: new ObjectId(userData.id), status: { $in: [2] } } },
             {
                 $lookup: {
                     from: "users",
@@ -593,8 +601,51 @@ const getFollowListByUserId = async (ctx) => {
                 }
             }
         ]
+        connectedAggregationQuery = [
+            {
+                $match: {
+                    $or: [
+                        { senderId: new ObjectId(userData.id), status: 1 },
+                        { recipientId: new ObjectId(userData.id), status: 1 }
+                    ]
+                }
+            },
+            {
+                $lookup: {
+                    from: "users",
+                    localField: "senderId",
+                    foreignField: "_id",
+                    as: "senderData"
+                }
+
+            },
+            {
+                $lookup: {
+                    from: "users",
+                    localField: "recipientId",
+                    foreignField: "_id",
+                    as: "recipientData"
+                }
+            },
+            {
+                $project: {
+                    _id: 1,
+                    senderId: 1,
+                    senderName: { '$arrayElemAt': ['$senderData.fullName', 0] },
+                    senderProfile: { '$arrayElemAt': ['$senderData.profile', 0] },
+                    recipientId: 1,
+                    recipientName: { '$arrayElemAt': ['$recipientData.fullName', 0] },
+                    recipientProfile: { '$arrayElemAt': ['$recipientData.profile', 0] },
+                    status: 1,
+                    createdAt: 1,
+                }
+            }
+        ]
+
+        conectionData = await db.getAggregation('connection', connectedAggregationQuery)
 
         followData = await db.getAggregation('connection', aggregationQuery)
+        followData = [...followData, ...conectionData]
         if (followData) {
 
             return ctx.response.body = { status: 1, data: JSON.stringify(followData) }
@@ -670,7 +721,7 @@ const getConnectionListByUserId = async (ctx) => {
 
 const getFollowingListByUserId = async (ctx) => {
     let data = { status: 0, response: "Something went wrong" }, userData, userAggregationQuery, followingData,
-        pageAggregationQuery, userfollowingData, pagefollowinData, allData = [];
+        pageAggregationQuery, userfollowingData, pagefollowinData, allData = [], conectionData, connectedAggregationQuery;
     try {
         userData = ctx.request.body;
         if (Object.keys(userData).length === 0 && userData.data === undefined) {
@@ -681,7 +732,7 @@ const getFollowingListByUserId = async (ctx) => {
         userData = userData.data[0]
 
         userAggregationQuery = [
-            { $match: { senderId: new ObjectId(userData.id), status: { $nin: [3] } } },
+            { $match: { senderId: new ObjectId(userData.id), status: { $in: [2] } } },
             {
                 $lookup: {
                     from: "users",
@@ -735,10 +786,51 @@ const getFollowingListByUserId = async (ctx) => {
                 }
             }
         ]
+        connectedAggregationQuery = [
+            {
+                $match: {
+                    $or: [
+                        { senderId: new ObjectId(userData.id), status: 1 },
+                        { recipientId: new ObjectId(userData.id), status: 1 }
+                    ]
+                }
+            },
+            {
+                $lookup: {
+                    from: "users",
+                    localField: "senderId",
+                    foreignField: "_id",
+                    as: "senderData"
+                }
 
+            },
+            {
+                $lookup: {
+                    from: "users",
+                    localField: "recipientId",
+                    foreignField: "_id",
+                    as: "recipientData"
+                }
+            },
+            {
+                $project: {
+                    _id: 1,
+                    senderId: 1,
+                    senderName: { '$arrayElemAt': ['$senderData.fullName', 0] },
+                    senderProfile: { '$arrayElemAt': ['$senderData.profile', 0] },
+                    recipientId: 1,
+                    recipientName: { '$arrayElemAt': ['$recipientData.fullName', 0] },
+                    recipientProfile: { '$arrayElemAt': ['$recipientData.profile', 0] },
+                    status: 1,
+                    createdAt: 1,
+                }
+            }
+        ]
+
+        conectionData = await db.getAggregation('connection', connectedAggregationQuery)
         userfollowingData = await db.getAggregation('connection', userAggregationQuery)
         pagefollowinData = await db.getAggregation('follower', pageAggregationQuery)
-        allData = [...userfollowingData, ...pagefollowinData]
+        allData = [...userfollowingData, ...pagefollowinData, ...conectionData]
         if (allData) {
 
             return ctx.response.body = { status: 1, data: JSON.stringify(allData) }
