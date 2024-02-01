@@ -12,6 +12,5 @@ CONFIG.SMTP_PORT = process.env.SMTP_PORT
 CONFIG.SMTP_AUTH = { user: process.env.SMTP_AUTH_USER, pass: process.env.SMTP_AUTH_PW }
 CONFIG.AZURESTORAGE = process.env.AZURESTORAGE
 CONFIG.AZURECONNECTIONSTRING = process.env.AZURECONNECTIONSTRING
-CONFIG.UIPORT = `http:/localhost:5173/otp`
 
 module.exports = CONFIG
