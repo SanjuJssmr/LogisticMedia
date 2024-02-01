@@ -67,6 +67,8 @@ io.on("connection", (socket) => {
         createdAt,
       });
       await db.insertSingleDocument("chat", { connectionId: connectionId, sender: senderId, message: message, status: 1 })
+
+      return
     }
     await db.insertSingleDocument("chat", { connectionId: connectionId, sender: senderId, message: message})
   });
