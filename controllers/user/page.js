@@ -175,7 +175,7 @@ const resendOtp = async (ctx) => {
                 }
             )
 
-            return ctx.response.body = { status: 1, response: "OTP sended sucessfully" }
+            return ctx.response.body = { status: 1, response: "OTP sended successfully" }
         }
 
         return ctx.response.body = data
@@ -263,13 +263,13 @@ const pageFollow = async (ctx) => {
         if (checkFollow == true) {
             updateConectionStatus = await db.findOneAndUpdate("follower", { companyId: new ObjectId(followData.companyId), followerId: new ObjectId(followData.followerId) }, { status: 1 })
             if (updateConectionStatus) {
-                return ctx.response.body = { status: 1, response: "followed Sucessfully" }
+                return ctx.response.body = { status: 1, response: "followed successfully" }
             }
         }
         insertFollowData = await db.insertSingleDocument("follower", followData)
         if (insertFollowData) {
 
-            return ctx.response.body = { status: 1, response: "followed Sucessfully" }
+            return ctx.response.body = { status: 1, response: "followed successfully" }
         }
         return ctx.response.body = data
     } catch (error) {
@@ -380,7 +380,7 @@ const unfollowPages = async (ctx) => {
         updateFollowStatus = await db.findByIdAndUpdate("follower", followData.id, { status: 2 })
         if (updateFollowStatus.modifiedCount !== 0 && updateFollowStatus.matchedCount !== 0) {
 
-            return ctx.response.body = { status: 1, response: "unfollow Sucessfully" }
+            return ctx.response.body = { status: 1, response: "unfollow successfully" }
         }
 
         return ctx.response.body = data
@@ -404,7 +404,7 @@ const getCompanyDataByFollowersDescending = async (ctx) => {
             { $match: { status: 1 } },
             {
                 $lookup: {
-                    from: 'followers', 
+                    from: 'followers',
                     localField: '_id',
                     foreignField: 'companyId',
                     as: 'followersData'
@@ -419,13 +419,31 @@ const getCompanyDataByFollowersDescending = async (ctx) => {
                                     input: "$followersData",
                                     as: "follower",
                                     in: {
-                                        $eq: ["$$follower.followerId", new ObjectId(userData.userId)]
+                                        $and: [
+                                            { $eq: ["$$follower.followerId", new ObjectId(userData.userId)] },
+                                            { $eq: ["$$follower.status", 1] }
+                                        ]
                                     }
                                 }
                             }
                         }
                     }
                 }
+            },
+            {
+                $project: {
+                    _id: 1,
+                    companyName: 1,
+                    profile: 1,
+                    about: 1,
+                    "followersData": {
+                        $filter: {
+                            input: "$followersData",
+                            as: "follower",
+                            cond: { $eq: ["$$follower.status", 1] }
+                        }
+                    }
+                },
             },
             {
                 $addFields: {
@@ -440,13 +458,9 @@ const getCompanyDataByFollowersDescending = async (ctx) => {
             },
             {
                 $project: {
-                    _id: 1,
-                    companyName: 1,
-                    profile: 1,
-                    about: 1,
-                    followersCount:1
+                    followersData: 0,
                 }
-            }
+            },
         ];
         popularPageData = await db.getAggregation('companyPage', aggregationQuery);
         if (popularPageData) {

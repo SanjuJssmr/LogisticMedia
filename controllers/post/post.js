@@ -268,7 +268,8 @@ const getTrendingPost = async (ctx) => {
                     designation: "$userInfo.designation",
                     profile: "$userInfo.profile",
                     companyName: "$companyInfo.companyName",
-                    companyProfile: "$companyInfo.profile"
+                    companyProfile: "$companyInfo.profile",
+                    reporterIds: "$reportCount.userId"
                 }
             },
             {
@@ -278,6 +279,7 @@ const getTrendingPost = async (ctx) => {
                     "hashtags": "$hashtags",
                     "files": "$files",
                     "createdAt": "$createdAt",
+                    "reporterIds": "$reporterIds",
                     "fullName": { '$arrayElemAt': ['$fullName', 0] },
                     "designation": { '$arrayElemAt': ['$designation', 0] },
                     "profile": { '$arrayElemAt': ['$profile', 0] },
@@ -300,7 +302,7 @@ const getTrendingPost = async (ctx) => {
         ]
         postInfo = await db.getAggregation("post", aggregationQuery)
 
-        return ctx.response.body = { status: 1, data: JSON.stringify(postInfo) }
+        return ctx.response.body = { status: 1, data: postInfo }
     } catch (error) {
         console.log(error)
         return ctx.response.body = { status: 0, response: `Error in post controllers/getTrendingPost - ${error.message}` }
@@ -606,7 +608,8 @@ const getForYouPost = async (ctx) => {
                     designation: "$userInfo.designation",
                     profile: "$userInfo.profile",
                     companyName: "$companyInfo.companyName",
-                    companyProfile: "$companyInfo.profile"
+                    companyProfile: "$companyInfo.profile",
+                    reporterIds: "$reportCount.userId"
                 }
             },
             {
@@ -616,6 +619,7 @@ const getForYouPost = async (ctx) => {
                     "hashtags": "$hashtags",
                     "files": "$files",
                     "createdAt": "$createdAt",
+                    "reporterIds": "$reporterIds",
                     "fullName": { '$arrayElemAt': ['$fullName', 0] },
                     "designation": { '$arrayElemAt': ['$designation', 0] },
                     "profile": { '$arrayElemAt': ['$profile', 0] },
@@ -829,7 +833,8 @@ const getFriendsPost = async (ctx) => {
                     designation: "$userInfo.designation",
                     profile: "$userInfo.profile",
                     companyName: "$companyInfo.companyName",
-                    companyProfile: "$companyInfo.profile"
+                    companyProfile: "$companyInfo.profile",
+                    reporterIds: "$reportCount.userId"
                 }
             },
             {
@@ -843,6 +848,7 @@ const getFriendsPost = async (ctx) => {
                     "state": "$postInfo.state",
                     "country": "$postInfo.country",
                     "files": "$postInfo.files",
+                    "reporterIds": "$reporterIds",
                     "fullName": { '$arrayElemAt': ['$fullName', 0] },
                     "designation": { '$arrayElemAt': ['$designation', 0] },
                     "profile": { '$arrayElemAt': ['$profile', 0] },
@@ -904,7 +910,8 @@ const getAllNews = async (ctx) => {
                     likedBy: "$postInfo.likedBy",
                     fullName: "$userInfo.fullName",
                     designation: "$userInfo.designation",
-                    profile: "$userInfo.profile"
+                    profile: "$userInfo.profile",
+                    reporterIds: "$reportCount.userId"
                 }
             },
             {
@@ -914,6 +921,7 @@ const getAllNews = async (ctx) => {
                     "hashtags": "$hashtags",
                     "files": "$files",
                     "createdAt": "$createdAt",
+                    "reporterIds": "$reporterIds",
                     "fullName": { '$arrayElemAt': ['$fullName', 0] },
                     "designation": { '$arrayElemAt': ['$designation', 0] },
                     "profile": { '$arrayElemAt': ['$profile', 0] },
@@ -981,7 +989,8 @@ const getPagePost = async (ctx) => {
                     designation: "$userInfo.designation",
                     profile: "$userInfo.profile",
                     companyName: "$companyInfo.companyName",
-                    companyProfile: "$companyInfo.profile"
+                    companyProfile: "$companyInfo.profile",
+                    reporterIds: "$reportCount.userId"
                 }
             },
             {
@@ -991,6 +1000,7 @@ const getPagePost = async (ctx) => {
                     "hashtags": "$hashtags",
                     "files": "$files",
                     "createdAt": "$createdAt",
+                    "reporterIds": "$reporterIds",
                     "fullName": { '$arrayElemAt': ['$fullName', 0] },
                     "designation": { '$arrayElemAt': ['$designation', 0] },
                     "profile": { '$arrayElemAt': ['$profile', 0] },
