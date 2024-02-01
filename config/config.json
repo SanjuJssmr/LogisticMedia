@@ -10,7 +10,8 @@
     "settings": {
       "apiUrl": "localhost:8000",
       "siteTitle": "baseCode",
-      "nodeFileUploads": "amSocialFiles/"
+      "nodeFileUploads": "amSocialFiles/",
+      "otpUrl": "http://localhost:5173/otp/"
     },
     "azureFilePath": {
       "shareName": "files",

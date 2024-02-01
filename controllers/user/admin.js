@@ -115,7 +115,7 @@ const verifiyCompanyPages = async (ctx) => {
         updateInfo = await db.findByIdAndUpdate("companyPage", pageData.id, { status: pageData.status })
         if (updateInfo.modifiedCount !== 0 && updateInfo.matchedCount !== 0) {
 
-            return ctx.response.body = { status: 1, response: "Company approved" }
+            return ctx.response.body = { status: 1, response: "Company status updated" }
         }
 
         return ctx.response.body = data

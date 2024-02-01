@@ -7,7 +7,7 @@ const fs = require("fs").promises
 const jwt = require("jsonwebtoken")
 const { ObjectId } = require("bson")
 const { transporter } = require('../../model/mail')
-const CONFIG = require("../../config/config")
+const CONFIG = require("../../config/config.json")
 let mailResendAttempts = 2
 let templatePathUser = path.resolve('./templates')
 
@@ -128,7 +128,7 @@ const userRegister = async (ctx) => {
                     fullName: userInsert.fullName,
                     otp: userInsert.otp,
                     type: "account",
-                    url: `${CONFIG.UIPORT}/${userInsert._id}`
+                    url: CONFIG.settings.otpUrl + userInsert._id
                 }
             )
 
@@ -171,7 +171,8 @@ const updateRegisterData = async (ctx) => {
                     emailTo: userData.email,
                     fullName: userData.fullName,
                     otp: userData.otp,
-                    type: "account"
+                    type: "account",
+                    url: CONFIG.settings.otpUrl + userData.id
                 }
             )
 
@@ -234,7 +235,7 @@ const resendOtp = async (ctx) => {
                     fullName: checkEmail.fullName,
                     otp: userData.otp,
                     type: "account",
-                    url: `${CONFIG.UIPORT}/${checkEmail._id}`
+                    url: CONFIG.settings.otpUrl + checkEmail._id
                 }
             )
 
