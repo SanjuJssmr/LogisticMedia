@@ -547,6 +547,7 @@ const getConnectionRequestListById = async (ctx) => {
                     senderProfile: { '$arrayElemAt': ['$senderData.profile', 0] },
                     recipientId: 1,
                     recipientName: { '$arrayElemAt': ['$recipientData.fullName', 0] },
+                    recipientProfile: { '$arrayElemAt': ['$recipientData.profile', 0] },
                     status: 1,
                     createdAt: 1,
                 }
@@ -599,9 +600,10 @@ const getFollowListByUserId = async (ctx) => {
                     _id: 1,
                     senderId: 1,
                     senderName: { '$arrayElemAt': ['$senderData.fullName', 0] },
-                    profile: { '$arrayElemAt': ['$senderData.profile', 0] },
+                    senderProfile: { '$arrayElemAt': ['$senderData.profile', 0] },
                     recipientId: 1,
                     recipientName: { '$arrayElemAt': ['$recipientData.fullName', 0] },
+                    recipientProfile: { '$arrayElemAt': ['$recipientData.profile', 0] },
                     status: 1,
                     createdAt: 1,
                 }
@@ -760,9 +762,10 @@ const getFollowingListByUserId = async (ctx) => {
                     _id: 1,
                     senderId: 1,
                     senderName: { '$arrayElemAt': ['$senderData.fullName', 0] },
+                    senderProfile: { '$arrayElemAt': ['$senderData.profile', 0] },
                     recipientId: 1,
                     recipientName: { '$arrayElemAt': ['$recipientData.fullName', 0] },
-                    profile: { '$arrayElemAt': ['$recipientData.profile', 0] },
+                    recipientProfile: { '$arrayElemAt': ['$recipientData.profile', 0] },
                     status: 1,
                     createdAt: 1,
                 }
