@@ -54,6 +54,16 @@ io.on("connection", (socket) => {
     io.emit("getUsers", users);
   });
 
+  socket.on("sendNotification", ({ senderId, receiverId }) => {
+    const receiver = getUser(receiverId, users);
+    if(receiver.length !==0){
+      io.to(receiver[0].socketId).emit("getNotification", {
+        senderId,
+        receiverId
+      });
+    }
+  });
+
   socket.on("sendMessage", async ({ connectionId, senderId,senderName, receiverId, message, createdAt }) => {
     const user = getUser(receiverId, users);
     if (user.length !== 0) {

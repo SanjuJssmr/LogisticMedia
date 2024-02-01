@@ -4,9 +4,6 @@
   o.toUpperCase()) } %>
   <head>
   </head>
-  <style>
-@import url('https://fonts.googleapis.com/css2?family=Poppins&display=swap');
-</style>
   <body >
       <table 
       style="
@@ -27,22 +24,21 @@
                 <%= capitalize(fullName)%>,
               </strong></h3>
             <p style="padding-left: 10px !important;">
-             Welcome to <span style="color: #50ce8b !important;">AllMasters socials!</span>
+             Welcome to <span style="color: #50ce8b !important;">AllMaster's SocialMedia!</span>
             </p>
-            <p style="padding-left: 10px !important;">Below is the (OTP) to verify your <%=type%>.</p>
-            <p style="padding-left: 10px !important;">Use the following link to verify your account. 
-              <a
-              href="<%= url %>"
-              target="_blank" 
-              rel="noopener noreferrer"
-              style="font-weight: 700; color: #0ebd60 !important; list-style: none;" >Click Here</a></p>
-            <p>
+            <p style="padding-left: 10px !important;">Your one step ahead to complete your registration process with us, <br> Below is the (OTP) to get into your <%=type%>.</p>
             <center>
             <p ><strong style="font-size:30px; padding: 8px 4px; border: 1px solid;  border-radius: 8px !important;  font-weight: 800; ">
               OTP : <span style="color: #0ebd60 !important; "><%=otp%></span> 
               </strong></p>
-            </p>
           </center>
+            <p style="padding-left: 10px !important;">
+              <a
+              href="<%= url %>"
+              target="_blank" 
+              rel="noopener noreferrer"
+              style="font-weight: 700; color: #0ebd60 !important; list-style: none;" >Click Here,</a> to continue🎉</p>
+            <p>
             <p style="padding-left: 10px !important;">Regards,</p>
             <p style="padding-left: 10px !important; color: #50ce8b !important;"><strong>AllMaster's SocialMedia!</strong></p>
           </td>
