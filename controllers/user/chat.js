@@ -16,7 +16,7 @@ const getAllChatInfo = async (ctx) => {
             {
                 $match: {
                     $or: [
-                        { status: 1 }
+                        { connected: 1 }
                     ]
                 }
             },
