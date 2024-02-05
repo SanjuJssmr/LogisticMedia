@@ -137,7 +137,13 @@ const getMySchedule = async (ctx) => {
 const getAllSchedule = async (ctx) => {
     let data = { status: 0, response: "Invalid request" }
     try {
-        let scheduleInfo, aggregationQuery = [];
+        let scheduleData = ctx.request.body, scheduleInfo, aggregationQuery = [];
+        if (Object.keys(scheduleData).length === 0 && scheduleData.data === undefined) {
+            res.send(data)
+
+            return
+        }
+        scheduleData = scheduleData.data[0];
         aggregationQuery = [
             {
                 $match: { status: 1 },
@@ -192,11 +198,22 @@ const getAllSchedule = async (ctx) => {
                 $sort: {
                     createdAt: -1,
                 }
+            },
+            {
+                $facet: {
+                    data: [
+                        { $skip: (scheduleData.page - 1) * scheduleData.pageSize },
+                        { $limit: scheduleData.pageSize }
+                    ],
+                    totalCount: [
+                        { $count: "value" }
+                    ]
+                }
             }
         ]
         scheduleInfo = await db.getAggregation("schedule", aggregationQuery)
 
-        return ctx.response.body = { status: 1, data: JSON.stringify(scheduleInfo) }
+        return ctx.response.body = { status: 1, data: JSON.stringify(scheduleInfo[0].data), totalCount: scheduleInfo[0].totalCount[0].value }
     } catch (error) {
         console.log(error)
         return ctx.response.body = { status: 0, response: `Error in schedule controllers/getAllSchedule - ${error.message}` }

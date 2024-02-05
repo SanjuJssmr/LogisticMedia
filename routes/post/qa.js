@@ -13,7 +13,7 @@ try {
     qaRouter.post("/getAnswersAndReplies", getAnswersAndReplies)
     qaRouter.post("/updateQuestionLike", updateLike)
     qaRouter.post("/reportPost")
-    qaRouter.get("/getAllQa", getAllQa)
+    qaRouter.post("/getAllQa", getAllQa)
 
 } catch (error) {
     console.log(`Error in Qa router - ${error}`);
