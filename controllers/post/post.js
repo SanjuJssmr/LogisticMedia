@@ -908,7 +908,7 @@ const getFriendsPost = async (ctx) => {
             }
         ]
         postInfo = await db.getAggregation("connection", aggregationQuery)
-        await redisClient.setEx(ctx.request.url,3600,JSON.stringify(postInfo[0].data))
+
         return ctx.response.body = { status: 1, data: JSON.stringify(postInfo[0].data), totalCount: postInfo[0].totalCount[0].value }
     } catch (error) {
         console.log(error)
@@ -1007,7 +1007,13 @@ const getAllNews = async (ctx) => {
 
 const getPagePost = async (ctx) => {
     try {
-        let postInfo, aggregationQuery = [];
+        let postData = ctx.request.body, postInfo, aggregationQuery = [];
+        if (Object.keys(postData).length === 0 && postData.data === undefined) {
+            res.send(data)
+
+            return
+        }
+        postData = postData.data[0]
         aggregationQuery = [
             {
                 $match: { $and: [{ companyId: { $exists: true } }, { status: 1 }] },
@@ -1076,14 +1082,25 @@ const getPagePost = async (ctx) => {
                     createdAt: -1,
                 }
             },
+            {
+                $facet: {
+                    data: [
+                        { $skip: (postData.page - 1) * postData.pageSize },
+                        { $limit: postData.pageSize }
+                    ],
+                    totalCount: [
+                        { $count: "value" }
+                    ]
+                }
+            }
 
         ]
         postInfo = await db.getAggregation("post", aggregationQuery)
 
-        return ctx.response.body = { status: 1, data: JSON.stringify(postInfo) }
+        return ctx.response.body = { status: 1, data: JSON.stringify(postInfo[0].data), totalCount: postInfo[0].totalCount[0].value }
     } catch (error) {
         console.log(error)
-        return ctx.response.body = { status: 0, response: `Error in post controllers/getTrendingPost - ${error.message}` }
+        return ctx.response.body = { status: 0, response: `Error in post controllers/getPagePost - ${error.message}` }
     }
 }
 

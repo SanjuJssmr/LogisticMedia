@@ -23,8 +23,8 @@ try {
     postRouter.post("/getForYouPost", getForYouPost)
     postRouter.post("/reportPost", reportPost)
     postRouter.post("/getMyPagePost", getMyPagePost)
-    postRouter.get("/getAllNews", getAllNews)
-    postRouter.get("/getPagePost", getPagePost)
+    postRouter.post("/getAllNews", getAllNews)
+    postRouter.post("/getPagePost", getPagePost)
 
 } catch (error) {
     console.log(`Error in post router - ${error}`);
