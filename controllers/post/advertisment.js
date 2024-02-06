@@ -3,7 +3,7 @@ const db = require("../../model/mongodb")
 const common = require("../../model/common");
 const ObjectId = mongoose.Types.ObjectId
 
-const addAdvertisment = async (ctx) => {
+const addAdvertisement = async (ctx) => {
     let data = { status: 0, response: "Invalid request" }
     try {
         let advertData = ctx.request.body, fileData = ctx.request.files, advertInfo, filePath;
@@ -32,13 +32,13 @@ const addAdvertisment = async (ctx) => {
     }
 }
 
-const getAdvertisment = async (ctx) => {
+const getAdvertisement = async (ctx) => {
     let data = { status: 0, response: "Invalid request" }
     try {
         let advertInfo, aggregationQuery = [];
         aggregationQuery = [
             { $match: { status: 1 } },
-            { $sample: { size: 3 } },
+            { $sample: { size: 1 } },
             {
                 $project: {
                     _id: 0,
@@ -62,7 +62,7 @@ const getAdvertisment = async (ctx) => {
     }
 }
 
-const getAllAdvertisment = async (ctx) => {
+const getAllAdvertisement = async (ctx) => {
     try {
         let advertInfo
         advertInfo = await db.findDocuments("advertisment", {})
@@ -74,7 +74,7 @@ const getAllAdvertisment = async (ctx) => {
     }
 }
 
-const deleteAdvertisment = async (ctx) => {
+const deleteAdvertisement = async (ctx) => {
     let data = { status: 0, response: "Invalid request" }
     try {
         let advertData = ctx.request.body, advertInfo, updateInfo;
@@ -102,4 +102,4 @@ const deleteAdvertisment = async (ctx) => {
     }
 }
 
-module.exports = { addAdvertisment, getAdvertisment, deleteAdvertisment, getAllAdvertisment }
+module.exports = { addAdvertisement, getAdvertisement, deleteAdvertisement, getAllAdvertisement }

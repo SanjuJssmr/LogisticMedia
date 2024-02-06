@@ -228,11 +228,23 @@ const getMyPagePost = async (ctx) => {
 }
 
 const getTrendingPost = async (ctx) => {
+    let data = { status: 0, response: "Invalid request" }
     try {
-        let postInfo, aggregationQuery = [];
+        let postData = ctx.request.body, postInfo, aggregationQuery = [], matchCond;
+        if (Object.keys(postData).length === 0 && postData.data === undefined) {
+            res.send(data)
+
+            return
+        }
+        postData = postData.data[0];
+        if (postData.hashTags.trim().length !== 0) {
+            matchCond = { status: 1, hashtags: { $in: [postData.hashTags] } }
+        } else {
+            matchCond = { status: 1 }
+        }
         aggregationQuery = [
             {
-                $match: { status: 1 },
+                $match: matchCond
             },
             {
                 $lookup:
@@ -298,11 +310,25 @@ const getTrendingPost = async (ctx) => {
                     likes: -1,
                 }
             },
-
+            {
+                $facet: {
+                    data: [
+                        { $skip: (postData.page - 1) * postData.pageSize },
+                        { $limit: postData.pageSize }
+                    ],
+                    totalCount: [
+                        { $count: "value" }
+                    ]
+                }
+            }
         ]
         postInfo = await db.getAggregation("post", aggregationQuery)
+        if (postInfo[0].data.length !== 0) {
 
-        return ctx.response.body = { status: 1, data: JSON.stringify(postInfo) }
+            return ctx.response.body = { status: 1, data: JSON.stringify(postInfo[0].data), totalCount: postInfo[0].totalCount[0].value }
+        }
+
+        return ctx.response.body = { status: 1, data: JSON.stringify(postInfo[0].data), totalCount: 0 }
     } catch (error) {
         console.log(error)
         return ctx.response.body = { status: 0, response: `Error in post controllers/getTrendingPost - ${error.message}` }
@@ -557,22 +583,34 @@ const updateLike = async (ctx) => {
 const getForYouPost = async (ctx) => {
     let data = { status: 0, response: "Invalid request" }
     try {
-        let postData = ctx.request.body, postInfo, aggregationQuery = [];
+        let postData = ctx.request.body, postInfo, aggregationQuery = [], matchCond;
         if (Object.keys(postData).length === 0 && postData.data === undefined) {
             ctx.response.body = data
 
             return
         }
         postData = postData.data[0]
+        if (postData.hashTags.trim().length !== 0) {
+            matchCond = {
+                status: 1,
+                $or: [
+                    { state: postData.state },
+                    { country: postData.country }
+                ],
+                hashtags: { $in: [postData.hashTags] }
+            }
+        } else {
+            matchCond = {
+                status: 1,
+                $or: [
+                    { state: postData.state },
+                    { country: postData.country }
+                ]
+            }
+        }
         aggregationQuery = [
             {
-                $match: {
-                    status: 1,
-                    $or: [
-                        { state: postData.state },
-                        { country: postData.country }
-                    ]
-                },
+                $match: matchCond
             },
             {
                 $lookup:
@@ -638,10 +676,25 @@ const getForYouPost = async (ctx) => {
                     createdAt: -1,
                 }
             },
+            {
+                $facet: {
+                    data: [
+                        { $skip: (postData.page - 1) * postData.pageSize },
+                        { $limit: postData.pageSize }
+                    ],
+                    totalCount: [
+                        { $count: "value" }
+                    ]
+                }
+            }
         ]
         postInfo = await db.getAggregation("post", aggregationQuery)
+        if (postInfo[0].data.length !== 0) {
 
-        return ctx.response.body = { status: 1, data: JSON.stringify(postInfo) }
+            return ctx.response.body = { status: 1, data: JSON.stringify(postInfo[0].data), totalCount: postInfo[0].totalCount[0].value }
+        }
+
+        return ctx.response.body = { status: 1, data: JSON.stringify(postInfo[0].data), totalCount: 0 }
     } catch (error) {
         console.log(error)
         return ctx.response.body = { status: 0, response: `Error in post controllers/getForYouPost - ${error.message}` }
@@ -729,13 +782,18 @@ const getPostById = async (ctx) => {
 const getFriendsPost = async (ctx) => {
     let data = { status: 0, response: "Invalid request" }
     try {
-        let connectionData = ctx.request.body, postInfo, aggregationQuery = [];
+        let connectionData = ctx.request.body, postInfo, aggregationQuery = [], matchCond;
         if (Object.keys(connectionData).length === 0 && connectionData.data === undefined) {
             ctx.response.body = data
 
             return
         }
         connectionData = connectionData.data[0]
+        if (connectionData.hashTags.trim().length !== 0) {
+            matchCond = { "postInfo.status": 1, "postInfo.hashtags": { $in: [connectionData.hashTags] } }
+        } else {
+            matchCond = { "postInfo.status": 1 }
+        }
         aggregationQuery = [
             {
                 $match: {
@@ -798,7 +856,7 @@ const getFriendsPost = async (ctx) => {
             {
                 $unwind: "$postInfo"
             },
-            { $match: { "postInfo.status": 1 } },
+            { $match: matchCond },
             {
                 $lookup:
                 {
@@ -867,10 +925,25 @@ const getFriendsPost = async (ctx) => {
                     createdAt: -1,
                 }
             },
+            {
+                $facet: {
+                    data: [
+                        { $skip: (connectionData.page - 1) * connectionData.pageSize },
+                        { $limit: connectionData.pageSize }
+                    ],
+                    totalCount: [
+                        { $count: "value" }
+                    ]
+                }
+            }
         ]
         postInfo = await db.getAggregation("connection", aggregationQuery)
+        if (postInfo[0].data.length !== 0) {
 
-        return ctx.response.body = { status: 1, data: JSON.stringify(postInfo) }
+            return ctx.response.body = { status: 1, data: JSON.stringify(postInfo[0].data), totalCount: postInfo[0].totalCount[0].value }
+        }
+
+        return ctx.response.body = { status: 1, data: JSON.stringify(postInfo[0].data), totalCount: 0 }
     } catch (error) {
         console.log(error)
         return ctx.response.body = { status: 0, response: `Error in post controllers/getFriendsPost - ${error.message}` }
@@ -878,8 +951,15 @@ const getFriendsPost = async (ctx) => {
 }
 
 const getAllNews = async (ctx) => {
+    let data = { status: 0, response: "Invalid request" }
     try {
-        let postInfo, aggregationQuery = [];
+        let postData = ctx.request.body, postInfo, aggregationQuery = [];
+        if (Object.keys(postData).length === 0 && postData.data === undefined) {
+            res.send(data)
+
+            return
+        }
+        postData = postData.data[0]
         aggregationQuery = [
             {
                 $match: {
@@ -938,10 +1018,25 @@ const getAllNews = async (ctx) => {
                     createdAt: -1,
                 }
             },
+            {
+                $facet: {
+                    data: [
+                        { $skip: (postData.page - 1) * postData.pageSize },
+                        { $limit: postData.pageSize }
+                    ],
+                    totalCount: [
+                        { $count: "value" }
+                    ]
+                }
+            }
         ]
         postInfo = await db.getAggregation("post", aggregationQuery)
+        if (postInfo[0].data.length !== 0) {
 
-        return ctx.response.body = { status: 1, data: JSON.stringify(postInfo) }
+            return ctx.response.body = { status: 1, data: JSON.stringify(postInfo[0].data), totalCount: postInfo[0].totalCount[0].value }
+        }
+
+        return ctx.response.body = { status: 1, data: JSON.stringify(postInfo[0].data), totalCount: 0 }
     } catch (error) {
         console.log(error)
         return ctx.response.body = { status: 0, response: `Error in post controllers/getAllNews - ${error.message}` }
@@ -950,10 +1045,21 @@ const getAllNews = async (ctx) => {
 
 const getPagePost = async (ctx) => {
     try {
-        let postInfo, aggregationQuery = [];
+        let postData = ctx.request.body, postInfo, aggregationQuery = [], matchCond;
+        if (Object.keys(postData).length === 0 && postData.data === undefined) {
+            res.send(data)
+
+            return
+        }
+        postData = postData.data[0]
+        if (postData.hashTags.trim().length !== 0) {
+            matchCond = { $and: [{ companyId: { $exists: true } }, { status: 1 }], hashtags: { $in: [postData.hashTags] } }
+        } else {
+            matchCond = { $and: [{ companyId: { $exists: true } }, { status: 1 }] }
+        }
         aggregationQuery = [
             {
-                $match: { $and: [{ companyId: { $exists: true } }, { status: 1 }] },
+                $match: matchCond,
             },
             {
                 $lookup:
@@ -990,6 +1096,7 @@ const getPagePost = async (ctx) => {
                     profile: "$userInfo.profile",
                     companyName: "$companyInfo.companyName",
                     companyProfile: "$companyInfo.profile",
+                    companyId: "$companyInfo._id",
                     reporterIds: "$reportCount.userId"
                 }
             },
@@ -1007,6 +1114,7 @@ const getPagePost = async (ctx) => {
                     "likedBy": { '$arrayElemAt': ['$likedBy', 0] },
                     "companyName": { '$arrayElemAt': ['$companyName', 0] },
                     'companyProfile': { '$arrayElemAt': ['$companyProfile', 0] },
+                    "companyId": { '$arrayElemAt': ['$companyId', 0] }
                 }
             },
             {
@@ -1019,14 +1127,29 @@ const getPagePost = async (ctx) => {
                     createdAt: -1,
                 }
             },
+            {
+                $facet: {
+                    data: [
+                        { $skip: (postData.page - 1) * postData.pageSize },
+                        { $limit: postData.pageSize }
+                    ],
+                    totalCount: [
+                        { $count: "value" }
+                    ]
+                }
+            }
 
         ]
         postInfo = await db.getAggregation("post", aggregationQuery)
+        if (postInfo[0].data.length !== 0) {
 
-        return ctx.response.body = { status: 1, data: JSON.stringify(postInfo) }
+            return ctx.response.body = { status: 1, data: JSON.stringify(postInfo[0].data), totalCount: postInfo[0].totalCount[0].value }
+        }
+
+        return ctx.response.body = { status: 1, data: JSON.stringify(postInfo[0].data), totalCount: 0 }
     } catch (error) {
         console.log(error)
-        return ctx.response.body = { status: 0, response: `Error in post controllers/getTrendingPost - ${error.message}` }
+        return ctx.response.body = { status: 0, response: `Error in post controllers/getPagePost - ${error.message}` }
     }
 }
 

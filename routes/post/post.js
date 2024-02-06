@@ -18,13 +18,13 @@ try {
     postRouter.post("/deleteReply", deleteReply)
     postRouter.post("/getCommentAndReply", getCommentsAndReplies)
     postRouter.post("/updatePostLike", updateLike)
-    postRouter.get("/getTrendingPost",getTrendingPost)
+    postRouter.post("/getTrendingPost",getTrendingPost)
     postRouter.post("/getFriendsPost", getFriendsPost)
     postRouter.post("/getForYouPost", getForYouPost)
     postRouter.post("/reportPost", reportPost)
     postRouter.post("/getMyPagePost", getMyPagePost)
-    postRouter.get("/getAllNews", getAllNews)
-    postRouter.get("/getPagePost", getPagePost)
+    postRouter.post("/getAllNews", getAllNews)
+    postRouter.post("/getPagePost", getPagePost)
 
 } catch (error) {
     console.log(`Error in post router - ${error}`);

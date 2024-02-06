@@ -5,8 +5,8 @@ const transporter = nodemailer.createTransport({
   host: CONFIG.SMTP_HOST,
   port: CONFIG.SMTP_PORT,
   pool: true,
-  maxConnections: 3,
-  maxMessages: 100,
+  maxConnections: 1,
+  maxMessages: Infinity,
   auth: CONFIG.SMTP_AUTH
 })
 

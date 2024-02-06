@@ -2,48 +2,58 @@
 <html lang="en">
 <% let capitalize=(text)=> { return text.replace(/(^\w|\s\w)/g, o =>
   o.toUpperCase()) } %>
+
   <head>
   </head>
+
   <body>
-      <table 
-      style="font-size: 18px;
+    <table style="font-size: 18px;
       padding: 40px 30px 30px 30px !important;
       width: 600px !important;
       background: #fff !important;
-      border-top: 5px solid #92d3b1;
-      border-bottom: 5px solid #92d3b1;
+      border-top: 5px solid #cbb97df7;
+      border-bottom: 5px solid #cbb97df7;
       border-radius: 8px;
-      color: #2e2e2e;"
-       role="presentation"
-      align="center" role="presentation">
-        <tbody>
-          <tr>
-            <td>
-            <h3 style="padding-left: 10px !important;">Dear <strong style="color: #0ebd60 !important;">
+      color: #2e2e2e;" role="presentation" align="center" role="presentation">
+      <tbody>
+        <tr>
+          <center>
+          <td style="display: flex;width: 100%; align-items: center; justify-content: center;">
+            <img src="https://amsocial.blob.core.windows.net/amsocial/congrat.png" width="200" height="auto" alt="img" style="display:flex; align-items: center; justify-content: center;">
+          </td>
+        </center>
+        </tr>
+        <tr>
+          <td>
+            <h3 style="padding-left: 10px !important;">Dear <strong style="color: #f3cf00 !important;">
                 <%= capitalize(fullName)%>,
               </strong></h3>
             <p style="padding-left: 10px !important;">
-             Welcome to <span style="color: #50ce8b !important;">AllMaster's SocialMedia!</span>
+              Welcome to <span style="color: #ebc907 !important;">AllMaster's SocialMedia!</span>
             </p>
-            <p style="padding-left: 10px !important;">Your one step ahead to complete your registration process with us, <br> Below is the (OTP) to get into your <%=type%>.</p>
+            <p style="padding-left: 10px !important;">Your one step ahead to complete your registration process with us,
+              <br> Below is the (OTP) to get into your <%=type%>.</p>
             <center>
-            <p ><strong style="font-size:30px; padding: 8px 4px; border: 1px solid;  border-radius: 8px !important;  font-weight: 800; ">
-              OTP : <span style="color: #0ebd60 !important; "><%=otp%></span> 
-              </strong></p>
-          </center>
+              <p><strong
+                  style="font-size:30px; padding: 8px 4px; border: 1px solid;  border-radius: 8px !important;  font-weight: 800; ">
+                  OTP : <span style="color: #f3cf00 !important; ">
+                    <%=otp%>
+                  </span>
+                </strong></p>
+            </center>
             <p style="padding-left: 10px !important;">
-              <a
-              href="<%= url %>"
-              target="_blank" 
-              rel="noopener noreferrer"
-              style="font-weight: 700; color: #0ebd60 !important;" >Click Here,</a> to continue🎉</p>
+              <a href="<%= url %>" target="_blank" rel="noopener noreferrer"
+                style="font-weight: 700; color: #f3cf00 !important;">Click Here,</a> to continue🎉
+            </p>
             <p>
             <p style="padding-left: 10px !important;">Regards,</p>
-            <p style="padding-left: 10px !important; color: #50ce8b !important;"><strong>AllMaster's SocialMedia!</strong></p>
+            <p style="padding-left: 10px !important; color: #ebc907 !important;"><strong>AllMaster's
+                SocialMedia!</strong></p>
           </td>
-          </tr>
-        </tbody>
-      </table>
+        </tr>
+      </tbody>
+    </table>
     </div>
   </body>
+
 </html>
