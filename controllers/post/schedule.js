@@ -212,8 +212,12 @@ const getAllSchedule = async (ctx) => {
             }
         ]
         scheduleInfo = await db.getAggregation("schedule", aggregationQuery)
+        if (scheduleInfo[0].data.length !== 0) {
 
-        return ctx.response.body = { status: 1, data: JSON.stringify(scheduleInfo[0].data), totalCount: scheduleInfo[0].totalCount[0].value }
+            return ctx.response.body = { status: 1, data: JSON.stringify(scheduleInfo[0].data), totalCount: scheduleInfo[0].totalCount[0].value }
+        }
+
+        return ctx.response.body = { status: 1, data: JSON.stringify(scheduleInfo[0].data), totalCount: 0 }
     } catch (error) {
         console.log(error)
         return ctx.response.body = { status: 0, response: `Error in schedule controllers/getAllSchedule - ${error.message}` }

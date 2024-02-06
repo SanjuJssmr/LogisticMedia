@@ -380,8 +380,12 @@ const getAllQa = async (ctx) => {
             }
         ]
         qaData = await db.getAggregation("question", aggregationQuery)
+        if (qaData[0].data.length !== 0) {
 
-        return ctx.response.body = { status: 1, data: JSON.stringify(qaData[0].data), totalCount: qaData[0].totalCount[0].value}
+            return ctx.response.body = { status: 1, data: JSON.stringify(qaData[0].data), totalCount: qaData[0].totalCount[0].value }
+        }
+
+        return ctx.response.body = { status: 1, data: JSON.stringify(qaData[0].data), totalCount: 0 }
     } catch (error) {
         console.log(error)
         return ctx.response.body = { status: 0, response: `Error in Qa controllers/getAllQa - ${error.message}` }
