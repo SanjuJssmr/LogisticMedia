@@ -16,7 +16,7 @@ const addPost = async (ctx) => {
         postData.files = []
         if (fileData.length !== 0) {
             for (let file of fileData) {
-                filePath = await common.uploadBufferToAzureBlob(file)
+                filePath = await common.uploadBufferToAzureBlob(file, file.mimetype)
                 postData.files.push(filePath)
             }
         }

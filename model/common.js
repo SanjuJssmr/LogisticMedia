@@ -1,7 +1,5 @@
 //Imports
-const db = require('../model/mongodb')
 const CONFIG = require('../config/config')
-let CONFIGJSON = require('../config/config.json')
 const path = require('path')
 const ejs = require('ejs')
 const { transporter } = require('./mail')
@@ -45,34 +43,32 @@ const errorMail = async (errorData) => {
   }
 }
 
-const uploadBufferToAzureBlob = async (fileData) => {
+const uploadBufferToAzureBlob = async (fileData, contentType) => {
   try {
-    // Example usage with a buffer
-    const storageAccountName = 'amsocial';
-    const storageAccountKey = '5Kn3rgWEXZEvpls8VmrzoyZSrEqYoc5waWINl7GhI9nqhtr4lzRmmhgS5r6KOgL8gMaGbGBXcWI5+ASt6DBWLg==';
-    const containerName = 'amsocial';
-    // Create a BlobServiceClient
-    const blobServiceClient = BlobServiceClient.fromConnectionString(`DefaultEndpointsProtocol=https;AccountName=${storageAccountName};AccountKey=${storageAccountKey};EndpointSuffix=core.windows.net`);
+    let storageAccountName, storageAccountKey, containerName, blobServiceClient,
+      containerClient, blobName, blockBlobClient, blobContentType, blobUrl
+    storageAccountName = CONFIG.ACCOUNTNAME;
+    storageAccountKey = CONFIG.ACCOUNTKEY;
+    containerName = CONFIG.CONTAINERNAME;
 
-    // Get a reference to a container
-    const containerClient = blobServiceClient.getContainerClient(containerName);
+    blobServiceClient = BlobServiceClient.fromConnectionString(`DefaultEndpointsProtocol=https;AccountName=${storageAccountName};AccountKey=${storageAccountKey};EndpointSuffix=core.windows.net`);
 
-    // Generate a unique name for the blob
-    const blobName = `${uuid.v4()}${fileData.originalname}`; // Change the extension based on your buffer content type
+    containerClient = blobServiceClient.getContainerClient(containerName);
 
-    // Get a block blob client
-    const blockBlobClient = containerClient.getBlockBlobClient(blobName);
+    blobName = `${uuid.v4()}${fileData.originalname}`;
+    blockBlobClient = containerClient.getBlockBlobClient(blobName);
 
-    // Upload the buffer to the blob
-    await blockBlobClient.uploadData(fileData.buffer, { blobHTTPHeaders: { blobContentType: 'image/png' } });
+    // Determine content type
+    blobContentType = contentType.startsWith('image/') ? 'image/png' : 'video/mp4';
 
-    // Generate and return the URL
-    const blobUrl = `https://${storageAccountName}.blob.core.windows.net/${containerName}/${blobName}`;
+    await blockBlobClient.uploadData(fileData.buffer, { blobHTTPHeaders: { blobContentType } });
+
+    blobUrl = `https://${storageAccountName}.blob.core.windows.net/${containerName}/${blobName}`;
     return blobUrl;
   } catch (error) {
-    console.log(error.message)
+    console.log(error.message);
   }
-}
+};
 
 const otpGenerate = () => {
   try {

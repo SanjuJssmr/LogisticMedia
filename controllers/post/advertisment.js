@@ -15,7 +15,7 @@ const addAdvertisement = async (ctx) => {
         advertData.files = []
         if (fileData.length !== 0) {
             for (let file of fileData) {
-                filePath = await common.uploadBufferToAzureBlob(file)
+                filePath = await common.uploadBufferToAzureBlob(file, file.mimetype)
                 advertData.files.push(filePath)
             }
         }
