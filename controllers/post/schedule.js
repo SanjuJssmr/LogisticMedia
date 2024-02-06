@@ -209,11 +209,26 @@ const getAllSchedule = async (ctx) => {
                         { $count: "value" }
                     ]
                 }
-            }
+            },
+            {
+                $lookup: {
+                    from: "advertisments",
+                    pipeline: [],
+                    as: "randomData"
+                }
+            },
+            { $unwind: "$randomData" },
+            { $match: { "randomData.status": 1 } },
+            { $sample: { size: 1 } },
+            { $unset: ["randomData.createdAt", "randomData.updatedAt", "randomData.status"] }
         ]
         scheduleInfo = await db.getAggregation("schedule", aggregationQuery)
         if (scheduleInfo[0].data.length !== 0) {
+            if (scheduleInfo[0].data.length >= 9) {
 
+                scheduleInfo[0].data.splice(5, 0, scheduleInfo[0].randomData);
+                return ctx.response.body = { status: 1, data: JSON.stringify(scheduleInfo[0].data), totalCount: scheduleInfo[0].totalCount[0].value }
+            }
             return ctx.response.body = { status: 1, data: JSON.stringify(scheduleInfo[0].data), totalCount: scheduleInfo[0].totalCount[0].value }
         }
 
