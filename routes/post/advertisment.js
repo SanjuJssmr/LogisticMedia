@@ -1,6 +1,6 @@
 const Router = require('koa-router');
 const { addAdvertisement, getAdvertisement, deleteAdvertisement, getAllAdvertisement } = require('../../controllers/post/advertisment');
-const advertisementRouter = new Router({ prefix: "/advertisment" })
+const advertisementRouter = new Router({ prefix: "/advertisement" })
 
 try {
     advertisementRouter.post("/addAdvertisement", addAdvertisement)

@@ -230,21 +230,16 @@ const getMyPagePost = async (ctx) => {
 const getTrendingPost = async (ctx) => {
     let data = { status: 0, response: "Invalid request" }
     try {
-        let postData = ctx.request.body, postInfo, aggregationQuery = [], matchCond;
+        let postData = ctx.request.body, postInfo, aggregationQuery = [];
         if (Object.keys(postData).length === 0 && postData.data === undefined) {
             res.send(data)
 
             return
         }
         postData = postData.data[0];
-        if (postData.hashTags.trim().length !== 0) {
-            matchCond = { status: 1, hashtags: { $in: [postData.hashTags] } }
-        } else {
-            matchCond = { status: 1 }
-        }
         aggregationQuery = [
             {
-                $match: matchCond
+                $match: { status: 1 }
             },
             {
                 $lookup:
@@ -320,11 +315,26 @@ const getTrendingPost = async (ctx) => {
                         { $count: "value" }
                     ]
                 }
-            }
+            },
+            {
+                $lookup: {
+                    from: "advertisments",
+                    pipeline: [],
+                    as: "randomData"
+                }
+            },
+            { $unwind: "$randomData" },
+            { $match: { "randomData.status": 1 } },
+            { $sample: { size: 1 } },
+            { $unset: ["randomData.createdAt", "randomData.updatedAt", "randomData.status"] }
         ]
         postInfo = await db.getAggregation("post", aggregationQuery)
         if (postInfo[0].data.length !== 0) {
+            if (postInfo[0].data.length >= 9) {
 
+                postInfo[0].data.splice(5, 0, postInfo[0].randomData);
+                return ctx.response.body = { status: 1, data: JSON.stringify(postInfo[0].data), totalCount: postInfo[0].totalCount[0].value }
+            }
             return ctx.response.body = { status: 1, data: JSON.stringify(postInfo[0].data), totalCount: postInfo[0].totalCount[0].value }
         }
 
@@ -590,27 +600,15 @@ const getForYouPost = async (ctx) => {
             return
         }
         postData = postData.data[0]
-        if (postData.hashTags.trim().length !== 0) {
-            matchCond = {
-                status: 1,
-                $or: [
-                    { state: postData.state },
-                    { country: postData.country }
-                ],
-                hashtags: { $in: [postData.hashTags] }
-            }
-        } else {
-            matchCond = {
-                status: 1,
-                $or: [
-                    { state: postData.state },
-                    { country: postData.country }
-                ]
-            }
-        }
         aggregationQuery = [
             {
-                $match: matchCond
+                $match: {
+                    status: 1,
+                    $or: [
+                        { state: postData.state },
+                        { country: postData.country }
+                    ]
+                }
             },
             {
                 $lookup:
@@ -686,11 +684,26 @@ const getForYouPost = async (ctx) => {
                         { $count: "value" }
                     ]
                 }
-            }
+            },
+            {
+                $lookup: {
+                    from: "advertisments",
+                    pipeline: [],
+                    as: "randomData"
+                }
+            },
+            { $unwind: "$randomData" },
+            { $match: { "randomData.status": 1 } },
+            { $sample: { size: 1 } },
+            { $unset: ["randomData.createdAt", "randomData.updatedAt", "randomData.status"] }
         ]
         postInfo = await db.getAggregation("post", aggregationQuery)
         if (postInfo[0].data.length !== 0) {
+            if (postInfo[0].data.length >= 9) {
 
+                postInfo[0].data.splice(5, 0, postInfo[0].randomData);
+                return ctx.response.body = { status: 1, data: JSON.stringify(postInfo[0].data), totalCount: postInfo[0].totalCount[0].value }
+            }
             return ctx.response.body = { status: 1, data: JSON.stringify(postInfo[0].data), totalCount: postInfo[0].totalCount[0].value }
         }
 
@@ -782,18 +795,13 @@ const getPostById = async (ctx) => {
 const getFriendsPost = async (ctx) => {
     let data = { status: 0, response: "Invalid request" }
     try {
-        let connectionData = ctx.request.body, postInfo, aggregationQuery = [], matchCond;
+        let connectionData = ctx.request.body, postInfo, aggregationQuery = [];
         if (Object.keys(connectionData).length === 0 && connectionData.data === undefined) {
             ctx.response.body = data
 
             return
         }
         connectionData = connectionData.data[0]
-        if (connectionData.hashTags.trim().length !== 0) {
-            matchCond = { "postInfo.status": 1, "postInfo.hashtags": { $in: [connectionData.hashTags] } }
-        } else {
-            matchCond = { "postInfo.status": 1 }
-        }
         aggregationQuery = [
             {
                 $match: {
@@ -856,7 +864,7 @@ const getFriendsPost = async (ctx) => {
             {
                 $unwind: "$postInfo"
             },
-            { $match: matchCond },
+            { $match: { "postInfo.status": 1 } },
             {
                 $lookup:
                 {
@@ -935,11 +943,26 @@ const getFriendsPost = async (ctx) => {
                         { $count: "value" }
                     ]
                 }
-            }
+            },
+            {
+                $lookup: {
+                    from: "advertisments",
+                    pipeline: [],
+                    as: "randomData"
+                }
+            },
+            { $unwind: "$randomData" },
+            { $match: { "randomData.status": 1 } },
+            { $sample: { size: 1 } },
+            { $unset: ["randomData.createdAt", "randomData.updatedAt", "randomData.status"] }
         ]
         postInfo = await db.getAggregation("connection", aggregationQuery)
         if (postInfo[0].data.length !== 0) {
+            if (postInfo[0].data.length >= 9) {
 
+                postInfo[0].data.splice(5, 0, postInfo[0].randomData);
+                return ctx.response.body = { status: 1, data: JSON.stringify(postInfo[0].data), totalCount: postInfo[0].totalCount[0].value }
+            }
             return ctx.response.body = { status: 1, data: JSON.stringify(postInfo[0].data), totalCount: postInfo[0].totalCount[0].value }
         }
 
@@ -1028,11 +1051,26 @@ const getAllNews = async (ctx) => {
                         { $count: "value" }
                     ]
                 }
-            }
+            },
+            {
+                $lookup: {
+                    from: "advertisments",
+                    pipeline: [],
+                    as: "randomData"
+                }
+            },
+            { $unwind: "$randomData" },
+            { $match: { "randomData.status": 1 } },
+            { $sample: { size: 1 } },
+            { $unset: ["randomData.createdAt", "randomData.updatedAt", "randomData.status"] }
         ]
         postInfo = await db.getAggregation("post", aggregationQuery)
         if (postInfo[0].data.length !== 0) {
+            if (postInfo[0].data.length >= 9) {
 
+                postInfo[0].data.splice(5, 0, postInfo[0].randomData);
+                return ctx.response.body = { status: 1, data: JSON.stringify(postInfo[0].data), totalCount: postInfo[0].totalCount[0].value }
+            }
             return ctx.response.body = { status: 1, data: JSON.stringify(postInfo[0].data), totalCount: postInfo[0].totalCount[0].value }
         }
 
@@ -1045,21 +1083,16 @@ const getAllNews = async (ctx) => {
 
 const getPagePost = async (ctx) => {
     try {
-        let postData = ctx.request.body, postInfo, aggregationQuery = [], matchCond;
+        let postData = ctx.request.body, postInfo, aggregationQuery = [];
         if (Object.keys(postData).length === 0 && postData.data === undefined) {
             res.send(data)
 
             return
         }
         postData = postData.data[0]
-        if (postData.hashTags.trim().length !== 0) {
-            matchCond = { $and: [{ companyId: { $exists: true } }, { status: 1 }], hashtags: { $in: [postData.hashTags] } }
-        } else {
-            matchCond = { $and: [{ companyId: { $exists: true } }, { status: 1 }] }
-        }
         aggregationQuery = [
             {
-                $match: matchCond,
+                $match: { $and: [{ companyId: { $exists: true } }, { status: 1 }] },
             },
             {
                 $lookup:
@@ -1137,12 +1170,26 @@ const getPagePost = async (ctx) => {
                         { $count: "value" }
                     ]
                 }
-            }
-
+            },
+            {
+                $lookup: {
+                    from: "advertisments",
+                    pipeline: [],
+                    as: "randomData"
+                }
+            },
+            { $unwind: "$randomData" },
+            { $match: { "randomData.status": 1 } },
+            { $sample: { size: 1 } },
+            { $unset: ["randomData.createdAt", "randomData.updatedAt", "randomData.status"] }
         ]
         postInfo = await db.getAggregation("post", aggregationQuery)
         if (postInfo[0].data.length !== 0) {
+            if (postInfo[0].data.length >= 9) {
 
+                postInfo[0].data.splice(5, 0, postInfo[0].randomData);
+                return ctx.response.body = { status: 1, data: JSON.stringify(postInfo[0].data), totalCount: postInfo[0].totalCount[0].value }
+            }
             return ctx.response.body = { status: 1, data: JSON.stringify(postInfo[0].data), totalCount: postInfo[0].totalCount[0].value }
         }
 
