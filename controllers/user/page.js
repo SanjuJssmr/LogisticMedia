@@ -120,7 +120,7 @@ const addCompanyPages = async (ctx) => {
         }
         pageData.otp = common.otpGenerate()
         if (fileData.length !== 0) {
-            pageData.profile = await common.uploadBufferToAzureBlob(fileData[0])
+            pageData.profile = await common.uploadBufferToAzureBlob(fileData[0], fileData[0].mimetype)
         }
 
         pageInsert = await db.insertSingleDocument("companyPage", pageData)

@@ -13,7 +13,7 @@ const askQuestion = async (ctx) => {
             return
         }
         if (fileData.length !== 0) {
-            questionData.files = await common.uploadBufferToAzureBlob(fileData[0])
+            questionData.files = await common.uploadBufferToAzureBlob(fileData[0], fileData[0].mimetype)
         }
         questionInfo = await db.insertSingleDocument("question", questionData)
         if (Object.keys(questionInfo).length !== 0) {
