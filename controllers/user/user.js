@@ -118,7 +118,7 @@ const userRegister = async (ctx) => {
         userData.password = await bcrypt.hash(userData.password, 10)
         userData.otp = common.otpGenerate()
         if (fileData.length !== 0) {
-            userData.profile = await common.uploadBufferToAzureBlob(fileData[0])
+            userData.profile = await common.uploadBufferToAzureBlob(fileData[0],fileData[0].mimetype)
         }
         userInsert = await db.insertSingleDocument("user", userData)
         if (Object.keys(userInsert).length !== 0) {
@@ -161,7 +161,7 @@ const updateRegisterData = async (ctx) => {
         userData.password = await bcrypt.hash(userData.password, 10)
         userData.otp = common.otpGenerate()
         if (fileData.length !== 0) {
-            userData.profile = await common.uploadBufferToAzureBlob(fileData[0])
+            userData.profile = await common.uploadBufferToAzureBlob(fileData[0], fileData[0].mimetype)
         }
 
         updateuserData = await db.findByIdAndUpdate("user", userData.id, userData)
@@ -347,7 +347,7 @@ const updateUserDetails = async (ctx) => {
             return ctx.response.body = { status: 0, response: "Invalid id" }
         }
         if (fileData.length !== 0) {
-            updateData.profile = await common.uploadBufferToAzureBlob(fileData[0])
+            updateData.profile = await common.uploadBufferToAzureBlob(fileData[0], fileData[0].mimetype)
         }
         updateUserData = await db.findByIdAndUpdate("user", updateData.id, updateData)
         if (updateUserData.modifiedCount !== 0 && updateUserData.matchedCount !== 0) {
