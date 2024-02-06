@@ -4,7 +4,8 @@ const { addPost, deletePost, getMyPost, postComment, deleteComment, addReply, de
     getFriendsPost,
     getPagePost,
     getAllNews,
-    getMyPagePost} = require('../../controllers/post/post')
+    getMyPagePost,
+    getPostByHashtag} = require('../../controllers/post/post')
 const postRouter = new Router({ prefix: "/post" })
 
 try {
@@ -25,6 +26,7 @@ try {
     postRouter.post("/getMyPagePost", getMyPagePost)
     postRouter.post("/getAllNews", getAllNews)
     postRouter.post("/getPagePost", getPagePost)
+    postRouter.post("/getPostByHashtag", getPostByHashtag)
 
 } catch (error) {
     console.log(`Error in post router - ${error}`);
