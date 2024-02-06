@@ -1203,16 +1203,102 @@ const getPagePost = async (ctx) => {
 const getPostByHashtag = async (ctx) => {
     let data = { status: 0, response: "Invalid request" }
     try {
-        let hashTagData = ctx.request.body, postInfo;
+        let hashTagData = ctx.request.body, postInfo, aggregationQuery = [];
         if (Object.keys(hashTagData).length === 0 && hashTagData.data === undefined) {
             ctx.response.body = data
 
             return
         }
         hashTagData = hashTagData.data[0];
-        postInfo = await db.findDocuments("post", { hashtags: { $in: hashTagData.hashTags } })
+        aggregationQuery = [
+            {
+                $match: { status: 1, hashtags: { $in: hashTagData.hashTags } },
+            },
+            {
+                $lookup:
+                {
+                    from: "users",
+                    localField: "createdBy",
+                    foreignField: "_id",
+                    as: "userInfo",
+                }
+            },
+            {
+                $lookup:
+                {
+                    from: "companypages",
+                    localField: "companyId",
+                    foreignField: "_id",
+                    as: "companyInfo",
+                }
+            },
+            {
+                $lookup:
+                {
+                    from: "postlikes",
+                    localField: "_id",
+                    foreignField: "postId",
+                    as: "postInfo",
+                }
+            },
+            {
+                $addFields: {
+                    likedBy: "$postInfo.likedBy",
+                    fullName: "$userInfo.fullName",
+                    designation: "$userInfo.designation",
+                    profile: "$userInfo.profile",
+                    companyName: "$companyInfo.companyName",
+                    companyProfile: "$companyInfo.profile",
+                    companyId: "$companyInfo._id",
+                    reporterIds: "$reportCount.userId"
+                }
+            },
+            {
+                $project: {
+                    "createdBy": "$createdBy",
+                    "description": "$description",
+                    "hashtags": "$hashtags",
+                    "files": "$files",
+                    "createdAt": "$createdAt",
+                    "reporterIds": "$reporterIds",
+                    "fullName": { '$arrayElemAt': ['$fullName', 0] },
+                    "designation": { '$arrayElemAt': ['$designation', 0] },
+                    "profile": { '$arrayElemAt': ['$profile', 0] },
+                    "likedBy": { '$arrayElemAt': ['$likedBy', 0] },
+                    "companyName": { '$arrayElemAt': ['$companyName', 0] },
+                    'companyProfile': { '$arrayElemAt': ['$companyProfile', 0] },
+                    "companyId": { '$arrayElemAt': ['$companyId', 0] }
+                }
+            },
+            {
+                $addFields: {
+                    likes: { $size: "$likedBy" },
+                }
+            },
+            {
+                $sort: {
+                    createdAt: -1,
+                }
+            },
+            {
+                $facet: {
+                    data: [
+                        { $skip: (hashTagData.page - 1) * hashTagData.pageSize },
+                        { $limit: hashTagData.pageSize }
+                    ],
+                    totalCount: [
+                        { $count: "value" }
+                    ]
+                }
+            }
+        ]
+        postInfo = await db.getAggregation("post", aggregationQuery)
+        if (postInfo[0].data.length !== 0) {
 
-        return ctx.response.body = { status: 0, data: JSON.stringify(postInfo) }
+            return ctx.response.body = { status: 1, data: JSON.stringify(postInfo[0].data), totalCount: postInfo[0].totalCount[0].value }
+        }
+
+        return ctx.response.body = { status: 1, data: JSON.stringify(postInfo[0].data), totalCount: 0 }
     } catch (error) {
         console.log(error)
         return ctx.response.body = { status: 0, response: `Error in post controllers/getPostByHashtag - ${error.message}` }
