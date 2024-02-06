@@ -11,7 +11,7 @@ const { scheduleRouter } = require("./routes/post/schedule");
 const { qaRouter } = require("./routes/post/qa");
 const socketIo = require("socket.io");
 const db = require("./model/mongodb");
-const { advertismentRouter } = require("./routes/post/advertisment");
+const { advertisementRouter } = require("./routes/post/advertisment");
 
 const io = socketIo(8900, {
   cors: {
@@ -99,7 +99,7 @@ mongoose.connection.on('connected', () => {
     app.use(postRouter.routes())
     app.use(scheduleRouter.routes())
     app.use(qaRouter.routes())
-    app.use(advertismentRouter.routes())
+    app.use(advertisementRouter.routes())
     app.listen(CONFIG.PORT, () => {
       console.log("Server turned on with Koa", CONFIG.ENV, "mode on port", CONFIG.PORT);
     });

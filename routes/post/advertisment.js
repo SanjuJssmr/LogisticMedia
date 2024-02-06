@@ -1,15 +1,15 @@
 const Router = require('koa-router');
-const { addAdvertisment, getAdvertisment, deleteAdvertisment, getAllAdvertisment } = require('../../controllers/post/advertisment');
-const advertismentRouter = new Router({ prefix: "/advertisment" })
+const { addAdvertisement, getAdvertisement, deleteAdvertisement, getAllAdvertisement } = require('../../controllers/post/advertisment');
+const advertisementRouter = new Router({ prefix: "/advertisment" })
 
 try {
-    advertismentRouter.post("/addAdvertisment", addAdvertisment)
-    advertismentRouter.get("/getAdvertisment", getAdvertisment)
-    advertismentRouter.post("/deleteAdvertisment", deleteAdvertisment)
-    advertismentRouter.get("/getAllAdvertisment", getAllAdvertisment)
+    advertisementRouter.post("/addAdvertisement", addAdvertisement)
+    advertisementRouter.get("/getAdvertisement", getAdvertisement)
+    advertisementRouter.post("/deleteAdvertisement", deleteAdvertisement)
+    advertisementRouter.get("/getAllAdvertisement", getAllAdvertisement)
 
 } catch (error) {
-    console.log(`Error in Advertisment router - ${error}`);
+    console.log(`Error in Advertisement router - ${error}`);
 }
 
-module.exports = { advertismentRouter }
+module.exports = { advertisementRouter }

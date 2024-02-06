@@ -230,7 +230,7 @@ const verifyOtp = async (ctx) => {
 
             return ctx.response.body = data
         }
-        return ctx.response.body = { status: 1, response: "Invalid Request" }
+        return ctx.response.body = { status: 0, response: "Invalid OTP" }
 
     } catch (error) {
         console.log(error.message)

@@ -1096,6 +1096,7 @@ const getPagePost = async (ctx) => {
                     profile: "$userInfo.profile",
                     companyName: "$companyInfo.companyName",
                     companyProfile: "$companyInfo.profile",
+                    companyId: "$companyInfo._id",
                     reporterIds: "$reportCount.userId"
                 }
             },
@@ -1113,6 +1114,7 @@ const getPagePost = async (ctx) => {
                     "likedBy": { '$arrayElemAt': ['$likedBy', 0] },
                     "companyName": { '$arrayElemAt': ['$companyName', 0] },
                     'companyProfile': { '$arrayElemAt': ['$companyProfile', 0] },
+                    "companyId": { '$arrayElemAt': ['$companyId', 0] }
                 }
             },
             {
