@@ -1200,8 +1200,28 @@ const getPagePost = async (ctx) => {
     }
 }
 
+const getPostByHashtag = async (ctx) => {
+    let data = { status: 0, response: "Invalid request" }
+    try {
+        let hashTagData = ctx.request.body, postInfo;
+        if (Object.keys(hashTagData).length === 0 && hashTagData.data === undefined) {
+            ctx.response.body = data
+
+            return
+        }
+        hashTagData = hashTagData.data[0];
+        postInfo = await db.findDocuments("post", { hashtags: { $in: hashTagData.hashTags } })
+
+        return ctx.response.body = { status: 0, data: JSON.stringify(postInfo) }
+    } catch (error) {
+        console.log(error)
+        return ctx.response.body = { status: 0, response: `Error in post controllers/getPostByHashtag - ${error.message}` }
+    }
+}
+
+
 module.exports = {
     addPost, deletePost, getMyPost, postComment, deleteComment, addReply,
     deleteReply, getCommentsAndReplies, updateLike, getTrendingPost, getForYouPost, reportPost,
-    getPostById, getFriendsPost, getMyPagePost, getAllNews, getPagePost
+    getPostById, getFriendsPost, getMyPagePost, getAllNews, getPagePost, getPostByHashtag
 }

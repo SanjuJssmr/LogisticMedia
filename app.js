@@ -38,9 +38,9 @@ app.on('error', (err, ctx) => {
 
 let users = [];
 
-const addUser = (connectionId, userId, socketId) => {
+const addUser = ( userId, socketId) => {
   users = users.filter((user) => user.userId !== userId)
-  users.push({ connectionId, userId, socketId });
+  users.push({ userId, socketId });
 }
 
 const getUser = (receiverId, onlineUser) => {
@@ -49,14 +49,14 @@ const getUser = (receiverId, onlineUser) => {
 
 io.on("connection", (socket) => {
 
-  socket.on("users", (connectionId, userId) => {
-    addUser(connectionId, userId, socket.id);
+  socket.on("users", (userId) => {
+    addUser(userId, socket.id);
     io.emit("getUsers", users);
   });
 
   socket.on("sendNotification", ({ senderId, receiverId }) => {
     const receiver = getUser(receiverId, users);
-    if(receiver.length !==0){
+    if (receiver.length !== 0) {
       io.to(receiver[0].socketId).emit("getNotification", {
         senderId,
         receiverId
@@ -64,7 +64,7 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on("sendMessage", async ({ connectionId, senderId,senderName, receiverId, message, createdAt }) => {
+  socket.on("sendMessage", async ({ connectionId, senderId, senderName, receiverId, message, createdAt }) => {
     const user = getUser(receiverId, users);
     if (user.length !== 0) {
       io.to(user[0].socketId).emit("getMessage", {
@@ -78,7 +78,7 @@ io.on("connection", (socket) => {
 
       return
     }
-    await db.insertSingleDocument("chat", { connectionId: connectionId, sender: senderId, message: message})
+    await db.insertSingleDocument("chat", { connectionId: connectionId, sender: senderId, message: message })
   });
 
   socket.on("disconnect", () => {
