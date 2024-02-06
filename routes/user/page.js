@@ -21,7 +21,7 @@ try {
     pageRouter.post("/getCompanyDataByFollowersDescending", getCompanyDataByFollowersDescending)
 
 } catch (error) {
-    console.log(`error in user router - ${error}`);
+    console.log(`error in page router - ${error}`);
 }
 
 module.exports = { pageRouter }
