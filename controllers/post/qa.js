@@ -378,25 +378,25 @@ const getAllQa = async (ctx) => {
                     ]
                 }
             },
-            {
-                $lookup: {
-                    from: "advertisments",
-                    pipeline: [],
-                    as: "randomData"
-                }
-            },
-            { $unwind: "$randomData" },
-            { $match: { "randomData.status": 1 } },
-            { $sample: { size: 1 } },
-            { $unset: ["randomData.createdAt", "randomData.updatedAt", "randomData.status"] }
+            // {
+            //     $lookup: {
+            //         from: "advertisments",
+            //         pipeline: [],
+            //         as: "randomData"
+            //     }
+            // },
+            // { $unwind: "$randomData" },
+            // { $match: { "randomData.status": 1 } },
+            // { $sample: { size: 1 } },
+            // { $unset: ["randomData.createdAt", "randomData.updatedAt", "randomData.status"] }
         ]
         qaData = await db.getAggregation("question", aggregationQuery)
         if (qaData[0].data.length !== 0) {
-            if (qaData[0].data.length >= 9) {
+            // if (qaData[0].data.length >= 9) {
 
-                qaData[0].data.splice(5, 0, qaData[0].randomData);
-                return ctx.response.body = { status: 1, data: JSON.stringify(qaData[0].data), totalCount: qaData[0].totalCount[0].value }
-            }
+            //     qaData[0].data.splice(5, 0, qaData[0].randomData);
+            //     return ctx.response.body = { status: 1, data: JSON.stringify(qaData[0].data), totalCount: qaData[0].totalCount[0].value }
+            // }
             return ctx.response.body = { status: 1, data: JSON.stringify(qaData[0].data), totalCount: qaData[0].totalCount[0].value }
         }
 
