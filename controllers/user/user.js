@@ -955,7 +955,7 @@ const getMyNotifications = async (ctx) => {
         ]
         notificationInfo = await db.getAggregation("notification", aggregationQuery)
 
-        return ctx.response.body = { status: 1, data: notificationInfo }
+        return ctx.response.body = { status: 1, data: JSON.stringify(notificationInfo) }
     } catch (error) {
         console.log(error.message)
         return ctx.response.body = { status: 0, response: `Error in user Controller - getMyNotifications:-${error.message}` }
