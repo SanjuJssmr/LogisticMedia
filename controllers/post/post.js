@@ -362,13 +362,17 @@ const postComment = async (ctx) => {
         }
         commentInfo = await db.insertSingleDocument("postComment", commentData)
         if (Object.keys(commentInfo).length !== 0) {
-            updateNotification = await db.insertSingleDocument("notification", { receiverId: postInfo.createdBy, senderId: commentData.userId, postId: postInfo._id, commentId: commentInfo._id, category: 2 })
-            if (Object.keys(updateNotification).length !== 0) {
+            if (postInfo.createdBy.toString() !== commentData.userId) {
+                updateNotification = await db.insertSingleDocument("notification", { receiverId: postInfo.createdBy, senderId: commentData.userId, postId: postInfo._id, commentId: commentInfo._id, category: 2 })
+                if (Object.keys(updateNotification).length !== 0) {
 
-                return ctx.response.body = { status: 1, response: "Comment added successfully" }
+                    return ctx.response.body = { status: 1, response: "Comment added successfully" }
+                }
+
+                return ctx.response.body = { status: 0, response: "Notification not updated" }
             }
 
-            return ctx.response.body = { status: 0, response: "Notification not updated" }
+            return ctx.response.body = { status: 1, response: "Comment added successfully" }
         }
         return ctx.response.body = data
     } catch (error) {
@@ -578,13 +582,17 @@ const updateLike = async (ctx) => {
             if (checkAlreadyLiked == null) {
                 updateInfo = await db.updateOneDocument("postLike", { postId: postInfo._id }, { $push: { likedBy: postData.userId } })
                 if (updateInfo.modifiedCount !== 0 && updateInfo.matchedCount !== 0) {
-                    updateNotification = await db.insertSingleDocument("notification", { receiverId: postInfo.createdBy, senderId: postData.userId, postId: postInfo._id })
-                    if (Object.keys(updateNotification).length !== 0) {
+                    if (postInfo.createdBy.toString() !== postData.userId) {
+                        updateNotification = await db.insertSingleDocument("notification", { receiverId: postInfo.createdBy, senderId: postData.userId, postId: postInfo._id })
+                        if (Object.keys(updateNotification).length !== 0) {
 
-                        return ctx.response.body = { status: 1, response: "Like added successfully" }
+                            return ctx.response.body = { status: 1, response: "Like added successfully" }
+                        }
+
+                        return ctx.response.body = { status: 0, response: "Notification not updated" }
                     }
 
-                    return ctx.response.body = { status: 0, response: "Notification not updated" }
+                    return ctx.response.body = { status: 1, response: "Like added successfully" }
                 }
             }
 
@@ -782,6 +790,24 @@ const getPostById = async (ctx) => {
             {
                 $lookup:
                 {
+                    from: "users",
+                    localField: "createdBy",
+                    foreignField: "_id",
+                    as: "userInfo",
+                }
+            },
+            {
+                $lookup:
+                {
+                    from: "companypages",
+                    localField: "companyId",
+                    foreignField: "_id",
+                    as: "companyInfo",
+                }
+            },
+            {
+                $lookup:
+                {
                     from: "postlikes",
                     localField: "_id",
                     foreignField: "postId",
@@ -790,17 +816,36 @@ const getPostById = async (ctx) => {
             },
             {
                 $addFields: {
-                    likes: { $size: "$postInfo" }
+                    likedBy: "$postInfo.likedBy",
+                    fullName: "$userInfo.fullName",
+                    designation: "$userInfo.designation",
+                    profile: "$userInfo.profile",
+                    companyName: "$companyInfo.companyName",
+                    companyProfile: "$companyInfo.profile",
+                    reporterIds: "$reportCount.userId"
                 }
             },
             {
                 $project: {
-                    "postInfo": 0,
-                    "status": 0,
-                    "reportCount": 0,
-                    "updatedAt": 0
+                    "createdBy": "$createdBy",
+                    "description": "$description",
+                    "hashtags": "$hashtags",
+                    "files": "$files",
+                    "createdAt": "$createdAt",
+                    "reporterIds": "$reporterIds",
+                    "fullName": { '$arrayElemAt': ['$fullName', 0] },
+                    "designation": { '$arrayElemAt': ['$designation', 0] },
+                    "profile": { '$arrayElemAt': ['$profile', 0] },
+                    "likedBy": { '$arrayElemAt': ['$likedBy', 0] },
+                    "companyName": { '$arrayElemAt': ['$companyName', 0] },
+                    'companyProfile': { '$arrayElemAt': ['$companyProfile', 0] },
                 }
-            }
+            },
+            {
+                $addFields: {
+                    likes: { $size: "$likedBy" },
+                }
+            },
         ]
         postInfo = await db.getAggregation("post", aggregationQuery)
 
