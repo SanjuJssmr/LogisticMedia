@@ -27,7 +27,7 @@ const postSchema = mongoose.Schema({
         type: Array
     },
     status: {
-        type: Number,
+        type: Number,   // 0 for delete, 1 for active, 2 for company blocked
         default: 1
     },
     reportCount: [{

@@ -118,7 +118,7 @@ const userRegister = async (ctx) => {
         userData.password = await bcrypt.hash(userData.password, 10)
         userData.otp = common.otpGenerate()
         if (fileData.length !== 0) {
-            userData.profile = await common.uploadBufferToAzureBlob(fileData[0],fileData[0].mimetype)
+            userData.profile = await common.uploadBufferToAzureBlob(fileData[0], fileData[0].mimetype)
         }
         userInsert = await db.insertSingleDocument("user", userData)
         if (Object.keys(userInsert).length !== 0) {
@@ -899,9 +899,72 @@ const navSearch = async (ctx) => {
     }
 }
 
+const getMyNotifications = async (ctx) => {
+    let data = { status: 0, response: "Something went wrong" }, userData, notificationInfo, aggregationQuery = [], notificationData = {}, postNotification = [], mentionNotification = [];
+    try {
+        userData = ctx.request.body;
+        if (Object.keys(userData).length === 0 && userData.data === undefined) {
+            ctx.response.body = data
+
+            return
+        }
+        userData = userData.data[0]
+        aggregationQuery = [
+            {
+                $match: {
+                    $and: [
+                        { category: { $ne: 0 } },
+                        { receiverId: new ObjectId(userData.userId) }
+                    ]
+                }
+            },
+            {
+                $lookup: {
+                    from: "users",
+                    localField: "senderId",
+                    foreignField: "_id",
+                    as: "userInfo"
+                }
+            },
+            {
+                $replaceRoot: { newRoot: { $mergeObjects: [{ fullName: "$userInfo.fullName", profile: "$userInfo.profile" }, "$$ROOT"] } }
+            },
+            {
+                $addFields: {
+                    userName: { $arrayElemAt: ["$fullName", 0] },
+                    userProfile: { $arrayElemAt: ["$profile", 0] }
+                }
+            },
+            {
+                $sort: {
+                    createdAt: -1
+                }
+            },
+            {
+                $project: {
+                    _id: 0,
+                    postId: 1,
+                    userProfile: 1,
+                    userName: 1,
+                    category: 1,
+                    commentId: 1,
+                    createdAt: 1,
+                    status: 1
+                },
+            }
+        ]
+        notificationInfo = await db.getAggregation("notification", aggregationQuery)
+
+        return ctx.response.body = { status: 1, data: notificationInfo }
+    } catch (error) {
+        console.log(error.message)
+        return ctx.response.body = { status: 0, response: `Error in user Controller - getMyNotifications:-${error.message}` }
+    }
+}
+
 module.exports = {
     userRegister, updateRegisterData, resendOtp,
     login, verifyOtp, updateUserDetails, userConnectionRequest, getProfileById,
     getAllUser, changeConnectionStatus, getConnectionRequestListById, getFollowListByUserId, getFollowingListByUserId,
-    getConnectionListByUserId, userDetailsById, navSearch
+    getConnectionListByUserId, userDetailsById, navSearch, getMyNotifications
 }

@@ -348,7 +348,7 @@ const getTrendingPost = async (ctx) => {
 const postComment = async (ctx) => {
     let data = { status: 0, response: "Invalid request" }
     try {
-        let commentData = ctx.request.body, postInfo, commentInfo;
+        let commentData = ctx.request.body, postInfo, commentInfo, updateNotification;
         if (Object.keys(commentData).length === 0 && commentData.data === undefined) {
             ctx.response.body = data
 
@@ -362,8 +362,13 @@ const postComment = async (ctx) => {
         }
         commentInfo = await db.insertSingleDocument("postComment", commentData)
         if (Object.keys(commentInfo).length !== 0) {
+            updateNotification = await db.insertSingleDocument("notification", { receiverId: postInfo.createdBy, senderId: commentData.userId, postId: postInfo._id, commentId: commentInfo._id, category: 2 })
+            if (Object.keys(updateNotification).length !== 0) {
 
-            return ctx.response.body = { status: 1, response: "Comment added successfully" }
+                return ctx.response.body = { status: 1, response: "Comment added successfully" }
+            }
+
+            return ctx.response.body = { status: 0, response: "Notification not updated" }
         }
         return ctx.response.body = data
     } catch (error) {
@@ -556,31 +561,45 @@ const getCommentsAndReplies = async (ctx) => {
 const updateLike = async (ctx) => {
     let data = { status: 0, response: "Invalid request" }
     try {
-        let postData = ctx.request.body, postInfo, likeInfo;
+        let postData = ctx.request.body, postInfo, likeInfo, updateNotification, checkAlreadyLiked;
         if (Object.keys(postData).length === 0 && postData.data === undefined) {
             ctx.response.body = data
 
             return
         }
         postData = postData.data[0];
-        postInfo = await db.findSingleDocument("postLike", { postId: postData.postId })
+        postInfo = await db.findSingleDocument("post", { _id: postData.postId })
         if (postInfo == null || postInfo.status === 0) {
 
             return ctx.response.body = { status: 0, response: "No posta found" }
         }
+        checkAlreadyLiked = await db.findSingleDocument("postLike", { postId: postInfo._id, likedBy: { $in: [postData.userId] } })
         if (postData.status === 1) {
-            updateInfo = await db.updateOneDocument("postLike", { _id: postInfo._id }, { $push: { likedBy: postData.userId } })
-            if (updateInfo.modifiedCount !== 0 && updateInfo.matchedCount !== 0) {
+            if (checkAlreadyLiked == null) {
+                updateInfo = await db.updateOneDocument("postLike", { postId: postInfo._id }, { $push: { likedBy: postData.userId } })
+                if (updateInfo.modifiedCount !== 0 && updateInfo.matchedCount !== 0) {
+                    updateNotification = await db.insertSingleDocument("notification", { receiverId: postInfo.createdBy, senderId: postData.userId, postId: postInfo._id })
+                    if (Object.keys(updateNotification).length !== 0) {
 
-                return ctx.response.body = { status: 1, response: "Like added successfully" }
+                        return ctx.response.body = { status: 1, response: "Like added successfully" }
+                    }
+
+                    return ctx.response.body = { status: 0, response: "Notification not updated" }
+                }
             }
+
+            return ctx.response.body = { status: 0, response: "You're Already liked this post" }
         }
         if (postData.status === 2) {
-            updateInfo = await db.updateOneDocument("postLike", { _id: postInfo._id }, { $pull: { likedBy: postData.userId } })
-            if (updateInfo.modifiedCount !== 0 && updateInfo.matchedCount !== 0) {
+            if (checkAlreadyLiked != null) {
+                updateInfo = await db.updateOneDocument("postLike", { postId: postInfo._id }, { $pull: { likedBy: postData.userId } })
+                if (updateInfo.modifiedCount !== 0 && updateInfo.matchedCount !== 0) {
 
-                return ctx.response.body = { status: 1, response: "Disliked successfully" }
+                    return ctx.response.body = { status: 1, response: "Disliked successfully" }
+                }
             }
+
+            return ctx.response.body = { status: 0, response: "You're Not liked this post before" }
         }
 
         return ctx.response.body = data
