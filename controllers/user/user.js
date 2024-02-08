@@ -118,7 +118,7 @@ const userRegister = async (ctx) => {
         userData.password = await bcrypt.hash(userData.password, 10)
         userData.otp = common.otpGenerate()
         if (fileData.length !== 0) {
-            userData.profile = await common.uploadBufferToAzureBlob(fileData[0],fileData[0].mimetype)
+            userData.profile = await common.uploadBufferToAzureBlob(fileData[0], fileData[0].mimetype)
         }
         userInsert = await db.insertSingleDocument("user", userData)
         if (Object.keys(userInsert).length !== 0) {
@@ -899,9 +899,94 @@ const navSearch = async (ctx) => {
     }
 }
 
+const getMyNotifications = async (ctx) => {
+    let data = { status: 0, response: "Something went wrong" }, userData, notificationInfo, aggregationQuery = [], notificationData = {}, postNotification = [], mentionNotification = [];
+    try {
+        userData = ctx.request.body;
+        if (Object.keys(userData).length === 0 && userData.data === undefined) {
+            ctx.response.body = data
+
+            return
+        }
+        userData = userData.data[0]
+        aggregationQuery = [
+            {
+                $match: {
+                    $and: [
+                        { category: { $ne: 0 } },
+                        { receiverId: new ObjectId(userData.userId) }
+                    ]
+                }
+            },
+            {
+                $lookup: {
+                    from: "users",
+                    localField: "senderId",
+                    foreignField: "_id",
+                    as: "userInfo"
+                }
+            },
+            {
+                $replaceRoot: { newRoot: { $mergeObjects: [{ fullName: "$userInfo.fullName", profile: "$userInfo.profile" }, "$$ROOT"] } }
+            },
+            {
+                $addFields: {
+                    userName: { $arrayElemAt: ["$fullName", 0] },
+                    userProfile: { $arrayElemAt: ["$profile", 0] }
+                }
+            },
+            {
+                $sort: {
+                    createdAt: -1
+                }
+            },
+            {
+                $project: {
+                    postId: 1,
+                    userProfile: 1,
+                    userName: 1,
+                    category: 1,
+                    commentId: 1,
+                    createdAt: 1,
+                    status: 1
+                },
+            }
+        ]
+        notificationInfo = await db.getAggregation("notification", aggregationQuery)
+
+        return ctx.response.body = { status: 1, data: JSON.stringify(notificationInfo) }
+    } catch (error) {
+        console.log(error.message)
+        return ctx.response.body = { status: 0, response: `Error in user Controller - getMyNotifications:-${error.message}` }
+    }
+}
+
+const updateNotification = async (ctx) => {
+    let data = { status: 0, response: "Something went wrong" }, notificationData, updateNotificationStatus;
+    try {
+        notificationData = ctx.request.body;
+        if (Object.keys(notificationData).length === 0 && notificationData.data === undefined) {
+            ctx.response.body = data
+
+            return
+        }
+        notificationData = notificationData.data[0]
+        updateNotificationStatus = await db.updateOneDocument("notification", { _id: notificationData.id }, { status: 2 })
+        if (updateNotificationStatus.modifiedCount !== 0 && updateNotificationStatus.matchedCount !== 0) {
+
+            return ctx.response.body = { status: 1, response: "Notification updated successfully" }
+        }
+
+        return ctx.response.body = data
+    } catch (error) {
+        console.log(error.message)
+        return ctx.response.body = { status: 0, response: `Error in user Controller - updateNotification:-${error.message}` }
+    }
+}
+
 module.exports = {
     userRegister, updateRegisterData, resendOtp,
     login, verifyOtp, updateUserDetails, userConnectionRequest, getProfileById,
     getAllUser, changeConnectionStatus, getConnectionRequestListById, getFollowListByUserId, getFollowingListByUserId,
-    getConnectionListByUserId, userDetailsById, navSearch
+    getConnectionListByUserId, userDetailsById, navSearch, getMyNotifications, updateNotification
 }

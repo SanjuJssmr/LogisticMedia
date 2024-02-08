@@ -320,25 +320,25 @@ const getTrendingPost = async (ctx) => {
                     ]
                 }
             },
-            // {
-            //     $lookup: {
-            //         from: "advertisments",
-            //         pipeline: [],
-            //         as: "randomData"
-            //     }
-            // },
-            // { $unwind: "$randomData" },
-            // { $match: { "randomData.status": 1 } },
-            // { $sample: { size: 1 } },
-            // { $unset: ["randomData.createdAt", "randomData.updatedAt", "randomData.status"] }
+            {
+                $lookup: {
+                    from: "advertisments",
+                    pipeline: [],
+                    as: "randomData"
+                }
+            },
+            { $unwind: "$randomData" },
+            { $match: { "randomData.status": 1 } },
+            { $sample: { size: 1 } },
+            { $unset: ["randomData.createdAt", "randomData.updatedAt", "randomData.status"] }
         ]
         postInfo = await db.getAggregation("post", aggregationQuery)
         if (postInfo[0].data.length !== 0) {
-            // if (postInfo[0].data.length >= 9) {
+            if (postInfo[0].data.length >= 9) {
 
-            //     postInfo[0].data.splice(5, 0, postInfo[0].randomData);
-            //     return ctx.response.body = { status: 1, data: JSON.stringify(postInfo[0].data), totalCount: postInfo[0].totalCount[0].value }
-            // }
+                postInfo[0].data.splice(5, 0, postInfo[0].randomData);
+                return ctx.response.body = { status: 1, data: JSON.stringify(postInfo[0].data), totalCount: postInfo[0].totalCount[0].value }
+            }
             return ctx.response.body = { status: 1, data: JSON.stringify(postInfo[0].data), totalCount: postInfo[0].totalCount[0].value }
         }
 
@@ -352,7 +352,7 @@ const getTrendingPost = async (ctx) => {
 const postComment = async (ctx) => {
     let data = { status: 0, response: "Invalid request" }
     try {
-        let commentData = ctx.request.body, postInfo, commentInfo;
+        let commentData = ctx.request.body, postInfo, commentInfo, updateNotification;
         if (Object.keys(commentData).length === 0 && commentData.data === undefined) {
             ctx.response.body = data
 
@@ -366,6 +366,15 @@ const postComment = async (ctx) => {
         }
         commentInfo = await db.insertSingleDocument("postComment", commentData)
         if (Object.keys(commentInfo).length !== 0) {
+            if (postInfo.createdBy.toString() !== commentData.userId) {
+                updateNotification = await db.insertSingleDocument("notification", { receiverId: postInfo.createdBy, senderId: commentData.userId, postId: postInfo._id, commentId: commentInfo._id, category: 2 })
+                if (Object.keys(updateNotification).length !== 0) {
+
+                    return ctx.response.body = { status: 1, response: "Comment added successfully" }
+                }
+
+                return ctx.response.body = { status: 0, response: "Notification not updated" }
+            }
 
             return ctx.response.body = { status: 1, response: "Comment added successfully" }
         }
@@ -379,7 +388,7 @@ const postComment = async (ctx) => {
 const deleteComment = async (ctx) => {
     let data = { status: 0, response: "Invalid request" }
     try {
-        let commentData = ctx.request.body, commentInfo, updateInfo;
+        let commentData = ctx.request.body, commentInfo, updateInfo, updateNotification;
         if (Object.keys(commentData).length === 0 && commentData.data === undefined) {
             ctx.response.body = data
 
@@ -393,8 +402,11 @@ const deleteComment = async (ctx) => {
         }
         updateInfo = await db.updateOneDocument("postComment", { _id: commentInfo._id }, { status: 0 })
         if (updateInfo.modifiedCount !== 0 && updateInfo.matchedCount !== 0) {
+            updateNotification = await db.updateOneDocument("notification", { commentId: commentInfo._id, senderId: commentData.userId, category: 2, status: { $in: [1, 2] } }, { status: 0 })
+            if (updateNotification.modifiedCount !== 0 && updateNotification.matchedCount !== 0) {
 
-            return ctx.response.body = { status: 1, response: "Comment deleted successfully" }
+                return ctx.response.body = { status: 1, response: "Comment deleted successfully" }
+            }
         }
         return ctx.response.body = data
     } catch (error) {
@@ -560,31 +572,52 @@ const getCommentsAndReplies = async (ctx) => {
 const updateLike = async (ctx) => {
     let data = { status: 0, response: "Invalid request" }
     try {
-        let postData = ctx.request.body, postInfo, likeInfo;
+        let postData = ctx.request.body, postInfo, likeInfo, updateNotification, checkAlreadyLiked;
         if (Object.keys(postData).length === 0 && postData.data === undefined) {
             ctx.response.body = data
 
             return
         }
         postData = postData.data[0];
-        postInfo = await db.findSingleDocument("postLike", { postId: postData.postId })
+        postInfo = await db.findSingleDocument("post", { _id: postData.postId })
         if (postInfo == null || postInfo.status === 0) {
 
-            return ctx.response.body = { status: 0, response: "No posta found" }
+            return ctx.response.body = { status: 0, response: "No post found" }
         }
+        checkAlreadyLiked = await db.findSingleDocument("postLike", { postId: postInfo._id, likedBy: { $in: [postData.userId] } })
         if (postData.status === 1) {
-            updateInfo = await db.updateOneDocument("postLike", { _id: postInfo._id }, { $push: { likedBy: postData.userId } })
-            if (updateInfo.modifiedCount !== 0 && updateInfo.matchedCount !== 0) {
+            if (checkAlreadyLiked == null) {
+                updateInfo = await db.updateOneDocument("postLike", { postId: postInfo._id }, { $push: { likedBy: postData.userId } })
+                if (updateInfo.modifiedCount !== 0 && updateInfo.matchedCount !== 0) {
+                    if (postInfo.createdBy.toString() !== postData.userId) {
+                        updateNotification = await db.insertSingleDocument("notification", { receiverId: postInfo.createdBy, senderId: postData.userId, postId: postInfo._id })
+                        if (Object.keys(updateNotification).length !== 0) {
 
-                return ctx.response.body = { status: 1, response: "Like added successfully" }
+                            return ctx.response.body = { status: 1, response: "Like added successfully" }
+                        }
+
+                        return ctx.response.body = { status: 0, response: "Notification not updated" }
+                    }
+
+                    return ctx.response.body = { status: 1, response: "Like added successfully" }
+                }
             }
+
+            return ctx.response.body = { status: 0, response: "You're Already liked this post" }
         }
         if (postData.status === 2) {
-            updateInfo = await db.updateOneDocument("postLike", { _id: postInfo._id }, { $pull: { likedBy: postData.userId } })
-            if (updateInfo.modifiedCount !== 0 && updateInfo.matchedCount !== 0) {
+            if (checkAlreadyLiked != null) {
+                updateInfo = await db.updateOneDocument("postLike", { postId: postInfo._id }, { $pull: { likedBy: postData.userId } })
+                if (updateInfo.modifiedCount !== 0 && updateInfo.matchedCount !== 0) {
+                    updateNotification = await db.updateOneDocument("notification", { postId: postInfo._id, senderId: postData.userId, category: 1, status: { $in: [1, 2] } }, { status: 0 })
+                    if (updateNotification.modifiedCount !== 0 && updateNotification.matchedCount !== 0) {
 
-                return ctx.response.body = { status: 1, response: "Disliked successfully" }
+                        return ctx.response.body = { status: 1, response: "Disliked successfully" }
+                    }
+                }
             }
+
+            return ctx.response.body = { status: 0, response: "You're Not liked this post before" }
         }
 
         return ctx.response.body = data
@@ -689,25 +722,25 @@ const getForYouPost = async (ctx) => {
                     ]
                 }
             },
-            // {
-            //     $lookup: {
-            //         from: "advertisments",
-            //         pipeline: [],
-            //         as: "randomData"
-            //     }
-            // },
-            // { $unwind: "$randomData" },
-            // { $match: { "randomData.status": 1 } },
-            // { $sample: { size: 1 } },
-            // { $unset: ["randomData.createdAt", "randomData.updatedAt", "randomData.status"] }
+            {
+                $lookup: {
+                    from: "advertisments",
+                    pipeline: [],
+                    as: "randomData"
+                }
+            },
+            { $unwind: "$randomData" },
+            { $match: { "randomData.status": 1 } },
+            { $sample: { size: 1 } },
+            { $unset: ["randomData.createdAt", "randomData.updatedAt", "randomData.status"] }
         ]
         postInfo = await db.getAggregation("post", aggregationQuery)
         if (postInfo[0].data.length !== 0) {
-            // if (postInfo[0].data.length >= 9) {
+            if (postInfo[0].data.length >= 9) {
 
-            //     postInfo[0].data.splice(5, 0, postInfo[0].randomData);
-            //     return ctx.response.body = { status: 1, data: JSON.stringify(postInfo[0].data), totalCount: postInfo[0].totalCount[0].value }
-            // }
+                postInfo[0].data.splice(5, 0, postInfo[0].randomData);
+                return ctx.response.body = { status: 1, data: JSON.stringify(postInfo[0].data), totalCount: postInfo[0].totalCount[0].value }
+            }
             return ctx.response.body = { status: 1, data: JSON.stringify(postInfo[0].data), totalCount: postInfo[0].totalCount[0].value }
         }
 
@@ -767,6 +800,24 @@ const getPostById = async (ctx) => {
             {
                 $lookup:
                 {
+                    from: "users",
+                    localField: "createdBy",
+                    foreignField: "_id",
+                    as: "userInfo",
+                }
+            },
+            {
+                $lookup:
+                {
+                    from: "companypages",
+                    localField: "companyId",
+                    foreignField: "_id",
+                    as: "companyInfo",
+                }
+            },
+            {
+                $lookup:
+                {
                     from: "postlikes",
                     localField: "_id",
                     foreignField: "postId",
@@ -775,17 +826,36 @@ const getPostById = async (ctx) => {
             },
             {
                 $addFields: {
-                    likes: { $size: "$postInfo" }
+                    likedBy: "$postInfo.likedBy",
+                    fullName: "$userInfo.fullName",
+                    designation: "$userInfo.designation",
+                    profile: "$userInfo.profile",
+                    companyName: "$companyInfo.companyName",
+                    companyProfile: "$companyInfo.profile",
+                    reporterIds: "$reportCount.userId"
                 }
             },
             {
                 $project: {
-                    "postInfo": 0,
-                    "status": 0,
-                    "reportCount": 0,
-                    "updatedAt": 0
+                    "createdBy": "$createdBy",
+                    "description": "$description",
+                    "hashtags": "$hashtags",
+                    "files": "$files",
+                    "createdAt": "$createdAt",
+                    "reporterIds": "$reporterIds",
+                    "fullName": { '$arrayElemAt': ['$fullName', 0] },
+                    "designation": { '$arrayElemAt': ['$designation', 0] },
+                    "profile": { '$arrayElemAt': ['$profile', 0] },
+                    "likedBy": { '$arrayElemAt': ['$likedBy', 0] },
+                    "companyName": { '$arrayElemAt': ['$companyName', 0] },
+                    'companyProfile': { '$arrayElemAt': ['$companyProfile', 0] },
                 }
-            }
+            },
+            {
+                $addFields: {
+                    likes: { $size: "$likedBy" },
+                }
+            },
         ]
         postInfo = await db.getAggregation("post", aggregationQuery)
 
@@ -948,25 +1018,25 @@ const getFriendsPost = async (ctx) => {
                     ]
                 }
             },
-            // {
-            //     $lookup: {
-            //         from: "advertisments",
-            //         pipeline: [],
-            //         as: "randomData"
-            //     }
-            // },
-            // { $unwind: "$randomData" },
-            // { $match: { "randomData.status": 1 } },
-            // { $sample: { size: 1 } },
-            // { $unset: ["randomData.createdAt", "randomData.updatedAt", "randomData.status"] }
+            {
+                $lookup: {
+                    from: "advertisments",
+                    pipeline: [],
+                    as: "randomData"
+                }
+            },
+            { $unwind: "$randomData" },
+            { $match: { "randomData.status": 1 } },
+            { $sample: { size: 1 } },
+            { $unset: ["randomData.createdAt", "randomData.updatedAt", "randomData.status"] }
         ]
         postInfo = await db.getAggregation("connection", aggregationQuery)
         if (postInfo[0].data.length !== 0) {
-            // if (postInfo[0].data.length >= 9) {
+            if (postInfo[0].data.length >= 9) {
 
-            //     postInfo[0].data.splice(5, 0, postInfo[0].randomData);
-            //     return ctx.response.body = { status: 1, data: JSON.stringify(postInfo[0].data), totalCount: postInfo[0].totalCount[0].value }
-            // }
+                postInfo[0].data.splice(5, 0, postInfo[0].randomData);
+                return ctx.response.body = { status: 1, data: JSON.stringify(postInfo[0].data), totalCount: postInfo[0].totalCount[0].value }
+            }
             return ctx.response.body = { status: 1, data: JSON.stringify(postInfo[0].data), totalCount: postInfo[0].totalCount[0].value }
         }
 
@@ -1056,25 +1126,25 @@ const getAllNews = async (ctx) => {
                     ]
                 }
             },
-            // {
-            //     $lookup: {
-            //         from: "advertisments",
-            //         pipeline: [],
-            //         as: "randomData"
-            //     }
-            // },
-            // { $unwind: "$randomData" },
-            // { $match: { "randomData.status": 1 } },
-            // { $sample: { size: 1 } },
-            // { $unset: ["randomData.createdAt", "randomData.updatedAt", "randomData.status"] }
+            {
+                $lookup: {
+                    from: "advertisments",
+                    pipeline: [],
+                    as: "randomData"
+                }
+            },
+            { $unwind: "$randomData" },
+            { $match: { "randomData.status": 1 } },
+            { $sample: { size: 1 } },
+            { $unset: ["randomData.createdAt", "randomData.updatedAt", "randomData.status"] }
         ]
         postInfo = await db.getAggregation("post", aggregationQuery)
         if (postInfo[0].data.length !== 0) {
-            // if (postInfo[0].data.length >= 9) {
+            if (postInfo[0].data.length >= 9) {
 
-            //     postInfo[0].data.splice(5, 0, postInfo[0].randomData);
-            //     return ctx.response.body = { status: 1, data: JSON.stringify(postInfo[0].data), totalCount: postInfo[0].totalCount[0].value }
-            // }
+                postInfo[0].data.splice(5, 0, postInfo[0].randomData);
+                return ctx.response.body = { status: 1, data: JSON.stringify(postInfo[0].data), totalCount: postInfo[0].totalCount[0].value }
+            }
             return ctx.response.body = { status: 1, data: JSON.stringify(postInfo[0].data), totalCount: postInfo[0].totalCount[0].value }
         }
 
@@ -1175,25 +1245,25 @@ const getPagePost = async (ctx) => {
                     ]
                 }
             },
-            // {
-            //     $lookup: {
-            //         from: "advertisments",
-            //         pipeline: [],
-            //         as: "randomData"
-            //     }
-            // },
-            // { $unwind: "$randomData" },
-            // { $match: { "randomData.status": 1 } },
-            // { $sample: { size: 1 } },
-            // { $unset: ["randomData.createdAt", "randomData.updatedAt", "randomData.status"] }
+            {
+                $lookup: {
+                    from: "advertisments",
+                    pipeline: [],
+                    as: "randomData"
+                }
+            },
+            { $unwind: "$randomData" },
+            { $match: { "randomData.status": 1 } },
+            { $sample: { size: 1 } },
+            { $unset: ["randomData.createdAt", "randomData.updatedAt", "randomData.status"] }
         ]
         postInfo = await db.getAggregation("post", aggregationQuery)
         if (postInfo[0].data.length !== 0) {
-            // if (postInfo[0].data.length >= 9) {
+            if (postInfo[0].data.length >= 9) {
 
-            //     postInfo[0].data.splice(5, 0, postInfo[0].randomData);
-            //     return ctx.response.body = { status: 1, data: JSON.stringify(postInfo[0].data), totalCount: postInfo[0].totalCount[0].value }
-            // }
+                postInfo[0].data.splice(5, 0, postInfo[0].randomData);
+                return ctx.response.body = { status: 1, data: JSON.stringify(postInfo[0].data), totalCount: postInfo[0].totalCount[0].value }
+            }
             return ctx.response.body = { status: 1, data: JSON.stringify(postInfo[0].data), totalCount: postInfo[0].totalCount[0].value }
         }
 
