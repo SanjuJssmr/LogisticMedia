@@ -234,14 +234,14 @@ const getMyPagePost = async (ctx) => {
 const getTrendingPost = async (ctx) => {
     let data = { status: 0, response: "Invalid request" }
     try {
-        let postData = ctx.request.body, postInfo, aggregationQuery = [];
+        let postData = ctx.request.body, postInfo, postAggregation = [], advertisementAggregation = [], randomAdvertisment;
         if (Object.keys(postData).length === 0 && postData.data === undefined) {
             res.send(data)
 
             return
         }
         postData = postData.data[0];
-        aggregationQuery = [
+        postAggregation = [
             {
                 $match: { status: 1 }
             },
@@ -319,26 +319,23 @@ const getTrendingPost = async (ctx) => {
                         { $count: "value" }
                     ]
                 }
-            },
-            {
-                $lookup: {
-                    from: "advertisments",
-                    pipeline: [],
-                    as: "randomData"
-                }
-            },
-            { $unwind: "$randomData" },
-            { $match: { "randomData.status": 1 } },
-            { $sample: { size: 1 } },
-            { $unset: ["randomData.createdAt", "randomData.updatedAt", "randomData.status"] }
+            }
         ]
-        postInfo = await db.getAggregation("post", aggregationQuery)
+        advertisementAggregation = [
+            { $match: { status: 1 } },
+            { $sample: { size: 1 } },
+            { $unset: ["createdAt", "updatedAt", "status"] }
+        ]
+        postInfo = await db.getAggregation("post", postAggregation)
+        randomAdvertisment = await db.getAggregation("advertisment", advertisementAggregation)
         if (postInfo[0].data.length !== 0) {
-            if (postInfo[0].data.length >= 9) {
+            if (postInfo[0].data.length > 9 && randomAdvertisment.length !== 0) {
+                postInfo[0].data.splice(5, 0, randomAdvertisment[0]);
+                postInfo[0].data.pop()
 
-                postInfo[0].data.splice(5, 0, postInfo[0].randomData);
                 return ctx.response.body = { status: 1, data: JSON.stringify(postInfo[0].data), totalCount: postInfo[0].totalCount[0].value }
             }
+
             return ctx.response.body = { status: 1, data: JSON.stringify(postInfo[0].data), totalCount: postInfo[0].totalCount[0].value }
         }
 
@@ -630,14 +627,14 @@ const updateLike = async (ctx) => {
 const getForYouPost = async (ctx) => {
     let data = { status: 0, response: "Invalid request" }
     try {
-        let postData = ctx.request.body, postInfo, aggregationQuery = [], matchCond;
+        let postData = ctx.request.body, postInfo, postAggregation = [], advertisementAggregation = [], randomAdvertisment;
         if (Object.keys(postData).length === 0 && postData.data === undefined) {
             ctx.response.body = data
 
             return
         }
         postData = postData.data[0]
-        aggregationQuery = [
+        postAggregation = [
             {
                 $match: {
                     status: 1,
@@ -721,24 +718,20 @@ const getForYouPost = async (ctx) => {
                         { $count: "value" }
                     ]
                 }
-            },
-            {
-                $lookup: {
-                    from: "advertisments",
-                    pipeline: [],
-                    as: "randomData"
-                }
-            },
-            { $unwind: "$randomData" },
-            { $match: { "randomData.status": 1 } },
-            { $sample: { size: 1 } },
-            { $unset: ["randomData.createdAt", "randomData.updatedAt", "randomData.status"] }
+            }
         ]
-        postInfo = await db.getAggregation("post", aggregationQuery)
+        advertisementAggregation = [
+            { $match: { status: 1 } },
+            { $sample: { size: 1 } },
+            { $unset: ["createdAt", "updatedAt", "status"] }
+        ]
+        postInfo = await db.getAggregation("post", postAggregation)
+        randomAdvertisment = await db.getAggregation("advertisment", advertisementAggregation)
         if (postInfo[0].data.length !== 0) {
-            if (postInfo[0].data.length >= 9) {
+            if (postInfo[0].data.length >= 8 && randomAdvertisment.length !== 0) {
+                postInfo[0].data.splice(5, 0, randomAdvertisment[0]);
+                postInfo[0].data.pop()
 
-                postInfo[0].data.splice(5, 0, postInfo[0].randomData);
                 return ctx.response.body = { status: 1, data: JSON.stringify(postInfo[0].data), totalCount: postInfo[0].totalCount[0].value }
             }
             return ctx.response.body = { status: 1, data: JSON.stringify(postInfo[0].data), totalCount: postInfo[0].totalCount[0].value }
@@ -869,14 +862,14 @@ const getPostById = async (ctx) => {
 const getFriendsPost = async (ctx) => {
     let data = { status: 0, response: "Invalid request" }
     try {
-        let connectionData = ctx.request.body, postInfo, aggregationQuery = [];
+        let connectionData = ctx.request.body, postInfo, postAggregation = [], advertisementAggregation = [], randomAdvertisment;
         if (Object.keys(connectionData).length === 0 && connectionData.data === undefined) {
             ctx.response.body = data
 
             return
         }
         connectionData = connectionData.data[0]
-        aggregationQuery = [
+        postAggregation = [
             {
                 $match: {
                     $or: [
@@ -1017,26 +1010,23 @@ const getFriendsPost = async (ctx) => {
                         { $count: "value" }
                     ]
                 }
-            },
-            {
-                $lookup: {
-                    from: "advertisments",
-                    pipeline: [],
-                    as: "randomData"
-                }
-            },
-            { $unwind: "$randomData" },
-            { $match: { "randomData.status": 1 } },
-            { $sample: { size: 1 } },
-            { $unset: ["randomData.createdAt", "randomData.updatedAt", "randomData.status"] }
+            }
         ]
-        postInfo = await db.getAggregation("connection", aggregationQuery)
+        advertisementAggregation = [
+            { $match: { status: 1 } },
+            { $sample: { size: 1 } },
+            { $unset: ["createdAt", "updatedAt", "status"] }
+        ]
+        postInfo = await db.getAggregation("connection", postAggregation)
+        randomAdvertisment = await db.getAggregation("advertisment", advertisementAggregation)
         if (postInfo[0].data.length !== 0) {
-            if (postInfo[0].data.length >= 9) {
+            if (postInfo[0].data.length > 9 && randomAdvertisment.length !== 0) {
+                postInfo[0].data.splice(5, 0, randomAdvertisment[0]);
+                postInfo[0].data.pop()
 
-                postInfo[0].data.splice(5, 0, postInfo[0].randomData);
                 return ctx.response.body = { status: 1, data: JSON.stringify(postInfo[0].data), totalCount: postInfo[0].totalCount[0].value }
             }
+
             return ctx.response.body = { status: 1, data: JSON.stringify(postInfo[0].data), totalCount: postInfo[0].totalCount[0].value }
         }
 
@@ -1050,14 +1040,14 @@ const getFriendsPost = async (ctx) => {
 const getAllNews = async (ctx) => {
     let data = { status: 0, response: "Invalid request" }
     try {
-        let postData = ctx.request.body, postInfo, aggregationQuery = [];
+        let postData = ctx.request.body, postInfo, postAggregation = [], advertisementAggregation = [], randomAdvertisment;
         if (Object.keys(postData).length === 0 && postData.data === undefined) {
             res.send(data)
 
             return
         }
         postData = postData.data[0]
-        aggregationQuery = [
+        postAggregation = [
             {
                 $match: {
                     status: 1,
@@ -1125,26 +1115,23 @@ const getAllNews = async (ctx) => {
                         { $count: "value" }
                     ]
                 }
-            },
-            {
-                $lookup: {
-                    from: "advertisments",
-                    pipeline: [],
-                    as: "randomData"
-                }
-            },
-            { $unwind: "$randomData" },
-            { $match: { "randomData.status": 1 } },
-            { $sample: { size: 1 } },
-            { $unset: ["randomData.createdAt", "randomData.updatedAt", "randomData.status"] }
+            }
         ]
-        postInfo = await db.getAggregation("post", aggregationQuery)
+        advertisementAggregation = [
+            { $match: { status: 1 } },
+            { $sample: { size: 1 } },
+            { $unset: ["createdAt", "updatedAt", "status"] }
+        ]
+        postInfo = await db.getAggregation("post", postAggregation)
+        randomAdvertisment = await db.getAggregation("advertisment", advertisementAggregation)
         if (postInfo[0].data.length !== 0) {
-            if (postInfo[0].data.length >= 9) {
+            if (postInfo[0].data.length > 9 && randomAdvertisment.length !== 0) {
+                postInfo[0].data.splice(5, 0, randomAdvertisment[0]);
+                postInfo[0].data.pop()
 
-                postInfo[0].data.splice(5, 0, postInfo[0].randomData);
                 return ctx.response.body = { status: 1, data: JSON.stringify(postInfo[0].data), totalCount: postInfo[0].totalCount[0].value }
             }
+
             return ctx.response.body = { status: 1, data: JSON.stringify(postInfo[0].data), totalCount: postInfo[0].totalCount[0].value }
         }
 
@@ -1157,14 +1144,14 @@ const getAllNews = async (ctx) => {
 
 const getPagePost = async (ctx) => {
     try {
-        let postData = ctx.request.body, postInfo, aggregationQuery = [];
+        let postData = ctx.request.body, postInfo, postAggregation = [], advertisementAggregation = [], randomAdvertisment;
         if (Object.keys(postData).length === 0 && postData.data === undefined) {
             res.send(data)
 
             return
         }
         postData = postData.data[0]
-        aggregationQuery = [
+        postAggregation = [
             {
                 $match: { $and: [{ companyId: { $exists: true } }, { status: 1 }] },
             },
@@ -1244,26 +1231,23 @@ const getPagePost = async (ctx) => {
                         { $count: "value" }
                     ]
                 }
-            },
-            {
-                $lookup: {
-                    from: "advertisments",
-                    pipeline: [],
-                    as: "randomData"
-                }
-            },
-            { $unwind: "$randomData" },
-            { $match: { "randomData.status": 1 } },
-            { $sample: { size: 1 } },
-            { $unset: ["randomData.createdAt", "randomData.updatedAt", "randomData.status"] }
+            }
         ]
-        postInfo = await db.getAggregation("post", aggregationQuery)
+        advertisementAggregation = [
+            { $match: { status: 1 } },
+            { $sample: { size: 1 } },
+            { $unset: ["createdAt", "updatedAt", "status"] }
+        ]
+        postInfo = await db.getAggregation("post", postAggregation)
+        randomAdvertisment = await db.getAggregation("advertisment", advertisementAggregation)
         if (postInfo[0].data.length !== 0) {
-            if (postInfo[0].data.length >= 9) {
+            if (postInfo[0].data.length > 9 && randomAdvertisment.length !== 0) {
+                postInfo[0].data.splice(5, 0, randomAdvertisment[0]);
+                postInfo[0].data.pop()
 
-                postInfo[0].data.splice(5, 0, postInfo[0].randomData);
                 return ctx.response.body = { status: 1, data: JSON.stringify(postInfo[0].data), totalCount: postInfo[0].totalCount[0].value }
             }
+            
             return ctx.response.body = { status: 1, data: JSON.stringify(postInfo[0].data), totalCount: postInfo[0].totalCount[0].value }
         }
 

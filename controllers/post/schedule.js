@@ -137,14 +137,14 @@ const getMySchedule = async (ctx) => {
 const getAllSchedule = async (ctx) => {
     let data = { status: 0, response: "Invalid request" }
     try {
-        let scheduleData = ctx.request.body, scheduleInfo, aggregationQuery = [];
+        let scheduleData = ctx.request.body, scheduleInfo, scheduleAggregation = [], advertisementAggregation = [], randomAdvertisment;
         if (Object.keys(scheduleData).length === 0 && scheduleData.data === undefined) {
             res.send(data)
 
             return
         }
         scheduleData = scheduleData.data[0];
-        aggregationQuery = [
+        scheduleAggregation = [
             {
                 $match: { status: 1 },
             },
@@ -209,26 +209,23 @@ const getAllSchedule = async (ctx) => {
                         { $count: "value" }
                     ]
                 }
-            },
-            {
-                $lookup: {
-                    from: "advertisments",
-                    pipeline: [],
-                    as: "randomData"
-                }
-            },
-            { $unwind: "$randomData" },
-            { $match: { "randomData.status": 1 } },
-            { $sample: { size: 1 } },
-            { $unset: ["randomData.createdAt", "randomData.updatedAt", "randomData.status"] }
+            }
         ]
-        scheduleInfo = await db.getAggregation("schedule", aggregationQuery)
+        advertisementAggregation = [
+            { $match: { status: 1 } },
+            { $sample: { size: 1 } },
+            { $unset: ["createdAt", "updatedAt", "status"] }
+        ]
+        scheduleInfo = await db.getAggregation("schedule", scheduleAggregation)
+        randomAdvertisment = await db.getAggregation("advertisment", advertisementAggregation)
         if (scheduleInfo[0].data.length !== 0) {
-            if (scheduleInfo[0].data.length >= 9) {
+            if (scheduleInfo[0].data.length > 9 && randomAdvertisment.length !== 0) {
+                scheduleInfo[0].data.splice(5, 0, randomAdvertisment[0]);
+                scheduleInfo[0].data.pop()
 
-                scheduleInfo[0].data.splice(5, 0, scheduleInfo[0].randomData);
                 return ctx.response.body = { status: 1, data: JSON.stringify(scheduleInfo[0].data), totalCount: scheduleInfo[0].totalCount[0].value }
             }
+            
             return ctx.response.body = { status: 1, data: JSON.stringify(scheduleInfo[0].data), totalCount: scheduleInfo[0].totalCount[0].value }
         }
 
