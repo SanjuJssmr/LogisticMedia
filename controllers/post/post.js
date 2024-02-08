@@ -7,7 +7,7 @@ const addPost = async (ctx) => {
     let data = { status: 0, response: "Invalid request" }
     try {
         let postData = ctx.request.body, fileData = ctx.request.files, postInfo, likeInfo, filePath, fileInfo;
-        // postData.hashtags = JSON.parse(postData.hashTags)
+        postData.hashtags = JSON.parse(postData.hashTags)
         if (Object.keys(postData).length === 0 && postData == undefined) {
             ctx.response.body = data
 
