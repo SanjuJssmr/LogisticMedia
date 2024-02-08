@@ -984,9 +984,55 @@ const updateNotification = async (ctx) => {
     }
 }
 
+const userSearch = async (ctx) => {
+    let data = { status: 0, response: "Something went wrong" }, userData, pageData, searchData, pageDataCount, searchedInfo;
+    try {
+        searchData = ctx.request.body;
+        if (Object.keys(searchData).length === 0 && searchData.data === undefined) {
+            ctx.response.body = data
+
+            return
+        }
+        searchData = searchData.data[0]
+        searchTerm = searchData.term.trim()
+        userData = await db.findDocumentsWithLimit('user', {
+            status: 1,
+            role: 1,
+            $or: [
+                { fullName: { $regex: searchTerm, $options: 'i' } },
+            ]
+        }, { fullName: 1, profile: 1 }, 5)
+
+        pageData = await db.findDocumentsWithLimit('companyPage', {
+            status: 1,
+            $or: [
+
+                { companyName: { $regex: searchTerm, $options: 'i' } },
+            ]
+        }, { companyName: 1, profile: 1 }, 5)
+        if (userData.length > 4 || pageData.length === 0) {
+
+            return ctx.response.body = { status: 1, data: JSON.stringify(userData) }
+        }
+        if (userData.length === 0 && pageData.length !== 0) {
+
+            return ctx.response.body = { status: 1, data: JSON.stringify(pageData) }
+        }
+        pageDataCount = 5 - userData.length
+        pageData = pageData.splice(0, pageDataCount)
+        searchedInfo = [...userData, ...pageData]
+
+        return ctx.response.body = { status: 1, data: JSON.stringify(searchedInfo) }
+    } catch (error) {
+        console.log(error.message)
+        return ctx.response.body = { status: 0, response: `Error in user Controller - userConnectionRequest:-${error.message}` }
+    }
+}
+
+
 module.exports = {
     userRegister, updateRegisterData, resendOtp,
     login, verifyOtp, updateUserDetails, userConnectionRequest, getProfileById,
     getAllUser, changeConnectionStatus, getConnectionRequestListById, getFollowListByUserId, getFollowingListByUserId,
-    getConnectionListByUserId, userDetailsById, navSearch, getMyNotifications, updateNotification
+    getConnectionListByUserId, userDetailsById, navSearch, getMyNotifications, updateNotification, userSearch
 }
