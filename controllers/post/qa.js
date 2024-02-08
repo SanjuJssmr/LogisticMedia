@@ -308,14 +308,14 @@ const updateLike = async (ctx) => {
 const getAllQa = async (ctx) => {
     let data = { status: 0, response: "Invalid request" }
     try {
-        let questionData = ctx.request.body, qaData, aggregationQuery=[];
+        let questionData = ctx.request.body, qaData, qaAggregation = [], advertisementAggregation = [], randomAdvertisment;
         if (Object.keys(questionData).length === 0 && questionData.data === undefined) {
             res.send(data)
 
             return
         }
         questionData = questionData.data[0];
-        aggregationQuery = [
+        qaAggregation = [
             {
                 $match: { status: 1 },
             },
@@ -377,26 +377,23 @@ const getAllQa = async (ctx) => {
                         { $count: "value" }
                     ]
                 }
-            },
-            {
-                $lookup: {
-                    from: "advertisments",
-                    pipeline: [],
-                    as: "randomData"
-                }
-            },
-            { $unwind: "$randomData" },
-            { $match: { "randomData.status": 1 } },
-            { $sample: { size: 1 } },
-            { $unset: ["randomData.createdAt", "randomData.updatedAt", "randomData.status"] }
+            }
         ]
-        qaData = await db.getAggregation("question", aggregationQuery)
+        advertisementAggregation = [
+            { $match: { status: 1 } },
+            { $sample: { size: 1 } },
+            { $unset: ["createdAt", "updatedAt", "status"] }
+        ]
+        qaData = await db.getAggregation("question", qaAggregation)
+        randomAdvertisment = await db.getAggregation("advertisment", advertisementAggregation)
         if (qaData[0].data.length !== 0) {
-            if (qaData[0].data.length >= 9) {
+            if (qaData[0].data.length > 9 && randomAdvertisment.length !== 0) {
+                qaData[0].data.splice(5, 0, randomAdvertisment[0]);
+                qaData[0].data.pop()
 
-                qaData[0].data.splice(5, 0, qaData[0].randomData);
                 return ctx.response.body = { status: 1, data: JSON.stringify(qaData[0].data), totalCount: qaData[0].totalCount[0].value }
             }
+            
             return ctx.response.body = { status: 1, data: JSON.stringify(qaData[0].data), totalCount: qaData[0].totalCount[0].value }
         }
 
