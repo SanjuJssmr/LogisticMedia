@@ -49,7 +49,7 @@ const getUser = (receiverId, onlineUser) => {
 
 io.on("connection", (socket) => {
 
-  socket.on("users", (userId) => {
+  socket.on("users", (connectionId,userId) => {
     addUser(userId, socket.id);
     io.emit("getUsers", users);
   });
