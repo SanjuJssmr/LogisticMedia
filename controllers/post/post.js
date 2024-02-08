@@ -8,6 +8,7 @@ const addPost = async (ctx) => {
     try {
         let postData = ctx.request.body, fileData = ctx.request.files, postInfo, likeInfo, filePath, fileInfo;
         postData.hashtags = JSON.parse(postData.hashTags)
+        postData.postTags = JSON.parse(postData.postTags)
         if (Object.keys(postData).length === 0 && postData == undefined) {
             ctx.response.body = data
 
@@ -1363,9 +1364,63 @@ const getPostByHashtag = async (ctx) => {
     }
 }
 
+const getTagNotificationById = async (ctx) => {
+    let data = { status: 0, response: "Invalid request" }
+    try {
+        let userData = ctx.request.body, notificationInfo, aggregationQuery = [];
+        if (Object.keys(userData).length === 0 && userData.data === undefined) {
+            ctx.response.body = data
+
+            return
+        }
+        userData = userData.data[0]
+        aggregationQuery = [
+            { $match: { postTags: { $in: [userData.userId] } } },
+            {
+                $lookup: {
+                    from: "users",
+                    localField: "createdBy",
+                    foreignField: "_id",
+                    as: "userInfo"
+                }
+            },
+            { $replaceRoot: { newRoot: { $mergeObjects: [{ "fullName": "$userInfo.fullName", "profile": "$userInfo.profile" }, "$$ROOT"] } } },
+            {
+                $addFields: {
+                    userName: { $arrayElemAt: ["$fullName", 0] },
+                    userProfile: { $arrayElemAt: ["$profile", 0] },
+                    category: 3
+                }
+            },
+            {
+                $sort: {
+                    createdAt: -1
+                }
+            },
+            {
+                $project: {
+                    _id: 0,
+                    postId: "$_id",
+                    userProfile: 1,
+                    category: 1,
+                    userName: 1,
+                    category: 3,
+                    createdAt: 1,
+                    status: 1
+                },
+            }
+        ]
+        notificationInfo = await db.getAggregation("post", aggregationQuery)
+
+        return ctx.response.body = { status: 1, data: JSON.stringify(notificationInfo) }
+    } catch (error) {
+        console.log(error)
+        return ctx.response.body = { status: 0, response: `Error in post controllers/getTagNotificationById - ${error.message}` }
+    }
+}
 
 module.exports = {
     addPost, deletePost, getMyPost, postComment, deleteComment, addReply,
     deleteReply, getCommentsAndReplies, updateLike, getTrendingPost, getForYouPost, reportPost,
-    getPostById, getFriendsPost, getMyPagePost, getAllNews, getPagePost, getPostByHashtag
+    getPostById, getFriendsPost, getMyPagePost, getAllNews, getPagePost, getPostByHashtag, getTagNotificationById
 }
