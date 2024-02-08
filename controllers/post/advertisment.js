@@ -54,7 +54,7 @@ const getAdvertisement = async (ctx) => {
             }
         ]
         advertInfo = await db.getAggregation("advertisment", aggregationQuery)
-        if (Object.keys(advertInfo).length !== 0) {
+        if (advertInfo) {
 
             return ctx.response.body = { status: 1, data: JSON.stringify(advertInfo) }
         }
