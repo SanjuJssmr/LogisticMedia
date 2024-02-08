@@ -6,8 +6,8 @@ const ObjectId = mongoose.Types.ObjectId
 const addPost = async (ctx) => {
     let data = { status: 0, response: "Invalid request" }
     try {
-        let postData = ctx.request.body, fileData = ctx.request.files, postInfo, likeInfo, filePath;
-        postData.hashtags = JSON.parse(postData.hashTags)
+        let postData = ctx.request.body, fileData = ctx.request.files, postInfo, likeInfo, filePath, fileInfo;
+        // postData.hashtags = JSON.parse(postData.hashTags)
         if (Object.keys(postData).length === 0 && postData == undefined) {
             ctx.response.body = data
 
@@ -17,7 +17,11 @@ const addPost = async (ctx) => {
         if (fileData.length !== 0) {
             for (let file of fileData) {
                 filePath = await common.uploadBufferToAzureBlob(file, file.mimetype)
-                postData.files.push(filePath)
+                fileInfo = {
+                    filePath: filePath,
+                    fileType: file.mimetype
+                }
+                postData.files.push(fileInfo)
             }
         }
         postInfo = await db.insertSingleDocument("post", postData)

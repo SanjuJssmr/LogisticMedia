@@ -107,11 +107,20 @@ const verifiyCompanyPages = async (ctx) => {
             return
         }
         pageData = pageData.data[0];
-        pageExists = await db.findDocumentExist("companyPage", { _id: new ObjectId(pageData.id), status: 3 })
-        if (pageExists == false) {
+        // pageExists = await db.findDocumentExist("companyPage", { _id: new ObjectId(pageData.id), status: 3 })
+        // if (pageExists == false)
 
-            return ctx.response.body = { status: 0, response: "Invalid Request" }
+        //     return ctx.response.body = { status: 0, response: "Invalid Request" }
+        // }
+        if (pageData.status == 5) {
+            await db.updateManyDocuments("post", { companyId: new ObjectId(pageData.id), status: 1 }, { status: 2 })
+            await db.updateManyDocuments("schedule", { companyId: new ObjectId(pageData.id), status: 1 }, { status: 2 })
         }
+        if (pageData.status == 1) {
+            await db.updateManyDocuments("post", { companyId: new ObjectId(pageData.id), status: 2 }, { status: 1 })
+            await db.updateManyDocuments("schedule", { companyId: new ObjectId(pageData.id), status: 2 }, { status: 1 })
+        }
+        
         updateInfo = await db.findByIdAndUpdate("companyPage", pageData.id, { status: pageData.status })
         if (updateInfo.modifiedCount !== 0 && updateInfo.matchedCount !== 0) {
 
@@ -128,7 +137,7 @@ const verifiyCompanyPages = async (ctx) => {
 const getAllUnverifiedPages = async (ctx) => {
     let data = { status: 0, response: "Invalid request" }, pageDetails
     try {
-        pageDetails = await db.findDocuments("companyPage", { status: { $in: [1, 3, 4] } }, { updatedAt: 0, otp: 0 })
+        pageDetails = await db.findDocuments("companyPage", { status: { $in: [1, 3, 4, 5] } }, { updatedAt: 0, otp: 0 })
         if (pageDetails) {
 
             return ctx.response.body = { status: 1, data: JSON.stringify(pageDetails) }
