@@ -6,7 +6,7 @@ const ObjectId = mongoose.Types.ObjectId
 const addAdvertisement = async (ctx) => {
     let data = { status: 0, response: "Invalid request" }
     try {
-        let advertData = ctx.request.body, fileData = ctx.request.files, advertInfo, filePath;
+        let advertData = ctx.request.body, fileData = ctx.request.files, advertInfo, filePath, fileInfo;
         if (Object.keys(advertData).length === 0 && advertData == undefined) {
             ctx.response.body = data
 
@@ -16,7 +16,11 @@ const addAdvertisement = async (ctx) => {
         if (fileData.length !== 0) {
             for (let file of fileData) {
                 filePath = await common.uploadBufferToAzureBlob(file, file.mimetype)
-                advertData.files.push(filePath)
+                fileInfo = {
+                    filePath: filePath,
+                    fileType: file.mimetype
+                }
+                advertData.files.push(fileInfo)
             }
         }
         advertInfo = await db.insertSingleDocument("advertisment", advertData)

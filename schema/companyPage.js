@@ -32,7 +32,7 @@ const companyPageSchema = mongoose.Schema({
         type: String
     },
     status: {
-        type: Number,     // 2- otp , 3- verifation BY admin 1- verified 4- rejected By admin
+        type: Number,     // 2- otp , 3- verifation BY admin 1- verified 4- rejected By admin 5- blocked By Admin
         default: 2
     }
 }, {

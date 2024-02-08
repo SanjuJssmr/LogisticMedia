@@ -49,7 +49,7 @@ const userSchema = mongoose.Schema({
         default: 1
     },
     status: {
-        type: Number,
+        type: Number,     // 2- otp not verified 1- otp verified
         default: 2
     }
 }, {
