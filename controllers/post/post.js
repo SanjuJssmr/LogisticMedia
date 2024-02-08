@@ -384,7 +384,7 @@ const postComment = async (ctx) => {
 const deleteComment = async (ctx) => {
     let data = { status: 0, response: "Invalid request" }
     try {
-        let commentData = ctx.request.body, commentInfo, updateInfo;
+        let commentData = ctx.request.body, commentInfo, updateInfo, updateNotification;
         if (Object.keys(commentData).length === 0 && commentData.data === undefined) {
             ctx.response.body = data
 
@@ -398,8 +398,11 @@ const deleteComment = async (ctx) => {
         }
         updateInfo = await db.updateOneDocument("postComment", { _id: commentInfo._id }, { status: 0 })
         if (updateInfo.modifiedCount !== 0 && updateInfo.matchedCount !== 0) {
+            updateNotification = await db.updateOneDocument("notification", { commentId: commentInfo._id, senderId: commentData.userId, category: 2, status: { $in: [1, 2] } }, { status: 0 })
+            if (updateNotification.modifiedCount !== 0 && updateNotification.matchedCount !== 0) {
 
-            return ctx.response.body = { status: 1, response: "Comment deleted successfully" }
+                return ctx.response.body = { status: 1, response: "Comment deleted successfully" }
+            }
         }
         return ctx.response.body = data
     } catch (error) {
@@ -575,7 +578,7 @@ const updateLike = async (ctx) => {
         postInfo = await db.findSingleDocument("post", { _id: postData.postId })
         if (postInfo == null || postInfo.status === 0) {
 
-            return ctx.response.body = { status: 0, response: "No posta found" }
+            return ctx.response.body = { status: 0, response: "No post found" }
         }
         checkAlreadyLiked = await db.findSingleDocument("postLike", { postId: postInfo._id, likedBy: { $in: [postData.userId] } })
         if (postData.status === 1) {
@@ -602,8 +605,11 @@ const updateLike = async (ctx) => {
             if (checkAlreadyLiked != null) {
                 updateInfo = await db.updateOneDocument("postLike", { postId: postInfo._id }, { $pull: { likedBy: postData.userId } })
                 if (updateInfo.modifiedCount !== 0 && updateInfo.matchedCount !== 0) {
+                    updateNotification = await db.updateOneDocument("notification", { postId: postInfo._id, senderId: postData.userId, category: 1, status: { $in: [1, 2] } }, { status: 0 })
+                    if (updateNotification.modifiedCount !== 0 && updateNotification.matchedCount !== 0) {
 
-                    return ctx.response.body = { status: 1, response: "Disliked successfully" }
+                        return ctx.response.body = { status: 1, response: "Disliked successfully" }
+                    }
                 }
             }
 
