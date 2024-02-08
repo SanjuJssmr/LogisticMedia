@@ -38,7 +38,7 @@ app.on('error', (err, ctx) => {
 
 let users = [];
 
-const addUser = ( userId, socketId) => {
+const addUser = (userId, socketId) => {
   users = users.filter((user) => user.userId !== userId)
   users.push({ userId, socketId });
 }
@@ -49,7 +49,7 @@ const getUser = (receiverId, onlineUser) => {
 
 io.on("connection", (socket) => {
 
-  socket.on("users", (connectionId,userId) => {
+  socket.on("users", (connectionId, userId) => {
     addUser(userId, socket.id);
     io.emit("getUsers", users);
   });
