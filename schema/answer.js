@@ -31,13 +31,13 @@ const answerSchema = mongoose.Schema({
             },
             repliedOn: {
                 type: Date,
-                default: Date.now()
+                default: Date.now
             }
         },
     ],
     answeredOn: {
         type: Date,
-        default: Date.now()
+        default: Date.now
     },
     status: {
         type: Number,

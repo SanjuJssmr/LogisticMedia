@@ -39,7 +39,7 @@ const postSchema = mongoose.Schema({
         },
         reportedOn: {
             type: Date,
-            default: Date.now()
+            default: Date.now
         }
     }],
     postTags: {

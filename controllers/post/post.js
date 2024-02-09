@@ -542,7 +542,7 @@ const getCommentsAndReplies = async (ctx) => {
                 $project: {
                     "userId": "$userId",
                     "message": "$message",
-                    "commentedOn": "$commentedOn",
+                    "commentedOn": "$createdAt",
                     "userInfo": {
                         'fullName': { '$arrayElemAt': ['$fullName', 0] },
                         'designation': { '$arrayElemAt': ['$designation', 0] },

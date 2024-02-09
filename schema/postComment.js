@@ -31,14 +31,10 @@ const postCommentSchema = mongoose.Schema({
             },
             repliedOn: {
                 type: Date,
-                default: Date.now()
+                default: Date.now
             }
         },
     ],
-    commentedOn: {
-        type: Date,
-        default: Date.now()
-    },
     status: {
         type: Number,
         default: 1
