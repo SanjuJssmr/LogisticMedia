@@ -870,7 +870,7 @@ const navSearch = async (ctx) => {
                 { designation: { $regex: searchTerm, $options: 'i' } },
                 { about: { $regex: searchTerm, $options: 'i' } }
             ]
-        }, { fullName: 1, profile: 1. userName: 1 }, 10)
+        }, { fullName: 1, profile: 1, userName: 1 }, 10)
 
         pageData = await db.findDocumentsWithLimit('companyPage', {
             status: 1,
