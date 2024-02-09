@@ -39,9 +39,12 @@ const postSchema = mongoose.Schema({
         },
         reportedOn: {
             type: Date,
-            default : Date.now()
+            default: Date.now
         }
     }],
+    postTags: {
+        type: Array
+    }
 }, {
     timestamps: true,
     versionKey: false
