@@ -42,7 +42,7 @@ const postSchema = mongoose.Schema({
             default: Date.now
         }
     }],
-    postTags: {
+    postMentions: {
         type: Array
     }
 }, {
