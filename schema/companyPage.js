@@ -9,7 +9,8 @@ const companyPageSchema = mongoose.Schema({
     },
     companyName: {
         type: String,
-        required: true
+        required: true,
+        unique: true
     },
     profile: {
         type: String,
@@ -26,7 +27,7 @@ const companyPageSchema = mongoose.Schema({
     },
     otp: {
         type: String,
-        require:true
+        require: true
     },
     about: {
         type: String

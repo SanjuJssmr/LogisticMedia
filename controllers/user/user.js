@@ -870,7 +870,7 @@ const navSearch = async (ctx) => {
                 { designation: { $regex: searchTerm, $options: 'i' } },
                 { about: { $regex: searchTerm, $options: 'i' } }
             ]
-        }, { fullName: 1, profile: 1 }, 10)
+        }, { fullName: 1, profile: 1, userName: 1 }, 10)
 
         pageData = await db.findDocumentsWithLimit('companyPage', {
             status: 1,
@@ -1010,7 +1010,7 @@ const userSearch = async (ctx) => {
             $or: [
                 { fullName: { $regex: searchTerm, $options: 'i' } },
             ]
-        }, { fullName: 1, profile: 1 }, 5)
+        }, { fullName: 1, profile: 1, userName: 1 }, 5)
 
         pageData = await db.findDocumentsWithLimit('companyPage', {
             status: 1,
@@ -1038,9 +1038,149 @@ const userSearch = async (ctx) => {
     }
 }
 
+const getProfileByName = async (ctx) => {
+    let data = { status: 0, response: "Something went wrong" }, profileData, profileInfo, aggregationQuery = [];
+    try {
+        profileData = ctx.request.body;
+        if (Object.keys(profileData).length === 0 && profileData.data === undefined) {
+            ctx.response.body = data
+
+            return
+        }
+        profileData = profileData.data[0]
+        aggregationQuery = [
+            {
+                $match: {
+                    userName: profileData.userName, status: 1
+                }
+            },
+            {
+                $lookup: {
+                    from: "connections",
+                    let: { userId: "$_id" },
+                    pipeline: [
+                        {
+                            $match: {
+                                $expr: {
+                                    $or: [{ $eq: ["$recipientId", "$$userId"] }, { $eq: ["$senderId", "$$userId"] }]
+                                }
+                            }
+                        },
+                        {
+                            $group:
+                            {
+                                _id: null,
+                                followersCount: {
+                                    $sum: {
+                                        $cond: {
+                                            if: { $and: [{ $eq: ["$status", 2] }, { $eq: ["$recipientId", "$$userId"] }] },
+                                            then: 1,
+                                            else: 0
+                                        }
+                                    }
+                                },
+                                followingCount: {
+                                    $sum: {
+                                        $cond: {
+                                            if: { $and: [{ $eq: ["$status", 2] }, { $eq: ["$senderId", "$$userId"] }] },
+                                            then: 1,
+                                            else: 0
+                                        }
+                                    }
+                                },
+                                connectionCount: {
+                                    $sum: {
+                                        $cond: {
+                                            if: { $eq: ["$status", 1] },
+                                            then: 1,
+                                            else: 0
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            $project: {
+                                _id: 0,
+                                connectionCount: 1,
+                                followingCount: { $add: ["$followingCount", "$connectionCount"] },
+                                followersCount: { $add: ["$followersCount", "$connectionCount"] }
+                            }
+                        },
+                    ],
+                    as: "connectionInfo"
+                }
+            },
+            {
+                $lookup: {
+                    from: "posts",
+                    let: { userId: "$_id" },
+                    pipeline: [
+                        {
+                            $match: {
+                                $expr: {
+                                    $and: [{ $eq: ["$status", 1] }, { $eq: ["$createdBy", "$$userId"] }]
+                                }
+                            }
+                        },
+                        {
+                            $count: "postCount"
+                        }
+                    ],
+                    as: "postData"
+                }
+            },
+            {
+                $lookup: {
+                    from: "companypages",
+                    let: { userId: "$_id" },
+                    pipeline: [
+                        {
+                            $match: {
+                                $expr: {
+                                    $eq: ["$createdBy", "$$userId"]
+                                }
+                            }
+                        }
+                    ],
+                    as: "pageData"
+                }
+            },
+            {
+                $project: {
+                    "detailsCounts": {
+                        "postCount": { "$arrayElemAt": ["$postData.postCount", 0] },
+                        "followersCount": { "$arrayElemAt": ["$connectionInfo.followersCount", 0] },
+                        "followingCount": { "$arrayElemAt": ["$connectionInfo.followingCount", 0] },
+                        "connectionCount": { "$arrayElemAt": ["$connectionInfo.connectionCount", 0] }
+                    },
+                    "userData": {
+                        "_id": "$_id",
+                        "fullName": "$fullName",
+                        "userName": "$userName",
+                        "email": "$email",
+                        "designation": "$designation",
+                        "profile": "$profile",
+                        "state": "$state",
+                        "country": "$country",
+                        "dob": "$dob"
+                    },
+                    "pageData": { "$arrayElemAt": ["$pageData", 0] }
+                }
+            }
+        ]
+        profileInfo = await db.getAggregation("user", aggregationQuery)
+
+        return ctx.response.body = { status: 1, data: JSON.stringify(profileInfo) }
+    } catch (error) {
+        console.log(error.message)
+        return ctx.response.body = { status: 0, response: `Error in user Controller - getProfileByName:-${error.message}` }
+    }
+}
+
 module.exports = {
     userRegister, updateRegisterData, resendOtp,
     login, verifyOtp, updateUserDetails, userConnectionRequest, getProfileById,
     getAllUser, changeConnectionStatus, getConnectionRequestListById, getFollowListByUserId, getFollowingListByUserId,
-    getConnectionListByUserId, userDetailsById, navSearch, getMyNotifications, updateNotification, userSearch
+    getConnectionListByUserId, userDetailsById, navSearch, getMyNotifications, updateNotification, userSearch, getProfileByName
 }

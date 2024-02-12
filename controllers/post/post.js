@@ -8,7 +8,7 @@ const addPost = async (ctx) => {
     try {
         let postData = ctx.request.body, fileData = ctx.request.files, postInfo, likeInfo, filePath, fileInfo;
         postData.hashtags = JSON.parse(postData.hashTags)
-        postData.postTags = JSON.parse(postData.postTags)
+        postData.postMentions = JSON.parse(postData.postMentions)
         if (Object.keys(postData).length === 0 && postData == undefined) {
             ctx.response.body = data
 
@@ -1364,7 +1364,7 @@ const getPostByHashtag = async (ctx) => {
     }
 }
 
-const getTagNotificationById = async (ctx) => {
+const getMentionNotificationByUserName = async (ctx) => {
     let data = { status: 0, response: "Invalid request" }
     try {
         let userData = ctx.request.body, notificationInfo, aggregationQuery = [];
@@ -1376,7 +1376,7 @@ const getTagNotificationById = async (ctx) => {
         userData = userData.data[0]
         skipCount = (userData.pageNumber - 1) * userData.pageSize
         aggregationQuery = [
-            { $match: { postTags: { $in: [userData.userId] } } },
+            { $match: { postMentions: { $in: [userData.userName] } } },
             {
                 $lookup: {
                     from: "users",
@@ -1422,12 +1422,12 @@ const getTagNotificationById = async (ctx) => {
         return ctx.response.body = { status: 1, data: JSON.stringify(notificationInfo) }
     } catch (error) {
         console.log(error)
-        return ctx.response.body = { status: 0, response: `Error in post controllers/getTagNotificationById - ${error.message}` }
+        return ctx.response.body = { status: 0, response: `Error in post controllers/getMentionNotificationById - ${error.message}` }
     }
 }
 
 module.exports = {
     addPost, deletePost, getMyPost, postComment, deleteComment, addReply,
     deleteReply, getCommentsAndReplies, updateLike, getTrendingPost, getForYouPost, reportPost,
-    getPostById, getFriendsPost, getMyPagePost, getAllNews, getPagePost, getPostByHashtag, getTagNotificationById
+    getPostById, getFriendsPost, getMyPagePost, getAllNews, getPagePost, getPostByHashtag, getMentionNotificationByUserName
 }

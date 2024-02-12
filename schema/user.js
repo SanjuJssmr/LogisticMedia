@@ -5,10 +5,16 @@ const userSchema = mongoose.Schema({
         type: String,
         require: true
     },
+    userName:{
+        type: String,
+        require: true,
+        unique:true
+    },
     email: {
         type: String,
         require: true,
-        lowercase: true
+        lowercase: true,
+        unique: true
     },
     designation: {
         type: String,
