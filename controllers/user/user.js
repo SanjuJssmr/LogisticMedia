@@ -900,8 +900,7 @@ const navSearch = async (ctx) => {
 }
 
 const getMyNotifications = async (ctx) => {
-    let data = { status: 0, response: "Something went wrong" }, userData, notificationInfo, aggregationQuery = [],
-        notificationData = {}, postNotification = [], mentionNotification = [], skipCount;
+    let data = { status: 0, response: "Something went wrong" }, userData, notificationInfo, aggregationQuery = []
     try {
         userData = ctx.request.body;
         if (Object.keys(userData).length === 0 && userData.data === undefined) {
@@ -910,8 +909,6 @@ const getMyNotifications = async (ctx) => {
             return
         }
         userData = userData.data[0]
-        skipCount = (userData.page - 1) * userData.pageSize
-
         aggregationQuery = [
             {
                 $match: {
@@ -956,24 +953,24 @@ const getMyNotifications = async (ctx) => {
             },
             {
                 $facet: {
-                    allData: [{
-                        $skip: skipCount,
-                    },
-                    {
-                        $limit: userData.pageSize,
-                    }],
+                    data: [
+                        { $skip: (userData.page - 1) * userData.pageSize },
+                        { $limit: userData.pageSize }
+                    ],
                     totalCount: [
-                        {
-                            $count: 'count'
-                        }
+                        { $count: "value" }
                     ]
                 }
             }
         ]
         notificationInfo = await db.getAggregation("notification", aggregationQuery)
 
-        return ctx.response.body = { status: 1, data: JSON.stringify(notificationInfo) }
-    } catch (error) {
+        if (notificationInfo[0].data.length !== 0) {
+
+            return ctx.response.body = { status: 1, data: JSON.stringify(notificationInfo[0].data), totalCount: notificationInfo[0].totalCount[0].value }
+        }
+
+        return ctx.response.body = { status: 1, data: JSON.stringify(notificationInfo[0].data), totalCount: 0 }    } catch (error) {
         console.log(error.message)
         return ctx.response.body = { status: 0, response: `Error in user Controller - getMyNotifications:-${error.message}` }
     }

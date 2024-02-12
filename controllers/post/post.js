@@ -1374,7 +1374,6 @@ const getMentionNotificationByUserName = async (ctx) => {
             return
         }
         userData = userData.data[0]
-        skipCount = (userData.page - 1) * userData.pageSize
         aggregationQuery = [
             { $match: { postMentions: { $in: [userData.userName] } } },
             {
@@ -1412,23 +1411,24 @@ const getMentionNotificationByUserName = async (ctx) => {
             },
             {
                 $facet: {
-                    allData: [{
-                        $skip: skipCount,
-                    },
-                    {
-                        $limit: userData.pageSize,
-                    }],
+                    data: [
+                        { $skip: (userData.page - 1) * userData.pageSize },
+                        { $limit: userData.pageSize }
+                    ],
                     totalCount: [
-                        {
-                            $count: 'count'
-                        }
+                        { $count: "value" }
                     ]
                 }
             }
         ]
         notificationInfo = await db.getAggregation("post", aggregationQuery)
 
-        return ctx.response.body = { status: 1, data: JSON.stringify(notificationInfo) }
+        if (notificationInfo[0].data.length !== 0) {
+
+            return ctx.response.body = { status: 1, data: JSON.stringify(notificationInfo[0].data), totalCount: notificationInfo[0].totalCount[0].value }
+        }
+
+        return ctx.response.body = { status: 1, data: JSON.stringify(notificationInfo[0].data), totalCount: 0 }
     } catch (error) {
         console.log(error)
         return ctx.response.body = { status: 0, response: `Error in post controllers/getMentionNotificationById - ${error.message}` }
