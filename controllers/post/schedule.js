@@ -274,6 +274,14 @@ const getScheduleById = async (ctx) => {
                 }
             },
             {
+                $lookup: {
+                    from: "schedulecomments",
+                    localField: "_id",
+                    foreignField: "scheduleId",
+                    as: "scheduleComments",
+                }
+            },
+            {
                 $project: {
                     "pol": 1,
                     "pod": 1,
@@ -282,6 +290,7 @@ const getScheduleById = async (ctx) => {
                     "createdBy": 1,
                     "description": 1,
                     "createdAt": 1,
+                    "totalComments": { "$size": "$scheduleComments" },
                     "companyName": { '$arrayElemAt': ['$fullName', 0] },
                     "companyProfile": { '$arrayElemAt': ['$profile', 0] },
                     'likedBy': { '$arrayElemAt': ['$likedBy', 0] },

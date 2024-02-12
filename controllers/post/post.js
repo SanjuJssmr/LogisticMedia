@@ -112,6 +112,14 @@ const getMyPost = async (ctx) => {
                 }
             },
             {
+                $lookup: {
+                    from: "postcomments",
+                    localField: "_id",
+                    foreignField: "postId",
+                    as: "postComments",
+                }
+            },
+            {
                 $project: {
                     "createdBy": 1,
                     "description": 1,
@@ -119,6 +127,7 @@ const getMyPost = async (ctx) => {
                     "country": 1,
                     "files": 1,
                     "createdAt": 1,
+                    "totalComments": { "$size": "$postComments" },
                     "fullName": { '$arrayElemAt': ['$fullName', 0] },
                     "designation": { '$arrayElemAt': ['$designation', 0] },
                     "profile": { '$arrayElemAt': ['$profile', 0] },
@@ -197,6 +206,14 @@ const getMyPagePost = async (ctx) => {
                 }
             },
             {
+                $lookup: {
+                    from: "postcomments",
+                    localField: "_id",
+                    foreignField: "postId",
+                    as: "postComments",
+                }
+            },
+            {
                 $project: {
                     "createdBy": 1,
                     "description": 1,
@@ -204,6 +221,7 @@ const getMyPagePost = async (ctx) => {
                     "country": 1,
                     "files": 1,
                     "createdAt": 1,
+                    "totalComments": { "$size": "$postComments" },
                     "fullName": { '$arrayElemAt': ['$fullName', 0] },
                     "designation": { '$arrayElemAt': ['$designation', 0] },
                     "profile": { '$arrayElemAt': ['$profile', 0] },
@@ -285,6 +303,14 @@ const getTrendingPost = async (ctx) => {
                 }
             },
             {
+                $lookup: {
+                    from: "postcomments",
+                    localField: "_id",
+                    foreignField: "postId",
+                    as: "postComments",
+                }
+            },
+            {
                 $project: {
                     "createdBy": "$createdBy",
                     "description": "$description",
@@ -292,6 +318,7 @@ const getTrendingPost = async (ctx) => {
                     "files": "$files",
                     "createdAt": "$createdAt",
                     "reporterIds": "$reporterIds",
+                    "totalComments": { "$size": "$postComments" },
                     "fullName": { '$arrayElemAt': ['$fullName', 0] },
                     "designation": { '$arrayElemAt': ['$designation', 0] },
                     "profile": { '$arrayElemAt': ['$profile', 0] },
@@ -684,6 +711,14 @@ const getForYouPost = async (ctx) => {
                 }
             },
             {
+                $lookup: {
+                    from: "postcomments",
+                    localField: "_id",
+                    foreignField: "postId",
+                    as: "postComments",
+                }
+            },
+            {
                 $project: {
                     "createdBy": "$createdBy",
                     "description": "$description",
@@ -691,6 +726,7 @@ const getForYouPost = async (ctx) => {
                     "files": "$files",
                     "createdAt": "$createdAt",
                     "reporterIds": "$reporterIds",
+                    "totalComments": { "$size": "$postComments" },
                     "fullName": { '$arrayElemAt': ['$fullName', 0] },
                     "designation": { '$arrayElemAt': ['$designation', 0] },
                     "profile": { '$arrayElemAt': ['$profile', 0] },
@@ -830,6 +866,14 @@ const getPostById = async (ctx) => {
                 }
             },
             {
+                $lookup: {
+                    from: "postcomments",
+                    localField: "_id",
+                    foreignField: "postId",
+                    as: "postComments",
+                }
+            },
+            {
                 $project: {
                     "createdBy": "$createdBy",
                     "description": "$description",
@@ -837,6 +881,7 @@ const getPostById = async (ctx) => {
                     "files": "$files",
                     "createdAt": "$createdAt",
                     "reporterIds": "$reporterIds",
+                    "totalComments": { "$size": "$postComments" },
                     "fullName": { '$arrayElemAt': ['$fullName', 0] },
                     "designation": { '$arrayElemAt': ['$designation', 0] },
                     "profile": { '$arrayElemAt': ['$profile', 0] },
@@ -972,6 +1017,14 @@ const getFriendsPost = async (ctx) => {
                 }
             },
             {
+                $lookup: {
+                    from: "postcomments",
+                    localField: "postInfo_id",
+                    foreignField: "postId",
+                    as: "postComments",
+                }
+            },
+            {
                 $project: {
                     _id: 0,
                     "_id": "$postInfo._id",
@@ -983,6 +1036,7 @@ const getFriendsPost = async (ctx) => {
                     "country": "$postInfo.country",
                     "files": "$postInfo.files",
                     "reporterIds": "$reporterIds",
+                    "totalComments": { "$size": "$postComments" },
                     "fullName": { '$arrayElemAt': ['$fullName', 0] },
                     "designation": { '$arrayElemAt': ['$designation', 0] },
                     "profile": { '$arrayElemAt': ['$profile', 0] },
@@ -1083,6 +1137,14 @@ const getAllNews = async (ctx) => {
                 }
             },
             {
+                $lookup: {
+                    from: "postcomments",
+                    localField: "_id",
+                    foreignField: "postId",
+                    as: "postComments",
+                }
+            },
+            {
                 $project: {
                     "createdBy": "$createdBy",
                     "description": "$description",
@@ -1090,6 +1152,7 @@ const getAllNews = async (ctx) => {
                     "files": "$files",
                     "createdAt": "$createdAt",
                     "reporterIds": "$reporterIds",
+                    "totalComments": { "$size": "$postComments" },
                     "fullName": { '$arrayElemAt': ['$fullName', 0] },
                     "designation": { '$arrayElemAt': ['$designation', 0] },
                     "profile": { '$arrayElemAt': ['$profile', 0] },
@@ -1196,6 +1259,14 @@ const getPagePost = async (ctx) => {
                 }
             },
             {
+                $lookup: {
+                    from: "postcomments",
+                    localField: "_id",
+                    foreignField: "postId",
+                    as: "postComments",
+                }
+            },
+            {
                 $project: {
                     "createdBy": "$createdBy",
                     "description": "$description",
@@ -1203,6 +1274,7 @@ const getPagePost = async (ctx) => {
                     "files": "$files",
                     "createdAt": "$createdAt",
                     "reporterIds": "$reporterIds",
+                    "totalComments": { "$size": "$postComments" },
                     "fullName": { '$arrayElemAt': ['$fullName', 0] },
                     "designation": { '$arrayElemAt': ['$designation', 0] },
                     "profile": { '$arrayElemAt': ['$profile', 0] },
@@ -1313,12 +1385,21 @@ const getPostByHashtag = async (ctx) => {
                 }
             },
             {
+                $lookup: {
+                    from: "postcomments",
+                    localField: "_id",
+                    foreignField: "postId",
+                    as: "postComments",
+                }
+            },
+            {
                 $project: {
                     "createdBy": "$createdBy",
                     "description": "$description",
                     "hashtags": "$hashtags",
                     "files": "$files",
                     "createdAt": "$createdAt",
+                    "totalComments": { "$size": "$postComments" },
                     "reporterIds": "$reporterIds",
                     "fullName": { '$arrayElemAt': ['$fullName', 0] },
                     "designation": { '$arrayElemAt': ['$designation', 0] },
