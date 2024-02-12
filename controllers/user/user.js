@@ -1012,26 +1012,7 @@ const userSearch = async (ctx) => {
             ]
         }, { fullName: 1, profile: 1, userName: 1 }, 5)
 
-        pageData = await db.findDocumentsWithLimit('companyPage', {
-            status: 1,
-            $or: [
-
-                { companyName: { $regex: searchTerm, $options: 'i' } },
-            ]
-        }, { companyName: 1, profile: 1 }, 5)
-        if (userData.length > 4 || pageData.length === 0) {
-
-            return ctx.response.body = { status: 1, data: JSON.stringify(userData) }
-        }
-        if (userData.length === 0 && pageData.length !== 0) {
-
-            return ctx.response.body = { status: 1, data: JSON.stringify(pageData) }
-        }
-        pageDataCount = 5 - userData.length
-        pageData = pageData.splice(0, pageDataCount)
-        searchedInfo = [...userData, ...pageData]
-
-        return ctx.response.body = { status: 1, data: JSON.stringify(searchedInfo) }
+        return ctx.response.body = { status: 1, data: JSON.stringify(userData) }
     } catch (error) {
         console.log(error.message)
         return ctx.response.body = { status: 0, response: `Error in user Controller - userConnectionRequest:-${error.message}` }
