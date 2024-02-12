@@ -8,7 +8,7 @@ const addPost = async (ctx) => {
     try {
         let postData = ctx.request.body, fileData = ctx.request.files, postInfo, likeInfo, filePath, fileInfo;
         postData.hashtags = JSON.parse(postData.hashTags)
-        postData.postTags = JSON.parse(postData.postTags)
+        postData.postMentions = JSON.parse(postData.postMentions)
         if (Object.keys(postData).length === 0 && postData == undefined) {
             ctx.response.body = data
 
@@ -1364,7 +1364,7 @@ const getPostByHashtag = async (ctx) => {
     }
 }
 
-const getMentionNotificationById = async (ctx) => {
+const getMentionNotificationByUserName = async (ctx) => {
     let data = { status: 0, response: "Invalid request" }
     try {
         let userData = ctx.request.body, notificationInfo, aggregationQuery = [];
@@ -1422,5 +1422,5 @@ const getMentionNotificationById = async (ctx) => {
 module.exports = {
     addPost, deletePost, getMyPost, postComment, deleteComment, addReply,
     deleteReply, getCommentsAndReplies, updateLike, getTrendingPost, getForYouPost, reportPost,
-    getPostById, getFriendsPost, getMyPagePost, getAllNews, getPagePost, getPostByHashtag, getMentionNotificationById
+    getPostById, getFriendsPost, getMyPagePost, getAllNews, getPagePost, getPostByHashtag, getMentionNotificationByUserName
 }

@@ -49,7 +49,7 @@ const getUser = (receiverId, onlineUser) => {
 
 io.on("connection", (socket) => {
 
-  socket.on("users", (connectionId, userId) => {
+  socket.on("users", (userId) => {
     addUser(userId, socket.id);
     io.emit("getUsers", users);
   });
@@ -74,9 +74,6 @@ io.on("connection", (socket) => {
         message,
         createdAt,
       });
-      await db.insertSingleDocument("chat", { connectionId: connectionId, sender: senderId, message: message, status: 1 })
-
-      return
     }
     await db.insertSingleDocument("chat", { connectionId: connectionId, sender: senderId, message: message })
   });
