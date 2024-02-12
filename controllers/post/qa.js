@@ -346,11 +346,20 @@ const getAllQa = async (ctx) => {
                 }
             },
             {
+                $lookup: {
+                    from: "answers",
+                    localField: "_id",
+                    foreignField: "questionId",
+                    as: "questionAnswers",
+                }
+            },
+            {
                 $project: {
                     "createdBy": "$createdBy",
                     "question": "$question",
                     "files": "$files",
                     "createdAt": "$createdAt",
+                    "totalAnswers": { "$size": "$questionAnswers" },
                     "fullName": { '$arrayElemAt': ['$fullName', 0] },
                     "designation": { '$arrayElemAt': ['$designation', 0] },
                     "profile": { '$arrayElemAt': ['$profile', 0] },
