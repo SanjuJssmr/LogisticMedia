@@ -13,11 +13,11 @@ const socketIo = require("socket.io");
 const db = require("./model/mongodb");
 const { advertisementRouter } = require("./routes/post/advertisment");
 
-const io = socketIo(8900, {
-  cors: {
-    origin: "*",
-  },
-});
+// const io = socketIo(8900, {
+//   cors: {
+//     origin: "*",
+//   },
+// });
 
 const app = new koa()
 app.use(bodyParser())
@@ -36,53 +36,53 @@ app.on('error', (err, ctx) => {
 });
 
 
-let users = [];
+// let users = [];
 
-const addUser = (userId, socketId) => {
-  users = users.filter((user) => user.userId !== userId)
-  users.push({ userId, socketId });
-}
+// const addUser = (userId, socketId) => {
+//   users = users.filter((user) => user.userId !== userId)
+//   users.push({ userId, socketId });
+// }
 
-const getUser = (receiverId, onlineUser) => {
-  return onlineUser.filter((user) => user.userId === receiverId);
-};
+// const getUser = (receiverId, onlineUser) => {
+//   return onlineUser.filter((user) => user.userId === receiverId);
+// };
 
-io.on("connection", (socket) => {
+// io.on("connection", (socket) => {
 
-  socket.on("users", (userId) => {
-    addUser(userId, socket.id);
-    io.emit("getUsers", users);
-  });
+//   socket.on("users", (userId) => {
+//     addUser(userId, socket.id);
+//     io.emit("getUsers", users);
+//   });
 
-  socket.on("sendNotification", ({ senderId, receiverId }) => {
-    const receiver = getUser(receiverId, users);
-    if (receiver.length !== 0) {
-      io.to(receiver[0].socketId).emit("getNotification", {
-        senderId,
-        receiverId
-      });
-    }
-  });
+//   socket.on("sendNotification", ({ senderId, receiverId }) => {
+//     const receiver = getUser(receiverId, users);
+//     if (receiver.length !== 0) {
+//       io.to(receiver[0].socketId).emit("getNotification", {
+//         senderId,
+//         receiverId
+//       });
+//     }
+//   });
 
-  socket.on("sendMessage", async ({ connectionId, senderId, senderName, receiverId, message, createdAt }) => {
-    const user = getUser(receiverId, users);
-    if (user.length !== 0) {
-      io.to(user[0].socketId).emit("getMessage", {
-        senderId,
-        senderName,
-        receiverId,
-        message,
-        createdAt,
-      });
-    }
-    await db.insertSingleDocument("chat", { connectionId: connectionId, sender: senderId, message: message })
-  });
+//   socket.on("sendMessage", async ({ connectionId, senderId, senderName, receiverId, message, createdAt }) => {
+//     const user = getUser(receiverId, users);
+//     if (user.length !== 0) {
+//       io.to(user[0].socketId).emit("getMessage", {
+//         senderId,
+//         senderName,
+//         receiverId,
+//         message,
+//         createdAt,
+//       });
+//     }
+//     await db.insertSingleDocument("chat", { connectionId: connectionId, sender: senderId, message: message })
+//   });
 
-  socket.on("disconnect", () => {
-    users = users.filter((user) => user.socketId !== socket.id);
-    io.emit("getUsers", users);
-  });
-});
+//   socket.on("disconnect", () => {
+//     users = users.filter((user) => user.socketId !== socket.id);
+//     io.emit("getUsers", users);
+//   });
+// });
 
 mongoose.connect(CONFIG.DB_URL)
 mongoose.connection.on('disconnected', () => console.log('disconnected'));
