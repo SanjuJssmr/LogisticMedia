@@ -900,7 +900,8 @@ const navSearch = async (ctx) => {
 }
 
 const getMyNotifications = async (ctx) => {
-    let data = { status: 0, response: "Something went wrong" }, userData, notificationInfo, aggregationQuery = [], notificationData = {}, postNotification = [], mentionNotification = [];
+    let data = { status: 0, response: "Something went wrong" }, userData, notificationInfo, aggregationQuery = [],
+        notificationData = {}, postNotification = [], mentionNotification = [], skipCount;
     try {
         userData = ctx.request.body;
         if (Object.keys(userData).length === 0 && userData.data === undefined) {
@@ -909,6 +910,8 @@ const getMyNotifications = async (ctx) => {
             return
         }
         userData = userData.data[0]
+        skipCount = (userData.pageNumber - 1) * userData.pageSize
+
         aggregationQuery = [
             {
                 $match: {
@@ -939,6 +942,12 @@ const getMyNotifications = async (ctx) => {
                 $sort: {
                     createdAt: -1
                 }
+            },
+            {
+                $skip: skipCount
+            },
+            {
+                $limit: userData.pageSize
             },
             {
                 $project: {
@@ -1028,7 +1037,6 @@ const userSearch = async (ctx) => {
         return ctx.response.body = { status: 0, response: `Error in user Controller - userConnectionRequest:-${error.message}` }
     }
 }
-
 
 module.exports = {
     userRegister, updateRegisterData, resendOtp,

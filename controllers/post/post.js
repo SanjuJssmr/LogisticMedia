@@ -1248,7 +1248,7 @@ const getPagePost = async (ctx) => {
 
                 return ctx.response.body = { status: 1, data: JSON.stringify(postInfo[0].data), totalCount: postInfo[0].totalCount[0].value }
             }
-            
+
             return ctx.response.body = { status: 1, data: JSON.stringify(postInfo[0].data), totalCount: postInfo[0].totalCount[0].value }
         }
 
@@ -1374,6 +1374,7 @@ const getTagNotificationById = async (ctx) => {
             return
         }
         userData = userData.data[0]
+        skipCount = (userData.pageNumber - 1) * userData.pageSize
         aggregationQuery = [
             { $match: { postTags: { $in: [userData.userId] } } },
             {
@@ -1391,6 +1392,12 @@ const getTagNotificationById = async (ctx) => {
                     userProfile: { $arrayElemAt: ["$profile", 0] },
                     category: 3
                 }
+            },
+            {
+                $skip: skipCount
+            },
+            {
+                $limit: userData.pageSize
             },
             {
                 $sort: {
