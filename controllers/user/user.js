@@ -910,7 +910,7 @@ const getMyNotifications = async (ctx) => {
             return
         }
         userData = userData.data[0]
-        skipCount = (userData.pageNumber - 1) * userData.pageSize
+        skipCount = (userData.page - 1) * userData.pageSize
 
         aggregationQuery = [
             {
