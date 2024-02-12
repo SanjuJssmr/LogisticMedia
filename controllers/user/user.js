@@ -100,7 +100,7 @@ const resendOtpMail = async (mailData) => {
 }
 
 const userRegister = async (ctx) => {
-    let data = { status: 0, response: "Something went wrong" }, userData, checkEmailExist, userInsert, fileData, fileUrl;
+    let data = { status: 0, response: "Something went wrong" }, userData, checkEmailExist, userInsert, fileData, fileUrl, checkUserNameExist;
     try {
         userData = ctx.request.body;
         // if (Object.keys(userData).length === 0 && userData.data === undefined) {
@@ -114,6 +114,11 @@ const userRegister = async (ctx) => {
         if (checkEmailExist == true) {
 
             return ctx.response.body = { status: 0, response: "Email Already Exists" }
+        }
+        checkUserNameExist = await db.findOneDocumentExists("user", { userName: userData.userName })
+        if (checkUserNameExist == true) {
+
+            return ctx.response.body = { status: 0, response: "Username Already Exists" }
         }
         userData.password = await bcrypt.hash(userData.password, 10)
         userData.otp = common.otpGenerate()
