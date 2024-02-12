@@ -1399,12 +1399,6 @@ const getMentionNotificationByUserName = async (ctx) => {
                 }
             },
             {
-                $skip: skipCount
-            },
-            {
-                $limit: userData.pageSize
-            },
-            {
                 $project: {
                     _id: 0,
                     postId: "$_id",
@@ -1415,6 +1409,21 @@ const getMentionNotificationByUserName = async (ctx) => {
                     createdAt: 1,
                     status: 1
                 },
+            },
+            {
+                $facet: {
+                    allData: [{
+                        $skip: skipCount,
+                    },
+                    {
+                        $limit: userData.pageSize,
+                    }],
+                    totalCount: [
+                        {
+                            $count: 'count'
+                        }
+                    ]
+                }
             }
         ]
         notificationInfo = await db.getAggregation("post", aggregationQuery)

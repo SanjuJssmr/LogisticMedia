@@ -944,12 +944,6 @@ const getMyNotifications = async (ctx) => {
                 }
             },
             {
-                $skip: skipCount
-            },
-            {
-                $limit: userData.pageSize
-            },
-            {
                 $project: {
                     postId: 1,
                     userProfile: 1,
@@ -959,6 +953,21 @@ const getMyNotifications = async (ctx) => {
                     createdAt: 1,
                     status: 1
                 },
+            },
+            {
+                $facet: {
+                    allData: [{
+                        $skip: skipCount,
+                    },
+                    {
+                        $limit: userData.pageSize,
+                    }],
+                    totalCount: [
+                        {
+                            $count: 'count'
+                        }
+                    ]
+                }
             }
         ]
         notificationInfo = await db.getAggregation("notification", aggregationQuery)
