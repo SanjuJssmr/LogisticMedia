@@ -1394,15 +1394,15 @@ const getMentionNotificationByUserName = async (ctx) => {
                 }
             },
             {
+                $sort: {
+                    createdAt: -1
+                }
+            },
+            {
                 $skip: skipCount
             },
             {
                 $limit: userData.pageSize
-            },
-            {
-                $sort: {
-                    createdAt: -1
-                }
             },
             {
                 $project: {
