@@ -80,6 +80,24 @@ mongoose.connection.on('connected', () => {
         }
       });
 
+      socket.on("messageAck", ({ receiverId }) => {
+        const receiver = getUser(receiverId, users);
+        if (receiver.length !== 0) {
+          io.to(receiver[0].socketId).emit("getAckMessage", {
+            status: 1
+          });
+        }
+      });
+
+      socket.on("typing", ({ receiverId }) => {
+        const receiver = getUser(receiverId, users);
+        if (receiver.length !== 0) {
+          io.to(receiver[0].socketId).emit("typingStatus", {
+            status: 1
+          });
+        }
+      });
+
       socket.on("sendMessage", async ({ connectionId, senderId, senderName, receiverId, message, createdAt }) => {
         const user = getUser(receiverId, users);
         if (user.length !== 0) {
