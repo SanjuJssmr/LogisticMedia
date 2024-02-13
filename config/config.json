@@ -11,7 +11,7 @@
       "apiUrl": "localhost:8000",
       "siteTitle": "baseCode",
       "nodeFileUploads": "amSocialFiles/",
-      "otpUrl": "http://localhost:5173/otp/"
+      "otpUrl": "https://allmastersocial.onrender.com/otp/"
     },
     "azureFilePath": {
       "shareName": "files",

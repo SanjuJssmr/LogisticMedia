@@ -964,6 +964,10 @@ const getMyNotifications = async (ctx) => {
                     ],
                     totalCount: [
                         { $count: "value" }
+                    ],
+                    unseenCount: [
+                        { $match: { "status": 1 } },
+                        { $count: "value" }
                     ]
                 }
             }
@@ -971,11 +975,15 @@ const getMyNotifications = async (ctx) => {
         notificationInfo = await db.getAggregation("notification", aggregationQuery)
 
         if (notificationInfo[0].data.length !== 0) {
+            if (notificationInfo[0].unseenCount.length !== 0) {
 
-            return ctx.response.body = { status: 1, data: JSON.stringify(notificationInfo[0].data), totalCount: notificationInfo[0].totalCount[0].value }
+                return ctx.response.body = { status: 1, data: JSON.stringify(notificationInfo[0].data), totalCount: notificationInfo[0].totalCount[0].value, unseenCount: notificationInfo[0].unseenCount[0].value }
+            }
+
+            return ctx.response.body = { status: 1, data: JSON.stringify(notificationInfo[0].data), totalCount: notificationInfo[0].totalCount[0].value, unseenCount: 0 }
         }
 
-        return ctx.response.body = { status: 1, data: JSON.stringify(notificationInfo[0].data), totalCount: 0 }
+        return ctx.response.body = { status: 1, data: JSON.stringify(notificationInfo[0].data), totalCount: notificationInfo[0].totalCount[0].value, unseenCount: 0 }
     } catch (error) {
         console.log(error.message)
         return ctx.response.body = { status: 0, response: `Error in user Controller - getMyNotifications:-${error.message}` }
