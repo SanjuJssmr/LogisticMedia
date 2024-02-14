@@ -64,6 +64,16 @@ const getAllChatInfo = async (ctx) => {
                 }
             },
             {
+                $addFields: {
+                    "recentChat": { $arrayElemAt: ["$chatInfo", -1] }
+                }
+            },
+            {
+                $sort: {
+                    "chatInfo.createdAt": -1
+                }
+            },
+            {
                 $project: {
                     "_id": "$_id",
                     "senderId": "$senderId",
@@ -72,6 +82,9 @@ const getAllChatInfo = async (ctx) => {
                     "senderProfile": { '$arrayElemAt': ['$senderProfile', 0] },
                     "recipientProfile": { '$arrayElemAt': ['$recipientProfile', 0] },
                     "recipientId": "$recipientId",
+                    "recentChat": "$recentChat.message",
+                    "recentTime": "$recentChat.createdAt",
+                    "recentChatStatus":"$recentChat.status",
                     "chatInfo": {
                         $filter: {
                             input: "$chatInfo",
@@ -83,7 +96,7 @@ const getAllChatInfo = async (ctx) => {
             },
             {
                 $addFields: {
-                    "unSeenCount": { $size: "$chatInfo" },
+                    "unSeenCount": { $size: "$chatInfo" }
                 }
             },
             { $unset: "chatInfo" }

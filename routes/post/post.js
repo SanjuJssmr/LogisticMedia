@@ -6,7 +6,8 @@ const { addPost, deletePost, getMyPost, postComment, deleteComment, addReply, de
     getAllNews,
     getMyPagePost,
     getPostByHashtag,
-    getMentionNotificationByUserName} = require('../../controllers/post/post')
+    getMentionNotificationByUserName,
+    updatePostMentionNotification} = require('../../controllers/post/post')
 const postRouter = new Router({ prefix: "/post" })
 
 try {
@@ -29,6 +30,7 @@ try {
     postRouter.post("/getPagePost", getPagePost)
     postRouter.post("/getPostByHashtag", getPostByHashtag)
     postRouter.post("/getPostMentionNotification", getMentionNotificationByUserName)
+    postRouter.post("/updatePostMentionNotification", updatePostMentionNotification)
 
 } catch (error) {
     console.log(`Error in post router - ${error}`);
