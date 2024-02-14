@@ -1456,7 +1456,7 @@ const getMentionNotificationByUserName = async (ctx) => {
         }
         userData = userData.data[0]
         aggregationQuery = [
-            { $match: { postMentions: { $in: [userData.userName] } } },
+            { $match: { "postMentions.userName": { $in: [userData.userName] } } },
             {
                 $lookup: {
                     from: "users",
@@ -1485,10 +1485,24 @@ const getMentionNotificationByUserName = async (ctx) => {
                     userProfile: 1,
                     category: 1,
                     userName: 1,
-                    category: 3,
+                    category: 1,
                     createdAt: 1,
-                    status: 1
+                    seenStatus: {
+                        $filter: {
+                            input: "$postMentions",
+                            as: "mention",
+                            cond: { $eq: ["$$mention.userName", userData.userName] }
+                        }
+                    }
                 },
+            },
+            {
+                $addFields: {
+                    status: { $arrayElemAt: ["$seenStatus.status", 0] }
+                }
+            },
+            {
+                $unset: ["seenStatus"]
             },
             {
                 $facet: {
@@ -1516,8 +1530,32 @@ const getMentionNotificationByUserName = async (ctx) => {
     }
 }
 
+const updatePostMentionNotification = async (ctx) => {
+    let data = { status: 0, response: "Something went wrong" }, notificationData, updateNotificationStatus;
+    try {
+        notificationData = ctx.request.body;
+        if (Object.keys(notificationData).length === 0 && notificationData.data === undefined) {
+            ctx.response.body = data
+
+            return
+        }
+        notificationData = notificationData.data[0]
+        updateNotificationStatus = await db.updateOneDocument("post", { _id: notificationData.postId, postMentions: { $elemMatch: { userName: notificationData.userName } } }, { $set: { "postMentions.$.status": 2 } })
+        if (updateNotificationStatus.modifiedCount !== 0 && updateNotificationStatus.matchedCount !== 0) {
+
+            return ctx.response.body = { status: 1, response: "Notification updated successfully" }
+        }
+
+        return ctx.response.body = data
+    } catch (error) {
+        console.log(error.message)
+        return ctx.response.body = { status: 0, response: `Error in post Controller - updatePostMentionNotification:-${error.message}` }
+    }
+}
+
 module.exports = {
     addPost, deletePost, getMyPost, postComment, deleteComment, addReply,
     deleteReply, getCommentsAndReplies, updateLike, getTrendingPost, getForYouPost, reportPost,
-    getPostById, getFriendsPost, getMyPagePost, getAllNews, getPagePost, getPostByHashtag, getMentionNotificationByUserName
+    getPostById, getFriendsPost, getMyPagePost, getAllNews, getPagePost, getPostByHashtag, getMentionNotificationByUserName,
+    updatePostMentionNotification
 }

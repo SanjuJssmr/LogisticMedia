@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<% let capitalize=(text)=> { return text.replace(/(^\w|\s\w)/g, o =>
+    o.toUpperCase()) } %>
+
+    <head>
+    </head>
+
+    <body>
+        <table style="font-size: 18px;
+      padding: 40px 30px 30px 30px !important;
+      width: 600px !important;
+      background: #fff !important;
+      border-top: 5px solid #8b9dbb;
+      border-bottom: 5px solid #8b9dbb;
+      border-radius: 8px;
+      color: #2e2e2e;" role="presentation" align="center" role="presentation">
+            <tbody>
+                <tr>
+                    <td>
+                        <h3 style="padding-left: 10px !important;">Dear <strong style="color: #2f65b9 !important;">
+                                <%= capitalize(fullName)%>,
+                            </strong></h3>
+                        <p style="padding-left: 10px !important;">
+                            Greetings from <span style="color: #4c78be !important;">AllMaster's SocialMedia!</span>
+                        </p>
+                        <p style="padding-left: 10px !important;">
+                            <%= contextOne %>
+                        </p>
+                        <p style="padding-left: 10px !important;">
+                            <%= contextTwo %>
+                        </p>
+                        <p style="padding-left: 10px !important;">Regards,</p>
+                        <p style="padding-left: 10px !important; color: #4c78be !important;"><strong>AllMaster's
+                                SocialMedia!</strong></p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        </div>
+    </body>
+
+</html>
