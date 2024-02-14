@@ -983,7 +983,7 @@ const getMyNotifications = async (ctx) => {
             return ctx.response.body = { status: 1, data: JSON.stringify(notificationInfo[0].data), totalCount: notificationInfo[0].totalCount[0].value, unseenCount: 0 }
         }
 
-        return ctx.response.body = { status: 1, data: JSON.stringify(notificationInfo[0].data), totalCount: notificationInfo[0].totalCount[0].value, unseenCount: 0 }
+        return ctx.response.body = { status: 1, data: JSON.stringify(notificationInfo[0].data), totalCount: 0, unseenCount: 0 }
     } catch (error) {
         console.log(error.message)
         return ctx.response.body = { status: 0, response: `Error in user Controller - getMyNotifications:-${error.message}` }
