@@ -199,6 +199,16 @@ const verifiyCompanyPages = async (ctx) => {
                     }
                 )
             }
+            if (pageExists.status == 4){
+                await companyVerificationMail(
+                    {
+                        emailTo: pageExists.email,
+                        fullName: pageExists.companyName,
+                        contextOne: "In response to your request, our admin revoked the decision to reject your company page after conducting a further investigation. Congratulations🎉",
+                        contextTwo: "The logistics community is eager to hear about your concepts and proposals."
+                    }
+                )
+            }
         }
         if (pageData.status == 4){
             await companyVerificationMail(

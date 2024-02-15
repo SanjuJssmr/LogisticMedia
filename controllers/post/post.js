@@ -132,11 +132,15 @@ const getMyPost = async (ctx) => {
                     "designation": { '$arrayElemAt': ['$designation', 0] },
                     "profile": { '$arrayElemAt': ['$profile', 0] },
                     'likedBy': { '$arrayElemAt': ['$likedBy', 0] },
-                }
-            },
-            {
-                $addFields: {
-                    likes: { $size: "$likedBy" }
+                    "likes":
+                    {
+                        "$cond":
+                        {
+                            "if": { "$isArray": { '$arrayElemAt': ['$likedBy', 0] } },
+                            "then": { "$size": { '$arrayElemAt': ['$likedBy', 0] } },
+                            "else": 0
+                        }
+                    }
                 }
             },
             {
@@ -228,11 +232,15 @@ const getMyPagePost = async (ctx) => {
                     'likedBy': { '$arrayElemAt': ['$likedBy', 0] },
                     "companyName": { '$arrayElemAt': ['$companyName', 0] },
                     'companyProfile': { '$arrayElemAt': ['$companyProfile', 0] },
-                }
-            },
-            {
-                $addFields: {
-                    likes: { $size: "$likedBy" }
+                    "likes":
+                    {
+                        "$cond":
+                        {
+                            "if": { "$isArray": { '$arrayElemAt': ['$likedBy', 0] } },
+                            "then": { "$size": { '$arrayElemAt': ['$likedBy', 0] } },
+                            "else": 0
+                        }
+                    }
                 }
             },
             {
@@ -318,18 +326,23 @@ const getTrendingPost = async (ctx) => {
                     "files": "$files",
                     "createdAt": "$createdAt",
                     "reporterIds": "$reporterIds",
+                    "postMentions": "$postMentions",
                     "totalComments": { "$size": "$postComments" },
                     "fullName": { '$arrayElemAt': ['$fullName', 0] },
                     "designation": { '$arrayElemAt': ['$designation', 0] },
                     "profile": { '$arrayElemAt': ['$profile', 0] },
-                    "likedBy": { '$arrayElemAt': ['$likedBy', 0] },
                     "companyName": { '$arrayElemAt': ['$companyName', 0] },
                     'companyProfile': { '$arrayElemAt': ['$companyProfile', 0] },
-                }
-            },
-            {
-                $addFields: {
-                    likes: { $size: "$likedBy" },
+                    "likedBy": { '$arrayElemAt': ['$likedBy', 0] },
+                    "likes":
+                    {
+                        "$cond":
+                        {
+                            "if": { "$isArray": { '$arrayElemAt': ['$likedBy', 0] } },
+                            "then": { "$size": { '$arrayElemAt': ['$likedBy', 0] } },
+                            "else": 0
+                        }
+                    }
                 }
             },
             {
@@ -609,40 +622,29 @@ const updateLike = async (ctx) => {
 
             return ctx.response.body = { status: 0, response: "No post found" }
         }
-        checkAlreadyLiked = await db.findSingleDocument("postLike", { postId: postInfo._id, likedBy: { $in: [postData.userId] } })
         if (postData.status === 1) {
-            if (checkAlreadyLiked == null) {
-                updateInfo = await db.updateOneDocument("postLike", { postId: postInfo._id }, { $push: { likedBy: postData.userId } })
-                if (updateInfo.modifiedCount !== 0 && updateInfo.matchedCount !== 0) {
-                    if (postInfo.createdBy.toString() !== postData.userId) {
-                        updateNotification = await db.insertSingleDocument("notification", { receiverId: postInfo.createdBy, senderId: postData.userId, postId: postInfo._id })
-                        if (Object.keys(updateNotification).length !== 0) {
+            updateInfo = await db.updateOneDocument("postLike", { postId: postInfo._id }, { $push: { likedBy: postData.userId } })
+            if (updateInfo.modifiedCount !== 0 && updateInfo.matchedCount !== 0) {
+                if (postInfo.createdBy.toString() !== postData.userId) {
+                    updateNotification = await db.insertSingleDocument("notification", { receiverId: postInfo.createdBy, senderId: postData.userId, postId: postInfo._id })
+                    if (Object.keys(updateNotification).length !== 0) {
 
-                            return ctx.response.body = { status: 1, response: "Like added successfully" }
-                        }
-
-                        return ctx.response.body = { status: 0, response: "Notification not updated" }
+                        return ctx.response.body = { status: 1, response: "Like added successfully" }
                     }
-
-                    return ctx.response.body = { status: 1, response: "Like added successfully" }
                 }
-            }
 
-            return ctx.response.body = { status: 0, response: "You're Already liked this post" }
+                return ctx.response.body = { status: 1, response: "Like added successfully" }
+            }
         }
         if (postData.status === 2) {
-            if (checkAlreadyLiked != null) {
-                updateInfo = await db.updateOneDocument("postLike", { postId: postInfo._id }, { $pull: { likedBy: postData.userId } })
-                if (updateInfo.modifiedCount !== 0 && updateInfo.matchedCount !== 0) {
-                    updateNotification = await db.updateOneDocument("notification", { postId: postInfo._id, senderId: postData.userId, category: 1, status: { $in: [1, 2] } }, { status: 0 })
-                    if (updateNotification.modifiedCount !== 0 && updateNotification.matchedCount !== 0) {
+            updateInfo = await db.updateOneDocument("postLike", { postId: postInfo._id }, { $pull: { likedBy: postData.userId } })
+            if (updateInfo.modifiedCount !== 0 && updateInfo.matchedCount !== 0) {
+                updateNotification = await db.updateOneDocument("notification", { postId: postInfo._id, senderId: postData.userId, category: 1, status: { $in: [1, 2] } }, { status: 0 })
+                if (updateNotification.modifiedCount !== 0 && updateNotification.matchedCount !== 0) {
 
-                        return ctx.response.body = { status: 1, response: "Disliked successfully" }
-                    }
+                    return ctx.response.body = { status: 1, response: "Disliked successfully" }
                 }
             }
-
-            return ctx.response.body = { status: 0, response: "You're Not liked this post before" }
         }
 
         return ctx.response.body = data
@@ -731,13 +733,17 @@ const getForYouPost = async (ctx) => {
                     "designation": { '$arrayElemAt': ['$designation', 0] },
                     "profile": { '$arrayElemAt': ['$profile', 0] },
                     "likedBy": { '$arrayElemAt': ['$likedBy', 0] },
+                    "likes":
+                    {
+                        "$cond":
+                        {
+                            "if": { "$isArray": { '$arrayElemAt': ['$likedBy', 0] } },
+                            "then": { "$size": { '$arrayElemAt': ['$likedBy', 0] } },
+                            "else": 0
+                        }
+                    },
                     "companyName": { '$arrayElemAt': ['$companyName', 0] },
                     'companyProfile': { '$arrayElemAt': ['$companyProfile', 0] },
-                }
-            },
-            {
-                $addFields: {
-                    likes: { $size: "$likedBy" },
                 }
             },
             {
@@ -888,13 +894,17 @@ const getPostById = async (ctx) => {
                     "likedBy": { '$arrayElemAt': ['$likedBy', 0] },
                     "companyName": { '$arrayElemAt': ['$companyName', 0] },
                     'companyProfile': { '$arrayElemAt': ['$companyProfile', 0] },
+                    "likes":
+                    {
+                        "$cond":
+                        {
+                            "if": { "$isArray": { '$arrayElemAt': ['$likedBy', 0] } },
+                            "then": { "$size": { '$arrayElemAt': ['$likedBy', 0] } },
+                            "else": 0
+                        }
+                    }
                 }
-            },
-            {
-                $addFields: {
-                    likes: { $size: "$likedBy" },
-                }
-            },
+            }
         ]
         postInfo = await db.getAggregation("post", aggregationQuery)
 
@@ -1040,14 +1050,18 @@ const getFriendsPost = async (ctx) => {
                     "fullName": { '$arrayElemAt': ['$fullName', 0] },
                     "designation": { '$arrayElemAt': ['$designation', 0] },
                     "profile": { '$arrayElemAt': ['$profile', 0] },
-                    'likedBy': { '$arrayElemAt': ['$likedBy', 0] },
+                    "likedBy": { '$arrayElemAt': ['$likedBy', 0] },
+                    "likes":
+                    {
+                        "$cond":
+                        {
+                            "if": { "$isArray": { '$arrayElemAt': ['$likedBy', 0] } },
+                            "then": { "$size": { '$arrayElemAt': ['$likedBy', 0] } },
+                            "else": 0
+                        }
+                    },
                     "companyName": { '$arrayElemAt': ['$companyName', 0] },
                     'companyProfile': { '$arrayElemAt': ['$companyProfile', 0] },
-                }
-            },
-            {
-                $addFields: {
-                    likes: { $size: "$likedBy" }
                 }
             },
             {
@@ -1157,11 +1171,15 @@ const getAllNews = async (ctx) => {
                     "designation": { '$arrayElemAt': ['$designation', 0] },
                     "profile": { '$arrayElemAt': ['$profile', 0] },
                     "likedBy": { '$arrayElemAt': ['$likedBy', 0] },
-                }
-            },
-            {
-                $addFields: {
-                    likes: { $size: "$likedBy" },
+                    "likes":
+                    {
+                        "$cond":
+                        {
+                            "if": { "$isArray": { '$arrayElemAt': ['$likedBy', 0] } },
+                            "then": { "$size": { '$arrayElemAt': ['$likedBy', 0] } },
+                            "else": 0
+                        }
+                    }
                 }
             },
             {
@@ -1281,12 +1299,16 @@ const getPagePost = async (ctx) => {
                     "likedBy": { '$arrayElemAt': ['$likedBy', 0] },
                     "companyName": { '$arrayElemAt': ['$companyName', 0] },
                     'companyProfile': { '$arrayElemAt': ['$companyProfile', 0] },
-                    "companyId": { '$arrayElemAt': ['$companyId', 0] }
-                }
-            },
-            {
-                $addFields: {
-                    likes: { $size: "$likedBy" },
+                    "companyId": { '$arrayElemAt': ['$companyId', 0] },
+                    "likes":
+                    {
+                        "$cond":
+                        {
+                            "if": { "$isArray": { '$arrayElemAt': ['$likedBy', 0] } },
+                            "then": { "$size": { '$arrayElemAt': ['$likedBy', 0] } },
+                            "else": 0
+                        }
+                    }
                 }
             },
             {
@@ -1407,12 +1429,16 @@ const getPostByHashtag = async (ctx) => {
                     "likedBy": { '$arrayElemAt': ['$likedBy', 0] },
                     "companyName": { '$arrayElemAt': ['$companyName', 0] },
                     'companyProfile': { '$arrayElemAt': ['$companyProfile', 0] },
-                    "companyId": { '$arrayElemAt': ['$companyId', 0] }
-                }
-            },
-            {
-                $addFields: {
-                    likes: { $size: "$likedBy" },
+                    "companyId": { '$arrayElemAt': ['$companyId', 0] },
+                    "likes":
+                    {
+                        "$cond":
+                        {
+                            "if": { "$isArray": { '$arrayElemAt': ['$likedBy', 0] } },
+                            "then": { "$size": { '$arrayElemAt': ['$likedBy', 0] } },
+                            "else": 0
+                        }
+                    }
                 }
             },
             {
@@ -1512,6 +1538,10 @@ const getMentionNotificationByUserName = async (ctx) => {
                     ],
                     totalCount: [
                         { $count: "value" }
+                    ],
+                    unseenCount: [
+                        { $match: { status: 1 } },
+                        { $count: "value" }
                     ]
                 }
             }
@@ -1519,8 +1549,12 @@ const getMentionNotificationByUserName = async (ctx) => {
         notificationInfo = await db.getAggregation("post", aggregationQuery)
 
         if (notificationInfo[0].data.length !== 0) {
+            if (notificationInfo[0].unseenCount.length !== 0) {
 
-            return ctx.response.body = { status: 1, data: JSON.stringify(notificationInfo[0].data), totalCount: notificationInfo[0].totalCount[0].value }
+                return ctx.response.body = { status: 1, data: JSON.stringify(notificationInfo[0].data), totalCount: notificationInfo[0].totalCount[0].value, unseenCount: notificationInfo[0].unseenCount[0].value }
+            }
+
+            return ctx.response.body = { status: 1, data: JSON.stringify(notificationInfo[0].data), totalCount: notificationInfo[0].totalCount[0].value, unseenCount: 0 }
         }
 
         return ctx.response.body = { status: 1, data: JSON.stringify(notificationInfo[0].data), totalCount: 0 }

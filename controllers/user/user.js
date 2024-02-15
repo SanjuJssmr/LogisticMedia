@@ -55,49 +55,6 @@ const registrationOtpMail = async (mailData) => {
         console.log(`Error sending Registration OTP verification : ${error.message}`)
     }
 }
-//Resend OTP Mail
-const resendOtpMail = async (mailData) => {
-    let errorData, mailOptions
-    try {
-        errorData = { location: "Resend otp", funName: "resendOtpMail" }
-        ejs.renderFile(`${templatePathUser}/resendOtp.ejs`,
-            {
-                fullName: mailData.fullName,
-                email: mailData.emailTo,
-                otp: mailData.otp
-            }
-            , async (err, data) => {
-                if (err) {
-                    console.log(err);
-                    await common.errorMail(errorData)
-                } else {
-                    mailOptions = {
-                        from: process.env.SMTP_AUTH_USER,
-                        to: mailData.emailTo,
-                        subject: `AllMasterSocial | Attention! - New OTP Request |`,
-                        html: data
-                    }
-                    //Send Mail
-                    transporter.sendMail(mailOptions, async (error, info) => {
-                        if (error) {
-                            if (mailResendAttempts !== 0) {
-                                resendOtpMail(mailData)
-                                mailResendAttempts--
-                            } else {
-                                mailResendAttempts = 2
-                                await common.errorMail(errorData)
-                            }
-                            console.log(`Resend otp Mail Not Sent - ${error}`)
-                            return console.log(error)
-                        }
-                        console.log(`Resend otp Mail sent:  - ${info.messageId}`)
-                    })
-                }
-            })
-    } catch (error) {
-        console.log(`Error sending user/resendOtpMail : ${error.message}`)
-    }
-}
 
 const userRegister = async (ctx) => {
     let data = { status: 0, response: "Something went wrong" }, userData, checkEmailExist, userInsert, fileData, fileUrl, checkUserNameExist;
@@ -1198,9 +1155,45 @@ const getProfileByName = async (ctx) => {
     }
 }
 
+const getAllNotificationCount = async (ctx) => {
+    let data = { status: 0, response: "Something went wrong" }, aggregationPostQuery = [], aggregationMentionQuery = [], totalNotificationCount, userData, postNotification, mentionNotification;
+    try {
+        userData = ctx.request.body;
+        userData = userData.data[0]
+        aggregationPostQuery = [
+            {
+                $match: {
+                    $and: [
+                        { category: { $ne: 0 } },
+                        { receiverId: new ObjectId(userData.userId) },
+                        { status: 1 }
+                    ]
+                }
+            },
+            {
+                $count: "postNotificationTotal"
+            }
+        ]
+        aggregationMentionQuery = [
+            { $match: { $and: [{ "postMentions.userName": { $in: [userData.userName] } }, { "postMentions.status": { $in: [1] } }] } },
+            {
+                $count: "mentionNotificationTotal"
+            }
+        ]
+        postNotification = await db.getAggregation("notification", aggregationPostQuery)
+        mentionNotification = await db.getAggregation("post", aggregationMentionQuery)
+        totalNotificationCount = postNotification[0].postNotificationTotal + mentionNotification[0].mentionNotificationTotal
+        return ctx.response.body = { status: 1, totalNotificationCount: totalNotificationCount }
+    } catch (error) {
+        console.log(error.message)
+        return ctx.response.body = { status: 0, response: `Error in user Controller - getAllNotificationCount:-${error.message}` }
+    }
+}
+
 module.exports = {
     userRegister, updateRegisterData, resendOtp,
     login, verifyOtp, updateUserDetails, userConnectionRequest, getProfileById,
     getAllUser, changeConnectionStatus, getConnectionRequestListById, getFollowListByUserId, getFollowingListByUserId,
-    getConnectionListByUserId, userDetailsById, navSearch, getMyNotifications, updateNotification, userSearch, getProfileByName
+    getConnectionListByUserId, userDetailsById, navSearch, getMyNotifications, updateNotification, userSearch, getProfileByName,
+    getAllNotificationCount
 }

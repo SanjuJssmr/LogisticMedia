@@ -18,10 +18,11 @@
       <tbody>
         <tr>
           <center>
-          <td style="display: flex;width: 100%; align-items: center; justify-content: center;">
-            <img src="https://amsocial.blob.core.windows.net/amsocial/congrat.png" width="200" height="auto" alt="img" style="display:flex; align-items: center; justify-content: center;">
-          </td>
-        </center>
+            <td style="display: flex;width: 100%; align-items: center; justify-content: center;">
+              <img src="https://amsocial.blob.core.windows.net/amsocial/congrat.png" width="200" height="auto" alt="img"
+                style="display:flex; align-items: center; justify-content: center;">
+            </td>
+          </center>
         </tr>
         <tr>
           <td>
@@ -32,23 +33,24 @@
               Welcome to <span style="color: #4c78be !important;">AllMaster's SocialMedia!</span>
             </p>
             <p style="padding-left: 10px !important;">Your one step ahead to complete your registration process with us,
-              <br> Below is the (OTP) to get into your <%=type%>.</p>
+              <br> Below is the (OTP) to get into your <%=type%>.
+            </p>
             <center>
-              <p><strong
-                  style="font-size:30px; padding: 8px 4px; border: 1px solid #002662;  font-weight: 800; ">
+              <p><strong style="font-size:30px; padding: 8px 4px; border: 1px solid #002662;  font-weight: 800; ">
                   OTP : <span style="color: #2f65b9 !important; ">
                     <%=otp%>
                   </span>
                 </strong></p>
             </center>
-            <p style="padding-left: 10px !important;">
-              <a href="<%= url %>" target="_blank" rel="noopener noreferrer"
-                style="font-weight: 700; color: #2f65b9 !important;">Click Here,</a> to continue🎉
-            </p>
-            <p>
-            <p style="padding-left: 10px !important;">Regards,</p>
-            <p style="padding-left: 10px !important; color: #4c78be !important;"><strong>AllMaster's
-                SocialMedia!</strong></p>
+            <%if (url) { %>
+              <p style="padding-left: 10px !important;">
+                <a href="<%= url %>" target="_blank" rel="noopener noreferrer"
+                  style="font-weight: 700; color: #2f65b9 !important;">Click Here,</a> to continue🎉
+              </p>
+              <% } %>
+                <p style="padding-left: 10px !important;">Regards,</p>
+                <p style="padding-left: 10px !important; color: #4c78be !important;"><strong>AllMaster's
+                    SocialMedia!</strong></p>
           </td>
         </tr>
       </tbody>

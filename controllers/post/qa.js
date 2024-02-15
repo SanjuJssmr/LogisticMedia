@@ -63,7 +63,7 @@ const deleteQuestion = async (ctx) => {
 const postAnswer = async (ctx) => {
     let data = { status: 0, response: "Invalid request" }
     try {
-        let answerData = ctx.request.body, questionInfo, answerInfo;
+        let answerData = ctx.request.body, questionInfo, answerInfo, updateNotification;
         if (Object.keys(answerData).length === 0 && answerData.data === undefined) {
             ctx.response.body = data
 
@@ -77,8 +77,11 @@ const postAnswer = async (ctx) => {
         }
         answerInfo = await db.insertSingleDocument("answer", answerData)
         if (Object.keys(answerInfo).length !== 0) {
+            updateNotification = await db.insertSingleDocument("notification", { receiverId: questionInfo.createdBy, senderId: answerData.userId, postId: questionInfo._id, commentId: answerInfo._id, category: 5 })
+            if (Object.keys(updateNotification).length !== 0) {
 
-            return ctx.response.body = { status: 1, response: "Answer added successfully" }
+                return ctx.response.body = { status: 1, response: "Answer added successfully" }
+            }
         }
         return ctx.response.body = data
     } catch (error) {
@@ -271,30 +274,36 @@ const getAnswersAndReplies = async (ctx) => {
 const updateLike = async (ctx) => {
     let data = { status: 0, response: "Invalid request" }
     try {
-        let questionData = ctx.request.body, questionInfo, likeInfo;
+        let questionData = ctx.request.body, questionInfo, likeInfo, updateNotification;
         if (Object.keys(questionData).length === 0 && questionData.data === undefined) {
             ctx.response.body = data
 
             return
         }
         questionData = questionData.data[0];
-        questionInfo = await db.findSingleDocument("questionLike", { questionId: questionData.questionId })
+        questionInfo = await db.findSingleDocument("question", { _id: questionData.questionId })
         if (questionInfo == null || questionInfo.status === 0) {
 
             return ctx.response.body = { status: 0, response: "No question found" }
         }
         if (questionData.status === 1) {
-            updateInfo = await db.updateOneDocument("questionLike", { _id: questionInfo._id }, { $push: { likedBy: questionData.userId } })
+            updateInfo = await db.updateOneDocument("questionLike", { questionId: questionInfo._id }, { $push: { likedBy: questionData.userId } })
             if (updateInfo.modifiedCount !== 0 && updateInfo.matchedCount !== 0) {
+                updateNotification = await db.insertSingleDocument("notification", { receiverId: questionInfo._id, senderId: questionData.userId, postId: questionInfo._id, category: 4 })
+                if (Object.keys(updateNotification).length !== 0) {
 
-                return ctx.response.body = { status: 1, response: "Like added successfully" }
+                    return ctx.response.body = { status: 1, response: "Like added successfully" }
+                }
             }
         }
         if (questionData.status === 2) {
-            updateInfo = await db.updateOneDocument("questionLike", { _id: questionInfo._id }, { $pull: { likedBy: questionData.userId } })
+            updateInfo = await db.updateOneDocument("questionLike", { questionId: questionInfo._id }, { $pull: { likedBy: questionData.userId } })
             if (updateInfo.modifiedCount !== 0 && updateInfo.matchedCount !== 0) {
+                updateNotification = await db.updateOneDocument("notification", { postId: questionInfo._id, senderId: questionData.userId, category: 4, status: { $in: [1, 2] } }, { status: 0 })
+                if (updateNotification.modifiedCount !== 0 && updateNotification.matchedCount !== 0) {
 
-                return ctx.response.body = { status: 1, response: "Disliked successfully" }
+                    return ctx.response.body = { status: 1, response: "Disliked successfully" }
+                }
             }
         }
 
@@ -364,11 +373,15 @@ const getAllQa = async (ctx) => {
                     "designation": { '$arrayElemAt': ['$designation', 0] },
                     "profile": { '$arrayElemAt': ['$profile', 0] },
                     "likedBy": { '$arrayElemAt': ['$likedBy', 0] },
-                }
-            },
-            {
-                $addFields: {
-                    likes: { $size: "$likedBy" },
+                    "likes":
+                    {
+                        "$cond":
+                        {
+                            "if": { "$isArray": { '$arrayElemAt': ['$likedBy', 0] } },
+                            "then": { "$size": { '$arrayElemAt': ['$likedBy', 0] } },
+                            "else": 0
+                        }
+                    }
                 }
             },
             {
@@ -402,7 +415,7 @@ const getAllQa = async (ctx) => {
 
                 return ctx.response.body = { status: 1, data: JSON.stringify(qaData[0].data), totalCount: qaData[0].totalCount[0].value }
             }
-            
+
             return ctx.response.body = { status: 1, data: JSON.stringify(qaData[0].data), totalCount: qaData[0].totalCount[0].value }
         }
 
