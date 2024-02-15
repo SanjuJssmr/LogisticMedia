@@ -33,7 +33,7 @@ const addSchedule = async (ctx) => {
 const deleteSchedule = async (ctx) => {
     let data = { status: 0, response: "Invalid request" }
     try {
-        let scheduleData = ctx.request.body, scheduleInfo, updateInfo;
+        let scheduleData = ctx.request.body, scheduleInfo, updateInfo, updateNotification;
         if (Object.keys(scheduleData).length === 0 && scheduleData.data === undefined) {
             ctx.response.body = data
 
@@ -48,8 +48,11 @@ const deleteSchedule = async (ctx) => {
 
         updateInfo = await db.updateOneDocument("schedule", { _id: scheduleInfo._id }, { status: 0 })
         if (updateInfo.modifiedCount !== 0 && updateInfo.matchedCount !== 0) {
+            updateNotification = await db.updateOneDocument("notification", { postId: scheduleInfo._id, status: { $in: [1, 2] } }, { status: 0 })
+            if (updateNotification.modifiedCount !== 0 && updateNotification.matchedCount !== 0) {
 
-            return ctx.response.body = { status: 1, response: "Schedule deleted successfully" }
+                return ctx.response.body = { status: 1, response: "Schedule deleted successfully" }
+            }
         }
 
         return ctx.response.body = data
@@ -357,7 +360,7 @@ const postComment = async (ctx) => {
 const deleteComment = async (ctx) => {
     let data = { status: 0, response: "Invalid request" }
     try {
-        let commentData = ctx.request.body, commentInfo, updateInfo;
+        let commentData = ctx.request.body, commentInfo, updateInfo, updateNotification;
         if (Object.keys(commentData).length === 0 && commentData.data === undefined) {
             ctx.response.body = data
 
@@ -371,9 +374,13 @@ const deleteComment = async (ctx) => {
         }
         updateInfo = await db.updateOneDocument("scheduleComment", { _id: commentInfo._id }, { status: 0 })
         if (updateInfo.modifiedCount !== 0 && updateInfo.matchedCount !== 0) {
+            updateNotification = await db.updateOneDocument("notification", { commentId: commentInfo._id, status: { $in: [1, 2] } }, { status: 0 })
+            if (updateNotification.modifiedCount !== 0 && updateNotification.matchedCount !== 0) {
 
-            return ctx.response.body = { status: 1, response: "Comment deleted successfully" }
+                return ctx.response.body = { status: 1, response: "Comment deleted successfully" }
+            }
         }
+        
         return ctx.response.body = data
     } catch (error) {
         console.log(error)

@@ -277,6 +277,7 @@ const login = async (ctx) => {
             userId: checkEmail._id,
             role: checkEmail.role,
             status: checkEmail.status,
+            userName: checkEmail.userName
         }, privateKey, { algorithm: 'RS256' })
 
         if (generatedToken) {
@@ -379,7 +380,7 @@ const getProfileById = async (ctx) => {
         checkId = await db.findSingleDocument("user", { _id: new ObjectId(ProfileIdData.id), status: 1 }, { password: 0, otp: 0 })
         if (checkId == null || Object.keys(checkId).length == 0) {
 
-            return ctx.response.body = { status: 0, response: "Invalid id" }
+            return ctx.response.body = { status: 1, response: JSON.stringify([]) }
         }
         getConnectionCount = await db.getCountAsync('connection', {
             $or: [
@@ -921,10 +922,6 @@ const getMyNotifications = async (ctx) => {
                     ],
                     totalCount: [
                         { $count: "value" }
-                    ],
-                    unseenCount: [
-                        { $match: { "status": 1 } },
-                        { $count: "value" }
                     ]
                 }
             }
@@ -932,15 +929,11 @@ const getMyNotifications = async (ctx) => {
         notificationInfo = await db.getAggregation("notification", aggregationQuery)
 
         if (notificationInfo[0].data.length !== 0) {
-            if (notificationInfo[0].unseenCount.length !== 0) {
 
-                return ctx.response.body = { status: 1, data: JSON.stringify(notificationInfo[0].data), totalCount: notificationInfo[0].totalCount[0].value, unseenCount: notificationInfo[0].unseenCount[0].value }
-            }
-
-            return ctx.response.body = { status: 1, data: JSON.stringify(notificationInfo[0].data), totalCount: notificationInfo[0].totalCount[0].value, unseenCount: 0 }
+            return ctx.response.body = { status: 1, data: JSON.stringify(notificationInfo[0].data), totalCount: notificationInfo[0].totalCount[0].value }
         }
 
-        return ctx.response.body = { status: 1, data: JSON.stringify(notificationInfo[0].data), totalCount: 0, unseenCount: 0 }
+        return ctx.response.body = { status: 1, data: JSON.stringify(notificationInfo[0].data), totalCount: 0 }
     } catch (error) {
         console.log(error.message)
         return ctx.response.body = { status: 0, response: `Error in user Controller - getMyNotifications:-${error.message}` }
@@ -986,6 +979,7 @@ const userSearch = async (ctx) => {
             role: 1,
             $or: [
                 { fullName: { $regex: searchTerm, $options: 'i' } },
+                { userName: { $regex: searchTerm, $options: 'i' } }
             ]
         }, { fullName: 1, profile: 1, userName: 1 }, 5)
 
@@ -1147,7 +1141,7 @@ const getProfileByName = async (ctx) => {
         }
         profileData = profileData.data[0]
         profileInfo = await db.findSingleDocument("user", { userName: profileData.userName, status: 1 }, { _id: 1 })
-        if(profileInfo != null){
+        if (profileInfo != null) {
 
             return ctx.response.body = { status: 1, data: JSON.stringify([{ userData: { _id: profileInfo._id } }]) }
         }
@@ -1160,7 +1154,7 @@ const getProfileByName = async (ctx) => {
 }
 
 const getAllNotificationCount = async (ctx) => {
-    let data = { status: 0, response: "Something went wrong" }, aggregationPostQuery = [], aggregationMentionQuery = [], totalNotificationCount, userData, postNotification, mentionNotification;
+    let data = { status: 0, response: "Something went wrong" }, aggregationPostQuery = [], aggregationMentionQuery = [], totalNotificationCount = 0, userData, postNotification, mentionNotification;
     try {
         userData = ctx.request.body;
         userData = userData.data[0]
@@ -1186,8 +1180,24 @@ const getAllNotificationCount = async (ctx) => {
         ]
         postNotification = await db.getAggregation("notification", aggregationPostQuery)
         mentionNotification = await db.getAggregation("post", aggregationMentionQuery)
-        totalNotificationCount = postNotification[0].postNotificationTotal + mentionNotification[0].mentionNotificationTotal
-        return ctx.response.body = { status: 1, totalNotificationCount: totalNotificationCount }
+        if (postNotification.length !== 0 || mentionNotification.length !== 0) {
+            if (postNotification.length !== 0 && mentionNotification.length !== 0) {
+                totalNotificationCount = postNotification[0].postNotificationTotal + mentionNotification[0].mentionNotificationTotal
+
+                return ctx.response.body = { status: 1, data: JSON.stringify(totalNotificationCount) }
+            }
+            if (mentionNotification.length !== 0) {
+                totalNotificationCount = 0 + mentionNotification[0].mentionNotificationTotal
+
+                return ctx.response.body = { status: 1, data: JSON.stringify(totalNotificationCount) }
+            }
+
+            totalNotificationCount = postNotification[0].postNotificationTotal + 0
+
+            return ctx.response.body = { status: 1, data: JSON.stringify(totalNotificationCount) }
+        }
+
+        return ctx.response.body = { status: 1, data: JSON.stringify(totalNotificationCount) }
     } catch (error) {
         console.log(error.message)
         return ctx.response.body = { status: 0, response: `Error in user Controller - getAllNotificationCount:-${error.message}` }

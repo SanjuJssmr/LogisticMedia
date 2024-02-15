@@ -45,7 +45,7 @@ const addPost = async (ctx) => {
 const deletePost = async (ctx) => {
     let data = { status: 0, response: "Invalid request" }
     try {
-        let postData = ctx.request.body, postInfo, updateInfo;
+        let postData = ctx.request.body, postInfo, updateInfo, updateNotification;
         if (Object.keys(postData).length === 0 && postData.data === undefined) {
             ctx.response.body = data
 
@@ -60,8 +60,11 @@ const deletePost = async (ctx) => {
 
         updateInfo = await db.updateOneDocument("post", { _id: postInfo._id }, { status: 0 })
         if (updateInfo.modifiedCount !== 0 && updateInfo.matchedCount !== 0) {
+            updateNotification = await db.updateOneDocument("notification", { postId: postInfo._id, status: { $in: [1, 2] } }, { status: 0 })
+            if (updateNotification.modifiedCount !== 0 && updateNotification.matchedCount !== 0) {
 
-            return ctx.response.body = { status: 1, response: "Post deleted successfully" }
+                return ctx.response.body = { status: 1, response: "Post deleted successfully" }
+            }
         }
 
         return ctx.response.body = data
@@ -790,7 +793,7 @@ const getForYouPost = async (ctx) => {
 const reportPost = async (ctx) => {
     let data = { status: 0, response: "Invalid request" }
     try {
-        let postData = ctx.request.body, postInfo;
+        let postData = ctx.request.body, postInfo, updateNotification;
         if (Object.keys(postData).length === 0 && postData.data === undefined) {
             ctx.response.body = data
 
@@ -805,8 +808,11 @@ const reportPost = async (ctx) => {
         if (postInfo.reportCount.length > 3) {
             updateInfo = await db.updateOneDocument("post", { _id: postInfo._id }, { status: 0, $push: { reportCount: { userId: postData.userId, reason: postData.reason } } })
             if (updateInfo.modifiedCount !== 0 && updateInfo.matchedCount !== 0) {
-
-                return ctx.response.body = { status: 1, response: "Post as been reported" }
+                updateNotification = await db.updateOneDocument("notification", { postId: postInfo._id, status: { $in: [1, 2] } }, { status: 0 })
+                if (updateNotification.modifiedCount !== 0 && updateNotification.matchedCount !== 0) {
+    
+                    return ctx.response.body = { status: 1, response: "Post as been reported" }
+                }
             }
         }
         updateInfo = await db.updateOneDocument("post", { _id: postInfo._id }, { $push: { reportCount: { userId: postData.userId, reason: postData.reason } } })
@@ -1538,10 +1544,6 @@ const getMentionNotificationByUserName = async (ctx) => {
                     ],
                     totalCount: [
                         { $count: "value" }
-                    ],
-                    unseenCount: [
-                        { $match: { status: 1 } },
-                        { $count: "value" }
                     ]
                 }
             }
@@ -1549,12 +1551,8 @@ const getMentionNotificationByUserName = async (ctx) => {
         notificationInfo = await db.getAggregation("post", aggregationQuery)
 
         if (notificationInfo[0].data.length !== 0) {
-            if (notificationInfo[0].unseenCount.length !== 0) {
 
-                return ctx.response.body = { status: 1, data: JSON.stringify(notificationInfo[0].data), totalCount: notificationInfo[0].totalCount[0].value, unseenCount: notificationInfo[0].unseenCount[0].value }
-            }
-
-            return ctx.response.body = { status: 1, data: JSON.stringify(notificationInfo[0].data), totalCount: notificationInfo[0].totalCount[0].value, unseenCount: 0 }
+            return ctx.response.body = { status: 1, data: JSON.stringify(notificationInfo[0].data), totalCount: notificationInfo[0].totalCount[0].value }
         }
 
         return ctx.response.body = { status: 1, data: JSON.stringify(notificationInfo[0].data), totalCount: 0 }

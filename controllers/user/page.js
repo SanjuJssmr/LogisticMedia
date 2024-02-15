@@ -296,7 +296,7 @@ const getCompanyProfileById = async (ctx) => {
         }
         idData = idData.data[0]
 
-        checkId = await db.findSingleDocument("companyPage", { _id: new ObjectId(idData.id), status: 1 }, { password: 0, otp: 0, createdAt: 0, updatedAt: 0 })
+        checkId = await db.findSingleDocument("companyPage", { _id: new ObjectId(idData.id) }, { password: 0, otp: 0, createdAt: 0, updatedAt: 0 })
         if (checkId == null || Object.keys(checkId).length == 0) {
 
             return ctx.response.body = { status: 0, response: "Invalid id" }
