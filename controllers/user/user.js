@@ -1147,8 +1147,12 @@ const getProfileByName = async (ctx) => {
         }
         profileData = profileData.data[0]
         profileInfo = await db.findSingleDocument("user", { userName: profileData.userName, status: 1 }, { _id: 1 })
+        if(profileInfo != null){
 
-        return ctx.response.body = { status: 1, data: JSON.stringify([{ userData: { _id: profileInfo._id } }]) }
+            return ctx.response.body = { status: 1, data: JSON.stringify([{ userData: { _id: profileInfo._id } }]) }
+        }
+
+        return ctx.response.body = { status: 1, data: JSON.stringify([]) }
     } catch (error) {
         console.log(error.message)
         return ctx.response.body = { status: 0, response: `Error in user Controller - getProfileByName:-${error.message}` }
