@@ -34,3 +34,6 @@ const notificationSchema = mongoose.Schema({
 })
 
 module.exports = mongoose.model("notification", notificationSchema)
+
+//Category
+// 1- postLike, 2- postComment. 3- mentions, 4. Qalike, 5- Qaanswers, 6- scehduleLike, 7- scheduleComments

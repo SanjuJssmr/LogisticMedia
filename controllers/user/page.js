@@ -18,7 +18,7 @@ const registrationOtpMail = async (mailData) => {
                 email: mailData.emailTo,
                 otp: mailData.otp,
                 type: mailData.type,
-                url: mailData.url
+                url: false
             }
             , async (err, data) => {
                 if (err) {
@@ -50,49 +50,6 @@ const registrationOtpMail = async (mailData) => {
             })
     } catch (error) {
         console.log(`Error sending Registration OTP verification : ${error.message}`)
-    }
-}
-//Resend OTP Mail
-const resendOtpMail = async (mailData) => {
-    let errorData, mailOptions
-    try {
-        errorData = { location: "Resend otp", funName: "resendOtpMail" }
-        ejs.renderFile(`${templatePathUser}/resendOtp.ejs`,
-            {
-                fullName: mailData.fullName,
-                email: mailData.emailTo,
-                otp: mailData.otp
-            }
-            , async (err, data) => {
-                if (err) {
-                    console.log(err);
-                    await common.errorMail(errorData)
-                } else {
-                    mailOptions = {
-                        from: process.env.SMTP_AUTH_USER,
-                        to: mailData.emailTo,
-                        subject: `AllMasterSocial | Attention! - New OTP Request |`,
-                        html: data
-                    }
-                    //Send Mail
-                    transporter.sendMail(mailOptions, async (error, info) => {
-                        if (error) {
-                            if (mailResendAttempts !== 0) {
-                                resendOtpMail(mailData)
-                                mailResendAttempts--
-                            } else {
-                                mailResendAttempts = 2
-                                await common.errorMail(errorData)
-                            }
-                            console.log(`Resend otp Mail Not Sent - ${error}`)
-                            return console.log(error)
-                        }
-                        console.log(`Resend otp Mail sent:  - ${info.messageId}`)
-                    })
-                }
-            })
-    } catch (error) {
-        console.log(`Error sending user/resendOtpMail : ${error.message}`)
     }
 }
 
@@ -130,8 +87,7 @@ const addCompanyPages = async (ctx) => {
                     emailTo: pageInsert.email,
                     fullName: pageInsert.companyName,
                     otp: pageInsert.otp,
-                    type: "company page",
-                    url: CONFIG.settings.otpUrl + pageInsert._id
+                    type: "company page"
                 }
             )
 
@@ -170,8 +126,7 @@ const resendOtp = async (ctx) => {
                     emailTo: pageData.email,
                     fullName: checkEmail.companyName,
                     otp: pageData.otp,
-                    type: "company page",
-                    url: CONFIG.settings.otpUrl + checkEmail._id
+                    type: "company page"
                 }
             )
 
@@ -341,7 +296,7 @@ const getCompanyProfileById = async (ctx) => {
         }
         idData = idData.data[0]
 
-        checkId = await db.findSingleDocument("companyPage", { _id: new ObjectId(idData.id), status: 1 }, { password: 0, otp: 0, createdAt: 0, updatedAt: 0 })
+        checkId = await db.findSingleDocument("companyPage", { _id: new ObjectId(idData.id) }, { password: 0, otp: 0, createdAt: 0, updatedAt: 0 })
         if (checkId == null || Object.keys(checkId).length == 0) {
 
             return ctx.response.body = { status: 0, response: "Invalid id" }

@@ -8,7 +8,8 @@ const { userRegister, updateRegisterData, resendOtp,
     getMyNotifications,
     updateNotification,
     userSearch,
-    getProfileByName} = require("../../controllers/user/user")
+    getProfileByName,
+    getAllNotificationCount} = require("../../controllers/user/user")
 
 const { getReportPost, deleteReportedPost } = require("../../controllers/user/admin")
 const { getAllChatInfo, updateChatStatus, getChatsByConnectionId } = require('../../controllers/user/chat')
@@ -41,6 +42,7 @@ try {
     userRouter.post("/updateNotification", updateNotification)
     userRouter.post("/userSearch", userSearch)
     userRouter.post("/getProfileByName", getProfileByName)
+    userRouter.post("/getAllNotificationCount", getAllNotificationCount)
 
 } catch (error) {
     console.log(`error in user router - ${error}`);

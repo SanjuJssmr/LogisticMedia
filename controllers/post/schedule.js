@@ -33,7 +33,7 @@ const addSchedule = async (ctx) => {
 const deleteSchedule = async (ctx) => {
     let data = { status: 0, response: "Invalid request" }
     try {
-        let scheduleData = ctx.request.body, scheduleInfo, updateInfo;
+        let scheduleData = ctx.request.body, scheduleInfo, updateInfo, updateNotification;
         if (Object.keys(scheduleData).length === 0 && scheduleData.data === undefined) {
             ctx.response.body = data
 
@@ -48,8 +48,11 @@ const deleteSchedule = async (ctx) => {
 
         updateInfo = await db.updateOneDocument("schedule", { _id: scheduleInfo._id }, { status: 0 })
         if (updateInfo.modifiedCount !== 0 && updateInfo.matchedCount !== 0) {
+            updateNotification = await db.updateOneDocument("notification", { postId: scheduleInfo._id, status: { $in: [1, 2] } }, { status: 0 })
+            if (updateNotification.modifiedCount !== 0 && updateNotification.matchedCount !== 0) {
 
-            return ctx.response.body = { status: 1, response: "Schedule deleted successfully" }
+                return ctx.response.body = { status: 1, response: "Schedule deleted successfully" }
+            }
         }
 
         return ctx.response.body = data
@@ -96,7 +99,7 @@ const getMySchedule = async (ctx) => {
                     likedBy: "$scheduleInfo.likedBy",
                     fullName: "$companyInfo.companyName",
                     profile: "$companyInfo.profile",
-                    companyId:"$companyInfo._id"
+                    companyId: "$companyInfo._id"
                 }
             },
             {
@@ -112,11 +115,15 @@ const getMySchedule = async (ctx) => {
                     "companyName": { '$arrayElemAt': ['$fullName', 0] },
                     "companyProfile": { '$arrayElemAt': ['$profile', 0] },
                     'likedBy': { '$arrayElemAt': ['$likedBy', 0] },
-                }
-            },
-            {
-                $addFields: {
-                    likes: { $size: "$likedBy" }
+                    "likes":
+                    {
+                        "$cond":
+                        {
+                            "if": { "$isArray": { '$arrayElemAt': ['$likedBy', 0] } },
+                            "then": { "$size": { '$arrayElemAt': ['$likedBy', 0] } },
+                            "else": 0
+                        }
+                    }
                 }
             },
             {
@@ -187,11 +194,15 @@ const getAllSchedule = async (ctx) => {
                     "companyProfile": { '$arrayElemAt': ['$profile', 0] },
                     "companyId": { '$arrayElemAt': ['$companyId', 0] },
                     'likedBy': { '$arrayElemAt': ['$likedBy', 0] },
-                }
-            },
-            {
-                $addFields: {
-                    likes: { $size: "$likedBy" }
+                    "likes":
+                    {
+                        "$cond":
+                        {
+                            "if": { "$isArray": { '$arrayElemAt': ['$likedBy', 0] } },
+                            "then": { "$size": { '$arrayElemAt': ['$likedBy', 0] } },
+                            "else": 0
+                        }
+                    }
                 }
             },
             {
@@ -225,7 +236,7 @@ const getAllSchedule = async (ctx) => {
 
                 return ctx.response.body = { status: 1, data: JSON.stringify(scheduleInfo[0].data), totalCount: scheduleInfo[0].totalCount[0].value }
             }
-            
+
             return ctx.response.body = { status: 1, data: JSON.stringify(scheduleInfo[0].data), totalCount: scheduleInfo[0].totalCount[0].value }
         }
 
@@ -294,13 +305,17 @@ const getScheduleById = async (ctx) => {
                     "companyName": { '$arrayElemAt': ['$fullName', 0] },
                     "companyProfile": { '$arrayElemAt': ['$profile', 0] },
                     'likedBy': { '$arrayElemAt': ['$likedBy', 0] },
+                    "likes":
+                    {
+                        "$cond":
+                        {
+                            "if": { "$isArray": { '$arrayElemAt': ['$likedBy', 0] } },
+                            "then": { "$size": { '$arrayElemAt': ['$likedBy', 0] } },
+                            "else": 0
+                        }
+                    }
                 }
-            },
-            {
-                $addFields: {
-                    likes: { $size: "$likedBy" }
-                }
-            },
+            }
         ]
         scheduleInfo = await db.getAggregation("schedule", aggregationQuery)
 
@@ -314,7 +329,7 @@ const getScheduleById = async (ctx) => {
 const postComment = async (ctx) => {
     let data = { status: 0, response: "Invalid request" }
     try {
-        let commentData = ctx.request.body, scheduleInfo, commentInfo;
+        let commentData = ctx.request.body, scheduleInfo, commentInfo, updateNotification;
         if (Object.keys(commentData).length === 0 && commentData.data === undefined) {
             ctx.response.body = data
 
@@ -326,9 +341,13 @@ const postComment = async (ctx) => {
 
             return ctx.response.body = { status: 0, response: "No schedule found" }
         }
-        scheduleInfo = await db.insertSingleDocument("scheduleComment", commentData)
-        if (Object.keys(scheduleInfo).length !== 0) {
+        commentInfo = await db.insertSingleDocument("scheduleComment", commentData)
+        if (Object.keys(commentInfo).length !== 0) {
+            updateNotification = await db.insertSingleDocument("notification", { receiverId: scheduleInfo.companyId, senderId: commentData.userId, postId: scheduleInfo._id, commentId: commentInfo._id, category: 7 })
+            if (Object.keys(updateNotification).length !== 0) {
 
+                return ctx.response.body = { status: 1, response: "Comment added successfully" }
+            }
             return ctx.response.body = { status: 1, response: "Comment added successfully" }
         }
         return ctx.response.body = data
@@ -341,7 +360,7 @@ const postComment = async (ctx) => {
 const deleteComment = async (ctx) => {
     let data = { status: 0, response: "Invalid request" }
     try {
-        let commentData = ctx.request.body, commentInfo, updateInfo;
+        let commentData = ctx.request.body, commentInfo, updateInfo, updateNotification;
         if (Object.keys(commentData).length === 0 && commentData.data === undefined) {
             ctx.response.body = data
 
@@ -355,9 +374,13 @@ const deleteComment = async (ctx) => {
         }
         updateInfo = await db.updateOneDocument("scheduleComment", { _id: commentInfo._id }, { status: 0 })
         if (updateInfo.modifiedCount !== 0 && updateInfo.matchedCount !== 0) {
+            updateNotification = await db.updateOneDocument("notification", { commentId: commentInfo._id, status: { $in: [1, 2] } }, { status: 0 })
+            if (updateNotification.modifiedCount !== 0 && updateNotification.matchedCount !== 0) {
 
-            return ctx.response.body = { status: 1, response: "Comment deleted successfully" }
+                return ctx.response.body = { status: 1, response: "Comment deleted successfully" }
+            }
         }
+        
         return ctx.response.body = data
     } catch (error) {
         console.log(error)
@@ -522,29 +545,36 @@ const getCommentsAndReplies = async (ctx) => {
 const updateLike = async (ctx) => {
     let data = { status: 0, response: "Invalid request" }
     try {
-        let scheduleData = ctx.request.body, scheduleInfo, likeInfo;
+        let scheduleData = ctx.request.body, scheduleInfo, likeInfo, updateNotification;
         if (Object.keys(scheduleData).length === 0 && scheduleData.data === undefined) {
             ctx.response.body = data
 
             return
         }
         scheduleData = scheduleData.data[0];
-        scheduleInfo = await db.findSingleDocument("scheduleLike", { scheduleId: scheduleData.scheduleId })
+        scheduleInfo = await db.findSingleDocument("schedule", { _id: scheduleData.scheduleId })
         if (scheduleInfo == null || scheduleInfo.status === 0) {
 
             return ctx.response.body = { status: 0, response: "No schedule found" }
         }
         if (scheduleData.status === 1) {
-            updateInfo = await db.updateOneDocument("scheduleLike", { _id: scheduleInfo._id }, { $push: { likedBy: scheduleData.userId } })
+            updateInfo = await db.updateOneDocument("scheduleLike", { scheduleId: scheduleInfo._id }, { $push: { likedBy: scheduleData.userId } })
             if (updateInfo.modifiedCount !== 0 && updateInfo.matchedCount !== 0) {
+                updateNotification = await db.insertSingleDocument("notification", { receiverId: scheduleInfo.companyId, senderId: scheduleData.userId, postId: scheduleInfo._id, category: 6 })
+                if (Object.keys(updateNotification).length !== 0) {
 
-                return ctx.response.body = { status: 1, response: "Like added successfully" }
+                    return ctx.response.body = { status: 1, response: "Like added successfully" }
+                }
             }
         }
         if (scheduleData.status === 2) {
             updateInfo = await db.updateOneDocument("scheduleLike", { _id: scheduleInfo._id }, { $pull: { likedBy: scheduleData.userId } })
             if (updateInfo.modifiedCount !== 0 && updateInfo.matchedCount !== 0) {
+                updateNotification = await db.updateOneDocument("notification", { postId: scheduleInfo._id, senderId: scheduleData.userId, category: 6, status: { $in: [1, 2] } }, { status: 0 })
+                if (updateNotification.modifiedCount !== 0 && updateNotification.matchedCount !== 0) {
 
+                    return ctx.response.body = { status: 1, response: "Disliked successfully" }
+                }
                 return ctx.response.body = { status: 1, response: "Disliked successfully" }
             }
         }
@@ -556,7 +586,84 @@ const updateLike = async (ctx) => {
     }
 }
 
+const getAdminSchedule = async (ctx) => {
+    let data = { status: 0, response: "Invalid request" }
+    try {
+        let scheduleInfo, scheduleAggregation = [];
+        scheduleAggregation = [
+            {
+                $match: { status: 1 },
+            },
+            {
+                $lookup:
+                {
+                    from: "companypages",
+                    localField: "companyId",
+                    foreignField: "_id",
+                    as: "companyInfo",
+                }
+            },
+            {
+                $lookup:
+                {
+                    from: "schedulelikes",
+                    localField: "_id",
+                    foreignField: "scheduleId",
+                    as: "scheduleInfo",
+                }
+            },
+            {
+                $addFields: {
+                    likedBy: "$scheduleInfo.likedBy",
+                    fullName: "$companyInfo.companyName",
+                    profile: "$companyInfo.profile",
+                    companyId: "$companyInfo._id"
+                }
+            },
+            {
+                $project: {
+                    "pol": 1,
+                    "pod": 1,
+                    "openingOn": 1,
+                    "bookingCutOff": 1,
+                    "createdBy": 1,
+                    "description": 1,
+                    "createdAt": 1,
+                    "companyName": { '$arrayElemAt': ['$fullName', 0] },
+                    "companyProfile": { '$arrayElemAt': ['$profile', 0] },
+                    "companyId": { '$arrayElemAt': ['$companyId', 0] },
+                    'likedBy': { '$arrayElemAt': ['$likedBy', 0] },
+                    "likes":
+                    {
+                        "$cond":
+                        {
+                            "if": { "$isArray": { '$arrayElemAt': ['$likedBy', 0] } },
+                            "then": { "$size": { '$arrayElemAt': ['$likedBy', 0] } },
+                            "else": 0
+                        }
+                    }
+                }
+            },
+            {
+                $sort: {
+                    createdAt: -1,
+                }
+            }
+        ]
+        scheduleInfo = await db.getAggregation("schedule", scheduleAggregation)
+        if (scheduleInfo.length !== 0) {
+
+            return ctx.response.body = { status: 1, data: JSON.stringify(scheduleInfo) }
+        }
+
+        return ctx.response.body = { status: 1, data: JSON.stringify(scheduleInfo) }
+    } catch (error) {
+        console.log(error)
+        return ctx.response.body = { status: 0, response: `Error in schedule controllers/getAllSchedule - ${error.message}` }
+    }
+}
+
 module.exports = {
     addSchedule, deleteSchedule, getMySchedule, getScheduleById, postComment, getCommentsAndReplies,
-    deleteComment, addReply, deleteReply, updateLike, getAllSchedule
+    deleteComment, addReply, deleteReply, updateLike, getAllSchedule, getAdminSchedule
 }

@@ -1,5 +1,5 @@
 const Router = require('koa-router')
-const { addSchedule, deleteSchedule, getMySchedule, getScheduleById, postComment, getCommentsAndReplies, deleteComment, addReply, deleteReply, updateLike, getAllSchedule } = require('../../controllers/post/schedule')
+const { addSchedule, deleteSchedule, getMySchedule, getScheduleById, postComment, getCommentsAndReplies, deleteComment, addReply, deleteReply, updateLike, getAllSchedule, getAdminSchedule } = require('../../controllers/post/schedule')
 const scheduleRouter = new Router({ prefix: "/schedule" })
 
 try {
@@ -14,6 +14,7 @@ try {
     scheduleRouter.post("/getCommentAndReply", getCommentsAndReplies)
     scheduleRouter.post("/updateScheduleLike", updateLike)
     scheduleRouter.post("/getAllSchedule", getAllSchedule)
+    scheduleRouter.get("/getAdminSchedule", getAdminSchedule)
 
 } catch (error) {
     console.log(`Error in schedule router - ${error}`);

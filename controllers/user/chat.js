@@ -85,6 +85,7 @@ const getAllChatInfo = async (ctx) => {
                     "recentChat": "$recentChat.message",
                     "recentTime": "$recentChat.createdAt",
                     "recentChatStatus":"$recentChat.status",
+                    "recentChatUserId":"$recentChat.sender",
                     "chatInfo": {
                         $filter: {
                             input: "$chatInfo",
